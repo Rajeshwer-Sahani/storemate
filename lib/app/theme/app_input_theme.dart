@@ -2,9 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:storemate/app/theme/app_dimensions.dart';
 
 abstract final class AppInputTheme {
-  static InputDecorationTheme get inputDecorationTheme {
+  static InputDecorationTheme inputDecorationTheme(
+    ColorScheme colorScheme,
+  ) {
     return InputDecorationTheme(
       filled: true,
+
+      // Theme-aware field background
+      fillColor: colorScheme.surface,
 
       contentPadding: const EdgeInsets.symmetric(
         horizontal: AppDimensions.spacingMedium,
@@ -16,7 +21,10 @@ abstract final class AppInputTheme {
         borderRadius: BorderRadius.circular(
           AppDimensions.radiusMedium,
         ),
-        borderSide: BorderSide.none,
+        borderSide: BorderSide(
+          color: colorScheme.outline,
+          width: 1,
+        ),
       ),
 
       // Normal border
@@ -24,17 +32,19 @@ abstract final class AppInputTheme {
         borderRadius: BorderRadius.circular(
           AppDimensions.radiusMedium,
         ),
-        borderSide: const BorderSide(
+        borderSide: BorderSide(
+          color: colorScheme.outline,
           width: 1,
         ),
       ),
 
-      // Border when the user selects the field
+      // Border when the field is selected
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(
           AppDimensions.radiusMedium,
         ),
-        borderSide: const BorderSide(
+        borderSide: BorderSide(
+          color: colorScheme.primary,
           width: 1.5,
         ),
       ),
@@ -44,7 +54,8 @@ abstract final class AppInputTheme {
         borderRadius: BorderRadius.circular(
           AppDimensions.radiusMedium,
         ),
-        borderSide: const BorderSide(
+        borderSide: BorderSide(
+          color: colorScheme.error,
           width: 1,
         ),
       ),
@@ -54,24 +65,42 @@ abstract final class AppInputTheme {
         borderRadius: BorderRadius.circular(
           AppDimensions.radiusMedium,
         ),
-        borderSide: const BorderSide(
+        borderSide: BorderSide(
+          color: colorScheme.error,
           width: 1.5,
         ),
       ),
 
-      labelStyle: const TextStyle(
+      // Label styling
+      labelStyle: TextStyle(
         fontSize: 14,
         fontWeight: FontWeight.w500,
+        color: colorScheme.onSurfaceVariant,
       ),
 
-      hintStyle: const TextStyle(
+      // Floating label styling
+      floatingLabelStyle: TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w500,
+        color: colorScheme.primary,
+      ),
+
+      // Hint styling
+      hintStyle: TextStyle(
         fontSize: 14,
         fontWeight: FontWeight.w400,
+        color: colorScheme.onSurfaceVariant,
       ),
 
-      errorStyle: const TextStyle(
+      // Prefix and suffix icon colors
+      prefixIconColor: colorScheme.onSurfaceVariant,
+      suffixIconColor: colorScheme.onSurfaceVariant,
+
+      // Error styling
+      errorStyle: TextStyle(
         fontSize: 12,
         fontWeight: FontWeight.w400,
+        color: colorScheme.error,
       ),
     );
   }

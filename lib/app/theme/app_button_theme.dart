@@ -3,19 +3,34 @@ import 'package:storemate/app/theme/app_dimensions.dart';
 
 abstract final class AppButtonTheme {
   // Elevated button theme
-  static ElevatedButtonThemeData get elevatedButtonTheme {
+  static ElevatedButtonThemeData elevatedButtonTheme(
+    ColorScheme colorScheme,
+  ) {
     return ElevatedButtonThemeData(
       style: ElevatedButton.styleFrom(
         minimumSize: const Size(
           double.infinity,
           AppDimensions.buttonHeight,
         ),
+
+        // Theme-aware colors
+        backgroundColor: colorScheme.primary,
+        foregroundColor: colorScheme.onPrimary,
+        disabledBackgroundColor: colorScheme.onSurface.withValues(
+          alpha: 0.12,
+        ),
+        disabledForegroundColor: colorScheme.onSurface.withValues(
+          alpha: 0.38,
+        ),
+
         elevation: 0,
+
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(
             AppDimensions.radiusMedium,
           ),
         ),
+
         textStyle: const TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.w600,
@@ -25,21 +40,30 @@ abstract final class AppButtonTheme {
   }
 
   // Outlined button theme
-  static OutlinedButtonThemeData get outlinedButtonTheme {
+  static OutlinedButtonThemeData outlinedButtonTheme(
+    ColorScheme colorScheme,
+  ) {
     return OutlinedButtonThemeData(
       style: OutlinedButton.styleFrom(
         minimumSize: const Size(
           double.infinity,
           AppDimensions.buttonHeight,
         ),
-        side: const BorderSide(
+
+        // Theme-aware text and border colors
+        foregroundColor: colorScheme.primary,
+
+        side: BorderSide(
+          color: colorScheme.primary,
           width: 1.2,
         ),
+
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(
             AppDimensions.radiusMedium,
           ),
         ),
+
         textStyle: const TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.w600,
@@ -49,17 +73,24 @@ abstract final class AppButtonTheme {
   }
 
   // Text button theme
-  static TextButtonThemeData get textButtonTheme {
+  static TextButtonThemeData textButtonTheme(
+    ColorScheme colorScheme,
+  ) {
     return TextButtonThemeData(
       style: TextButton.styleFrom(
         minimumSize: const Size(
           48,
           44,
         ),
+
+        // Theme-aware text color
+        foregroundColor: colorScheme.primary,
+
         textStyle: const TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.w600,
         ),
+
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(
             AppDimensions.radiusSmall,
