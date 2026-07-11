@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:storemate/features/auth/presentation/screens/login_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -44,6 +45,13 @@ class _SplashScreenState extends State<SplashScreen>
     );
 
     _animationController.forward();
+    Future.delayed(const Duration(milliseconds: 2500), () {
+      if (!mounted) return;
+
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+      );
+    });
   }
 
   @override

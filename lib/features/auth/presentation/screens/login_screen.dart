@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:storemate/features/auth/presentation/screens/register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -130,7 +131,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       onPressed: () {
                         // Login functionality will be added later.
                       },
-                      child: const Text('Login'),
+                      child: const Text('Log in'),
                     ),
 
                     const SizedBox(height: 22),
@@ -181,7 +182,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         TextButton(
                           onPressed: () {
-                            // Register navigation will be added later.
+                            Navigator.pushReplacement(context, MaterialPageRoute(
+                              builder: (context) => const RegisterScreen(),
+                            ));
                           },
                           child: const Text('Create account'),
                         ),
