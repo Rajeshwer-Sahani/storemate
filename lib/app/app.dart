@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:storemate/app/theme/app_theme.dart';
+import 'package:storemate/features/auth/presentation/screens/login_screen.dart';
 import 'package:storemate/features/splash/presentation/splash_screen.dart';
 
 class StoreMateApp extends StatelessWidget {
@@ -15,7 +16,7 @@ class StoreMateApp extends StatelessWidget {
       darkTheme: AppTheme.darkTheme,
       themeMode: ThemeMode.system,
 
-      home: const SplashScreen(),
+      home: const LoginScreen(),
     );
   }
 }
