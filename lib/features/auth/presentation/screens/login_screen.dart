@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:storemate/features/auth/presentation/screens/forgot_password_screen.dart';
 import 'package:storemate/features/auth/presentation/screens/register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -118,7 +119,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       alignment: Alignment.centerRight,
                       child: TextButton(
                         onPressed: () {
-                          // Navigation will be added later.
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  const ForgotPasswordScreen(),
+                            ),
+                          );
                         },
                         child: const Text('Forgot password?'),
                       ),
@@ -182,9 +188,12 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         TextButton(
                           onPressed: () {
-                            Navigator.pushReplacement(context, MaterialPageRoute(
-                              builder: (context) => const RegisterScreen(),
-                            ));
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const RegisterScreen(),
+                              ),
+                            );
                           },
                           child: const Text('Create account'),
                         ),
