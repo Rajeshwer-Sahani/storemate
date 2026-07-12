@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:storemate/features/auth/presentation/screens/login_screen.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -9,6 +10,7 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
+  bool _isLoading = false;
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
 
@@ -29,22 +31,61 @@ class _RegisterScreenState extends State<RegisterScreen> {
     super.dispose();
   }
 
-  void _createAccount() {
-    FocusScope.of(context).unfocus();
+  Future<void> _createAccount() async {
+    FocusManager.instance.primaryFocus?.unfocus();
 
-    final isFormValid = _formKey.currentState?.validate() ?? false;
-
-    if (!isFormValid) {
+    if (!_formKey.currentState!.validate()) {
       return;
     }
 
-    final fullName = _fullNameController.text.trim();
-    final email = _emailController.text.trim();
+    setState(() {
+      _isLoading = true;
+    });
 
-    debugPrint('Full name: $fullName');
-    debugPrint('Email: $email');
+    try {
+      final response = await Supabase.instance.client.auth.signUp(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+        data: {'full_name': _fullNameController.text.trim()},
+      );
 
-    // Firebase account creation will be added later.
+      if (!mounted) return;
+
+      if (response.user != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Account created. Please check your email and verify your account.',
+            ),
+          ),
+        );
+
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+          (route) => false,
+        );
+      }
+    } on AuthException catch (error) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.message)));
+    } catch (error) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Something went wrong. Please try again.'),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   @override
@@ -76,16 +117,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 children: [
                   // StoreMate logo
                   Center(
-                    child: Image.asset(logoPath, width: 135, fit: BoxFit.contain),
+                    child: Image.asset(
+                      logoPath,
+                      width: 135,
+                      fit: BoxFit.contain,
+                    ),
                   ),
-              
+
                   const SizedBox(height: 24),
-              
+
                   // Register heading
                   Text('Create your account', style: textTheme.headlineMedium),
-              
+
                   const SizedBox(height: 6),
-              
+
                   // Register description
                   Text(
                     'Start managing your store, inventory, and sales.',
@@ -93,9 +138,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       color: colorScheme.onSurfaceVariant,
                     ),
                   ),
-              
+
                   const SizedBox(height: 26),
-              
+
                   // Full-name field
                   TextFormField(
                     controller: _fullNameController,
@@ -105,15 +150,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     autofillHints: const [AutofillHints.name],
                     validator: (value) {
                       final fullName = value?.trim() ?? '';
-              
+
                       if (fullName.isEmpty) {
                         return 'Please enter your full name';
                       }
-              
+
                       if (fullName.length < 3) {
                         return 'Full name must contain at least 3 characters';
                       }
-              
+
                       return null;
                     },
                     decoration: const InputDecoration(
@@ -122,9 +167,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       prefixIcon: Icon(Icons.person_outline_rounded),
                     ),
                   ),
-              
+
                   const SizedBox(height: 15),
-              
+
                   // Email field
                   TextFormField(
                     controller: _emailController,
@@ -133,19 +178,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     autofillHints: const [AutofillHints.email],
                     validator: (value) {
                       final email = value?.trim() ?? '';
-              
+
                       if (email.isEmpty) {
                         return 'Please enter your email address';
                       }
-              
+
                       final emailPattern = RegExp(
                         r'^[\w-.]+@([\w-]+\.)+[\w-]{2,}$',
                       );
-              
+
                       if (!emailPattern.hasMatch(email)) {
                         return 'Please enter a valid email address';
                       }
-              
+
                       return null;
                     },
                     decoration: const InputDecoration(
@@ -155,7 +200,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                   ),
                   const SizedBox(height: 15),
-              
+
                   // Password field
                   TextFormField(
                     controller: _passwordController,
@@ -166,11 +211,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       if (value == null || value.isEmpty) {
                         return 'Please enter a password';
                       }
-              
+
                       if (value.length < 6) {
                         return 'Password must contain at least 6 characters';
                       }
-              
+
                       return null;
                     },
                     decoration: InputDecoration(
@@ -194,9 +239,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                     ),
                   ),
-              
+
                   const SizedBox(height: 15),
-              
+
                   // Confirm-password field
                   TextFormField(
                     controller: _confirmPasswordController,
@@ -207,11 +252,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       if (value == null || value.isEmpty) {
                         return 'Please confirm your password';
                       }
-              
+
                       if (value != _passwordController.text) {
                         return 'Passwords do not match';
                       }
-              
+
                       return null;
                     },
                     onFieldSubmitted: (_) {
@@ -239,17 +284,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                     ),
                   ),
-              
+
                   const SizedBox(height: 24),
-              
+
                   // Create-account button
                   ElevatedButton(
-                    onPressed: _createAccount,
-                    child: const Text('Create Account'),
+                    onPressed: _isLoading ? null : _createAccount,
+                    child: _isLoading
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(strokeWidth: 2.5),
+                          )
+                        : const Text('Create Account'),
                   ),
-              
+
                   const SizedBox(height: 22),
-              
+
                   // Divider
                   Row(
                     children: [
@@ -266,9 +317,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       const Expanded(child: Divider()),
                     ],
                   ),
-              
+
                   const SizedBox(height: 22),
-              
+
                   // Google registration button
                   OutlinedButton.icon(
                     onPressed: () {
@@ -282,9 +333,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     label: const Text('Continue with Google'),
                   ),
-              
+
                   const SizedBox(height: 10),
-              
+
                   // Login section
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
