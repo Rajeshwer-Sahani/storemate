@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:storemate/features/home/presentation/screens/home_screen.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class StoreSetupScreen extends StatefulWidget {
   const StoreSetupScreen({super.key});
@@ -16,6 +18,7 @@ class _StoreSetupScreenState extends State<StoreSetupScreen> {
   final _gstNumberController = TextEditingController();
 
   String? _selectedBusinessType;
+  bool _isLoading = false;
 
   final List<String> _businessTypes = [
     'Electronics',
@@ -139,7 +142,7 @@ class _StoreSetupScreenState extends State<StoreSetupScreen> {
     super.dispose();
   }
 
-  void _completeSetup() {
+  Future<void> _completeSetup() async {
     // Close the keyboard.
     FocusManager.instance.primaryFocus?.unfocus();
 
@@ -150,10 +153,80 @@ class _StoreSetupScreenState extends State<StoreSetupScreen> {
       return;
     }
 
-    // Supabase store setup will be added later.
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Store information is valid.')),
-    );
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final supabase = Supabase.instance.client;
+
+      // Get the currently logged-in user.
+      final currentUser = supabase.auth.currentUser;
+
+      if (currentUser == null) {
+        throw const AuthException(
+          'Your session has expired. Please log in again.',
+        );
+      }
+
+      // Save the store information in Supabase.
+      await supabase.from('stores').insert({
+        'owner_id': currentUser.id,
+        'store_name': _storeNameController.text.trim(),
+        'owner_phone': _phoneNumberController.text.trim(),
+        'business_type': _selectedBusinessType,
+        'store_address': _storeAddressController.text.trim(),
+        'gst_number': _gstNumberController.text.trim().isEmpty
+            ? null
+            : _gstNumberController.text.trim().toUpperCase(),
+      });
+
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Store setup completed successfully.')),
+      );
+
+      // Navigate to the StoreMate home screen.
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => const HomeScreen()),
+        (route) => false,
+      );
+    } on AuthException catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.message)));
+    } on PostgrestException catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.message)));
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Something went wrong. Please try again.'),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   @override
@@ -373,8 +446,14 @@ class _StoreSetupScreenState extends State<StoreSetupScreen> {
 
                   // Complete setup button
                   ElevatedButton(
-                    onPressed: _completeSetup,
-                    child: const Text('Complete Setup'),
+                    onPressed: _isLoading ? null : _completeSetup,
+                    child: _isLoading
+                        ? const SizedBox(
+                            width: 22,
+                            height: 22,
+                            child: CircularProgressIndicator(strokeWidth: 2.5),
+                          )
+                        : const Text('Complete Setup'),
                   ),
                 ],
               ),
