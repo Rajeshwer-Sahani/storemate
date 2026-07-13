@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:storemate/features/auth/presentation/screens/forgot_password_screen.dart';
 import 'package:storemate/features/auth/presentation/screens/register_screen.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -10,40 +11,82 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  bool _isPasswordVisible = false;
   final _formKey = GlobalKey<FormState>();
 
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
 
+  bool _isPasswordVisible = false;
+  bool _isLoading = false;
+
+  Future<void> _login() async {
+    // Close the keyboard.
+    FocusManager.instance.primaryFocus?.unfocus();
+
+    // Stop if validation fails.
+    final isFormValid = _formKey.currentState?.validate() ?? false;
+
+    if (!isFormValid) {
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      await Supabase.instance.client.auth.signInWithPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      );
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Login successful.'),
+        ),
+      );
+
+      // Navigation to Store Setup or Home Screen
+      // will be added after authentication testing.
+    } on AuthException catch (error) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error.message),
+        ),
+      );
+    } catch (error) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Something went wrong. Please try again.',
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
-    @override
-    void dispose() {
-      _emailController.dispose();
-      _passwordController.dispose();
-
-      super.dispose();
-    }
-
-    void _login() {
-      FocusScope.of(context).unfocus();
-
-      final isFormValid = _formKey.currentState?.validate() ?? false;
-
-      if (!isFormValid) {
-        return;
-      }
-
-      final email = _emailController.text.trim();
-      final password = _passwordController.text;
-
-      debugPrint('Email: $email');
-      debugPrint('Password entered: ${password.isNotEmpty}');
-
-      // Firebase login will be added later.
-    }
-
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final textTheme = theme.textTheme;
@@ -62,8 +105,12 @@ class _LoginScreenState extends State<LoginScreen> {
         },
         child: SafeArea(
           child: SingleChildScrollView(
-            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+            keyboardDismissBehavior:
+                ScrollViewKeyboardDismissBehavior.onDrag,
+            padding: const EdgeInsets.symmetric(
+              horizontal: 24,
+              vertical: 24,
+            ),
             child: Form(
               key: _formKey,
               child: ConstrainedBox(
@@ -109,9 +156,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       // Email field
                       TextFormField(
                         controller: _emailController,
+                        enabled: !_isLoading,
                         keyboardType: TextInputType.emailAddress,
                         textInputAction: TextInputAction.next,
-                        autofillHints: const [AutofillHints.email],
+                        autofillHints: const [
+                          AutofillHints.email,
+                        ],
                         validator: (value) {
                           final email = value?.trim() ?? '';
 
@@ -132,7 +182,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         decoration: const InputDecoration(
                           labelText: 'Email address',
                           hintText: 'Enter your email address',
-                          prefixIcon: Icon(Icons.email_outlined),
+                          prefixIcon: Icon(
+                            Icons.email_outlined,
+                          ),
                         ),
                       ),
 
@@ -141,9 +193,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       // Password field
                       TextFormField(
                         controller: _passwordController,
+                        enabled: !_isLoading,
                         obscureText: !_isPasswordVisible,
                         textInputAction: TextInputAction.done,
-                        autofillHints: const [AutofillHints.password],
+                        autofillHints: const [
+                          AutofillHints.password,
+                        ],
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Please enter your password';
@@ -156,21 +211,28 @@ class _LoginScreenState extends State<LoginScreen> {
                           return null;
                         },
                         onFieldSubmitted: (_) {
-                          _login();
+                          if (!_isLoading) {
+                            _login();
+                          }
                         },
                         decoration: InputDecoration(
                           labelText: 'Password',
                           hintText: 'Enter your password',
-                          prefixIcon: const Icon(Icons.lock_outline_rounded),
+                          prefixIcon: const Icon(
+                            Icons.lock_outline_rounded,
+                          ),
                           suffixIcon: IconButton(
                             tooltip: _isPasswordVisible
                                 ? 'Hide password'
                                 : 'Show password',
-                            onPressed: () {
-                              setState(() {
-                                _isPasswordVisible = !_isPasswordVisible;
-                              });
-                            },
+                            onPressed: _isLoading
+                                ? null
+                                : () {
+                                    setState(() {
+                                      _isPasswordVisible =
+                                          !_isPasswordVisible;
+                                    });
+                                  },
                             icon: Icon(
                               _isPasswordVisible
                                   ? Icons.visibility_off_outlined
@@ -186,24 +248,36 @@ class _LoginScreenState extends State<LoginScreen> {
                       Align(
                         alignment: Alignment.centerRight,
                         child: TextButton(
-                          onPressed: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (context) =>
-                                    const ForgotPasswordScreen(),
-                              ),
-                            );
-                          },
-                          child: const Text('Forgot password?'),
+                          onPressed: _isLoading
+                              ? null
+                              : () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          const ForgotPasswordScreen(),
+                                    ),
+                                  );
+                                },
+                          child: const Text(
+                            'Forgot password?',
+                          ),
                         ),
                       ),
 
                       const SizedBox(height: 15),
 
-                      // Sign-in button
+                      // Login button
                       ElevatedButton(
-                        onPressed: _login,
-                        child: const Text('Log in'),
+                        onPressed: _isLoading ? null : _login,
+                        child: _isLoading
+                            ? const SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.5,
+                                ),
+                              )
+                            : const Text('Log in'),
                       ),
 
                       const SizedBox(height: 22),
@@ -211,17 +285,24 @@ class _LoginScreenState extends State<LoginScreen> {
                       // Divider
                       Row(
                         children: [
-                          const Expanded(child: Divider()),
+                          const Expanded(
+                            child: Divider(),
+                          ),
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                            ),
                             child: Text(
                               'Or continue with',
                               style: textTheme.bodySmall?.copyWith(
-                                color: colorScheme.onSurfaceVariant,
+                                color:
+                                    colorScheme.onSurfaceVariant,
                               ),
                             ),
                           ),
-                          const Expanded(child: Divider()),
+                          const Expanded(
+                            child: Divider(),
+                          ),
                         ],
                       ),
 
@@ -229,39 +310,52 @@ class _LoginScreenState extends State<LoginScreen> {
 
                       // Google sign-in button
                       OutlinedButton.icon(
-                        onPressed: () {
-                          // Google authentication will be added later.
-                        },
+                        onPressed: _isLoading
+                            ? null
+                            : () {
+                                // Google authentication
+                                // will be added later.
+                              },
                         icon: Image.asset(
                           'assets/icons/google_logo.png',
                           width: 22,
                           height: 22,
                         ),
-                        label: const Text('Continue with Google'),
+                        label: const Text(
+                          'Continue with Google',
+                        ),
                       ),
 
                       const SizedBox(height: 22),
 
                       // Register section
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisAlignment:
+                            MainAxisAlignment.center,
                         children: [
                           Text(
                             "Don't have an account?",
-                            style: textTheme.bodyMedium?.copyWith(
-                              color: colorScheme.onSurfaceVariant,
+                            style:
+                                textTheme.bodyMedium?.copyWith(
+                              color:
+                                  colorScheme.onSurfaceVariant,
                             ),
                           ),
                           TextButton(
-                            onPressed: () {
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const RegisterScreen(),
-                                ),
-                              );
-                            },
-                            child: const Text('Create account'),
+                            onPressed: _isLoading
+                                ? null
+                                : () {
+                                    Navigator.pushReplacement(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            const RegisterScreen(),
+                                      ),
+                                    );
+                                  },
+                            child: const Text(
+                              'Create account',
+                            ),
                           ),
                         ],
                       ),
