@@ -37,15 +37,36 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
+      // Log in the user.
       final response = await Supabase.instance.client.auth.signInWithPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
 
+      // Get the successfully logged-in user.
+      final user = response.user;
+
+      if (user == null) {
+        throw Exception('Unable to get the logged-in user.');
+      }
+
+      // Check whether the logged-in user already has a store.
+      final store = await Supabase.instance.client
+          .from('stores')
+          .select('id')
+          .eq('owner_id', user.id)
+          .maybeSingle();
+
       if (!mounted) return;
 
-      // Navigate to the Home screen after successful login.
-      if (response.user != null) {
+      // Existing store found → go directly to HomeScreen.
+      if (store != null) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
+          (route) => false,
+        );
+      } else {
+        // No store found → user needs to complete store setup.
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(builder: (context) => const StoreSetupScreen()),
           (route) => false,

@@ -1,7 +1,45 @@
 import 'package:flutter/material.dart';
+import 'package:storemate/features/auth/presentation/screens/login_screen.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  Future<void> _logout() async {
+    try {
+      await Supabase.instance.client.auth.signOut();
+
+      if (!mounted) {
+        return;
+      }
+
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+        (route) => false,
+      );
+    } on AuthException catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.message)));
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Unable to log out. Please try again.')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -11,10 +49,14 @@ class HomeScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: const Text(
-          'StoreMate',
-        ),
+        title: const Text('StoreMate'),
+        actions: [
+          IconButton(
+            onPressed: _logout,
+            tooltip: 'Log out',
+            icon: const Icon(Icons.logout_rounded),
+          ),
+        ],
       ),
       body: SafeArea(
         child: Center(
@@ -28,9 +70,7 @@ class HomeScreen extends StatelessWidget {
                   height: 80,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: colorScheme.primary.withValues(
-                      alpha: 0.10,
-                    ),
+                    color: colorScheme.primary.withValues(alpha: 0.10),
                     borderRadius: BorderRadius.circular(24),
                   ),
                   child: Icon(

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:storemate/features/auth/presentation/screens/login_screen.dart';
+import 'package:storemate/features/home/presentation/screens/home_screen.dart';
+import 'package:storemate/features/store_setup/presentation/screens/store_setup_screen.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -45,13 +48,68 @@ class _SplashScreenState extends State<SplashScreen>
     );
 
     _animationController.forward();
-    Future.delayed(const Duration(milliseconds: 2500), () {
-      if (!mounted) return;
 
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
-      );
-    });
+
+    _checkAuthenticationStatus();  // Check authentication and store setup status.
+  }
+
+  Future<void> _checkAuthenticationStatus() async {
+    // Keep the splash screen visible while its animation completes.
+    await Future.delayed(const Duration(milliseconds: 2500));
+
+    if (!mounted) {
+      return;
+    }
+
+    try {
+      final supabase = Supabase.instance.client;
+
+      // Get the currently authenticated user.
+      final currentUser = supabase.auth.currentUser;
+
+      // No authenticated user exists.
+      if (currentUser == null) {
+        _navigateTo(const LoginScreen());
+        return;
+      }
+
+      // Check whether the logged-in user has completed store setup.
+      final store = await supabase
+          .from('stores')
+          .select('id')
+          .eq('owner_id', currentUser.id)
+          .maybeSingle();
+
+      if (!mounted) {
+        return;
+      }
+
+      // No store exists, so the user must complete store setup.
+      if (store == null) {
+        _navigateTo(const StoreSetupScreen());
+        return;
+      }
+
+      // A store already exists, so open the StoreMate dashboard.
+      _navigateTo(const HomeScreen());
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      // If the startup check fails, return to login safely.
+      _navigateTo(const LoginScreen());
+    }
+  }
+
+  void _navigateTo(Widget screen) {
+    if (!mounted) {
+      return;
+    }
+
+    Navigator.of(
+      context,
+    ).pushReplacement(MaterialPageRoute(builder: (context) => screen));
   }
 
   @override
