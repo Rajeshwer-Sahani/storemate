@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:storemate/app/navigation/main_navigation_screen.dart';
 import 'package:storemate/features/auth/presentation/screens/forgot_password_screen.dart';
 import 'package:storemate/features/auth/presentation/screens/register_screen.dart';
-import 'package:storemate/features/home/presentation/screens/home_screen.dart';
 import 'package:storemate/features/store_setup/presentation/screens/store_setup_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -62,7 +62,7 @@ class _LoginScreenState extends State<LoginScreen> {
       // Existing store found → go directly to HomeScreen.
       if (store != null) {
         Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => const HomeScreen()),
+          MaterialPageRoute(builder: (context) => const MainNavigationScreen()),
           (route) => false,
         );
       } else {

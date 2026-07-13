@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:storemate/features/home/presentation/screens/home_screen.dart';
+import 'package:storemate/app/navigation/main_navigation_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class StoreSetupScreen extends StatefulWidget {
@@ -191,7 +191,7 @@ class _StoreSetupScreenState extends State<StoreSetupScreen> {
 
       // Navigate to the StoreMate home screen.
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (context) => const HomeScreen()),
+        MaterialPageRoute(builder: (context) => const MainNavigationScreen()),
         (route) => false,
       );
     } on AuthException catch (error) {

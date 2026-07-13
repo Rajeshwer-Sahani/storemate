@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:storemate/app/navigation/main_navigation_screen.dart';
 import 'package:storemate/features/auth/presentation/screens/login_screen.dart';
-import 'package:storemate/features/home/presentation/screens/home_screen.dart';
 import 'package:storemate/features/store_setup/presentation/screens/store_setup_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -91,7 +91,7 @@ class _SplashScreenState extends State<SplashScreen>
       }
 
       // A store already exists, so open the StoreMate dashboard.
-      _navigateTo(const HomeScreen());
+      _navigateTo(const MainNavigationScreen());
     } catch (error) {
       if (!mounted) {
         return;
