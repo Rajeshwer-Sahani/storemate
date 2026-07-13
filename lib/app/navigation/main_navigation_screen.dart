@@ -20,9 +20,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
   final List<Widget> _screens = const [
     DashboardScreen(),
-    CustomersScreen(),
     InventoryScreen(),
     BillingScreen(),
+    CustomersScreen(),
     MoreScreen(),
   ];
 
@@ -35,38 +35,263 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: _screens,
+      extendBody: true,
+
+      body: IndexedStack(index: _selectedIndex, children: _screens),
+
+      floatingActionButton: _QuickBillButton(
+        isSelected: _selectedIndex == 2,
+        onPressed: () {
+          _onDestinationSelected(2);
+        },
       ),
-      bottomNavigationBar: NavigationBar(
+
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+
+      bottomNavigationBar: _StoreMateBottomNavigationBar(
         selectedIndex: _selectedIndex,
         onDestinationSelected: _onDestinationSelected,
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.dashboard_outlined),
-            selectedIcon: Icon(Icons.dashboard_rounded),
-            label: 'Dashboard',
+      ),
+    );
+  }
+}
+
+// -----------------------------------------------------------------------------
+// StoreMate Custom Bottom Navigation Bar
+// -----------------------------------------------------------------------------
+
+class _StoreMateBottomNavigationBar extends StatelessWidget {
+  const _StoreMateBottomNavigationBar({
+    required this.selectedIndex,
+    required this.onDestinationSelected,
+  });
+
+  final int selectedIndex;
+  final ValueChanged<int> onDestinationSelected;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        border: Border(
+          top: BorderSide(
+            color: colorScheme.outlineVariant.withValues(alpha: 0.55),
           ),
-          NavigationDestination(
-            icon: Icon(Icons.people_outline_rounded),
-            selectedIcon: Icon(Icons.people_rounded),
-            label: 'Customers',
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withValues(alpha: 0.08),
+            blurRadius: 24,
+            offset: const Offset(0, -8),
           ),
-          NavigationDestination(
-            icon: Icon(Icons.inventory_2_outlined),
-            selectedIcon: Icon(Icons.inventory_2_rounded),
-            label: 'Inventory',
+        ],
+      ),
+      child: SafeArea(
+        top: false,
+        child: SizedBox(
+          height: 78,
+          child: Row(
+            children: [
+              Expanded(
+                child: _NavigationItem(
+                  icon: Icons.dashboard_outlined,
+                  selectedIcon: Icons.dashboard_rounded,
+                  label: 'Dashboard',
+                  isSelected: selectedIndex == 0,
+                  onTap: () {
+                    onDestinationSelected(0);
+                  },
+                ),
+              ),
+
+              Expanded(
+                child: _NavigationItem(
+                  icon: Icons.inventory_2_outlined,
+                  selectedIcon: Icons.inventory_2_rounded,
+                  label: 'Inventory',
+                  isSelected: selectedIndex == 1,
+                  onTap: () {
+                    onDestinationSelected(1);
+                  },
+                ),
+              ),
+
+              // Extra width is reserved for the center Quick Bill button.
+              const SizedBox(width: 82),
+
+              Expanded(
+                child: _NavigationItem(
+                  icon: Icons.people_outline_rounded,
+                  selectedIcon: Icons.people_rounded,
+                  label: 'Customers',
+                  isSelected: selectedIndex == 3,
+                  onTap: () {
+                    onDestinationSelected(3);
+                  },
+                ),
+              ),
+
+              Expanded(
+                child: _NavigationItem(
+                  icon: Icons.grid_view_outlined,
+                  selectedIcon: Icons.grid_view_rounded,
+                  label: 'More',
+                  isSelected: selectedIndex == 4,
+                  onTap: () {
+                    onDestinationSelected(4);
+                  },
+                ),
+              ),
+            ],
           ),
-          NavigationDestination(
-            icon: Icon(Icons.receipt_long_outlined),
-            selectedIcon: Icon(Icons.receipt_long_rounded),
-            label: 'Billing',
+        ),
+      ),
+    );
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Normal Navigation Item
+// -----------------------------------------------------------------------------
+
+class _NavigationItem extends StatelessWidget {
+  const _NavigationItem({
+    required this.icon,
+    required this.selectedIcon,
+    required this.label,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final IconData selectedIcon;
+  final String label;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    final itemColor = isSelected
+        ? colorScheme.primary
+        : colorScheme.onSurfaceVariant;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 8),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.easeOut,
+                width: 48,
+                height: 31,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: isSelected ? colorScheme.primary : Colors.transparent,
+                  borderRadius: BorderRadius.circular(100),
+                ),
+                child: Icon(
+                  isSelected ? selectedIcon : icon,
+                  size: 23,
+                  color: isSelected
+                      ? colorScheme.onPrimary
+                      : colorScheme.onSurfaceVariant,
+                ),
+              ),
+
+              const SizedBox(height: 4),
+
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.visible,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: itemColor,
+                  fontSize: 10.5,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                ),
+              ),
+            ],
           ),
-          NavigationDestination(
-            icon: Icon(Icons.grid_view_outlined),
-            selectedIcon: Icon(Icons.grid_view_rounded),
-            label: 'More',
+        ),
+      ),
+    );
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Center Quick Bill Button
+// -----------------------------------------------------------------------------
+
+class _QuickBillButton extends StatelessWidget {
+  const _QuickBillButton({required this.isSelected, required this.onPressed});
+
+  final bool isSelected;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Transform.translate(
+      offset: const Offset(0, 12),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 68,
+            height: 68,
+            padding: const EdgeInsets.all(5),
+            decoration: BoxDecoration(
+              color: colorScheme.surface,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: colorScheme.primary.withValues(alpha: 0.28),
+                  blurRadius: 20,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Material(
+              color: colorScheme.primary,
+              shape: const CircleBorder(),
+              child: InkWell(
+                onTap: onPressed,
+                customBorder: const CircleBorder(),
+                child: Icon(
+                  isSelected ? Icons.receipt_long_rounded : Icons.add_rounded,
+                  size: 34,
+                  color: colorScheme.onPrimary,
+                ),
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 3),
+
+          Text(
+            'Quick Bill',
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: isSelected
+                  ? colorScheme.primary
+                  : colorScheme.onSurfaceVariant,
+              fontSize: 10.5,
+              fontWeight: FontWeight.w700,
+            ),
           ),
         ],
       ),
