@@ -168,6 +168,85 @@ class InventoryService {
   }
 
   // ---------------------------------------------------------------------------
+  // Archive a product belonging to the logged-in owner's store
+  // ---------------------------------------------------------------------------
+
+  Future<void> archiveProduct({required String productId}) async {
+    final storeId = await getCurrentStoreId();
+
+    final trimmedProductId = productId.trim();
+
+    if (trimmedProductId.isEmpty) {
+      throw ArgumentError('Product ID cannot be empty.');
+    }
+
+    await _supabase
+        .from('products')
+        .update({'is_active': false})
+        .eq('id', trimmedProductId)
+        .eq('store_id', storeId)
+        .eq('is_active', true);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Fetch archived products belonging to the logged-in owner's store
+  // ---------------------------------------------------------------------------
+
+  Future<List<Map<String, dynamic>>> getArchivedProducts() async {
+    final storeId = await getCurrentStoreId();
+
+    final response = await _supabase
+        .from('products')
+        .select('''
+        id,
+        store_id,
+        category_id,
+        name,
+        brand,
+        sku,
+        purchase_price,
+        selling_price,
+        stock_quantity,
+        low_stock_threshold,
+        description,
+        is_active,
+        created_at,
+        updated_at,
+        product_categories (
+          id,
+          name
+        )
+      ''')
+        .eq('store_id', storeId)
+        .eq('is_active', false)
+        .order('updated_at', ascending: false);
+
+    return List<Map<String, dynamic>>.from(response);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Restore an archived product belonging to the logged-in owner's store
+  // ---------------------------------------------------------------------------
+
+  Future<void> restoreProduct({required String productId}) async {
+    final storeId = await getCurrentStoreId();
+
+    if (productId.trim().isEmpty) {
+      throw ArgumentError('Product ID cannot be empty.');
+    }
+
+    await _supabase
+        .from('products')
+        .update({
+          'is_active': true,
+          'updated_at': DateTime.now().toUtc().toIso8601String(),
+        })
+        .eq('id', productId)
+        .eq('store_id', storeId)
+        .eq('is_active', false);
+  }
+
+  // ---------------------------------------------------------------------------
   // Convert empty optional text into null before saving it to Supabase
   // ---------------------------------------------------------------------------
 

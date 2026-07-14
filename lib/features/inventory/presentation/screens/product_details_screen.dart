@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
-
+import 'package:storemate/features/inventory/data/services/inventory_service.dart';
 import 'package:storemate/features/inventory/data/models/product_model.dart';
 import 'package:storemate/features/inventory/presentation/screens/edit_product_screen.dart';
 
 class ProductDetailsScreen extends StatelessWidget {
-  const ProductDetailsScreen({required this.product, super.key});
+  ProductDetailsScreen({required this.product, super.key});
 
   final ProductModel product;
+  final InventoryService _inventoryService = InventoryService();
 
   bool get _isOutOfStock {
     return product.stockQuantity <= 0;
@@ -57,6 +58,199 @@ class ProductDetailsScreen extends StatelessWidget {
     return trimmedValue;
   }
 
+  Future<void> _showArchiveConfirmation(BuildContext context) async {
+    final shouldArchive = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (bottomSheetContext) {
+        final theme = Theme.of(bottomSheetContext);
+
+        final colorScheme = theme.colorScheme;
+
+        return Container(
+          padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Bottom-sheet handle
+              Container(
+                width: 44,
+                height: 5,
+                decoration: BoxDecoration(
+                  color: colorScheme.outlineVariant,
+                  borderRadius: BorderRadius.circular(100),
+                ),
+              ),
+
+              const SizedBox(height: 28),
+
+              // Archive icon
+              // Archive icon
+              Container(
+                width: 72,
+                height: 72,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: colorScheme.error.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(22),
+                ),
+                child: Icon(
+                  Icons.inventory_2_outlined,
+                  color: colorScheme.error,
+                  size: 34,
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              Text(
+                'Archive Product?',
+                textAlign: TextAlign.center,
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+
+              const SizedBox(height: 10),
+
+              Text(
+                'Are you sure you want to archive '
+                '${product.name}? It will be removed '
+                'from your active inventory.',
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                  height: 1.5,
+                ),
+              ),
+
+              const SizedBox(height: 28),
+
+              Row(
+                children: [
+                  // Cancel button
+                  Expanded(
+                    child: SizedBox(
+                      height: 50,
+                      child: OutlinedButton(
+                        onPressed: () {
+                          Navigator.of(bottomSheetContext).pop(false);
+                        },
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: colorScheme.primary,
+                          side: BorderSide(
+                            color: colorScheme.primary,
+                            width: 1.5,
+                          ),
+                          padding: EdgeInsets.zero,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                        ),
+                        child: const Text(
+                          'Cancel',
+                          style: TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(width: 12),
+
+                  // Archive button
+                  Expanded(
+                    child: SizedBox(
+                      height: 50,
+                      child: FilledButton.icon(
+                        onPressed: () {
+                          Navigator.of(bottomSheetContext).pop(true);
+                        },
+                        style: FilledButton.styleFrom(
+                          backgroundColor: colorScheme.error,
+                          foregroundColor: colorScheme.onError,
+                          padding: EdgeInsets.zero,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                        ),
+                        icon: const Icon(Icons.archive_outlined, size: 19),
+                        label: const Text(
+                          'Archive',
+                          style: TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (shouldArchive != true || !context.mounted) {
+      return;
+    }
+
+    await _archiveProduct(context);
+  }
+
+  Future<void> _archiveProduct(BuildContext context) async {
+    try {
+      await _inventoryService.archiveProduct(productId: product.id);
+
+      if (!context.mounted) {
+        return;
+      }
+
+      Navigator.of(context).pop(true);
+    } catch (error) {
+      if (!context.mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: const Row(
+              children: [
+                Icon(
+                  Icons.error_outline_rounded,
+                  color: Colors.white,
+                  size: 21,
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Unable to archive the product. '
+                    'Please try again.',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Theme.of(context).colorScheme.error,
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+          ),
+        );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -76,12 +270,15 @@ class ProductDetailsScreen extends StatelessWidget {
         title: const Text('Product Details'),
         centerTitle: false,
         actions: [
+          // Edit Product
           IconButton(
             tooltip: 'Edit product',
             onPressed: () async {
               final wasUpdated = await Navigator.of(context).push<bool>(
                 MaterialPageRoute(
-                  builder: (_) => EditProductScreen(product: product),
+                  builder: (_) {
+                    return EditProductScreen(product: product);
+                  },
                 ),
               );
 
@@ -90,6 +287,46 @@ class ProductDetailsScreen extends StatelessWidget {
               }
             },
             icon: const Icon(Icons.edit_outlined),
+          ),
+
+          // Product options
+          PopupMenuButton<String>(
+            tooltip: 'Product options',
+            icon: const Icon(Icons.more_vert_rounded),
+            position: PopupMenuPosition.under,
+            onSelected: (action) async {
+              if (action == 'archive') {
+                await _showArchiveConfirmation(context);
+              }
+            },
+            itemBuilder: (context) {
+              final colorScheme = Theme.of(context).colorScheme;
+
+              return [
+                PopupMenuItem<String>(
+                  value: 'archive',
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.archive_outlined,
+                        size: 21,
+                        color: colorScheme.error,
+                      ),
+
+                      const SizedBox(width: 12),
+
+                      Text(
+                        'Archive Product',
+                        style: TextStyle(
+                          color: colorScheme.error,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ];
+            },
           ),
 
           const SizedBox(width: 8),

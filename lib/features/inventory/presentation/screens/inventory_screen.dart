@@ -3,6 +3,7 @@ import 'package:storemate/features/inventory/data/models/product_model.dart';
 
 import 'package:storemate/features/inventory/data/services/inventory_service.dart';
 import 'package:storemate/features/inventory/presentation/screens/add_product_screen.dart';
+import 'package:storemate/features/inventory/presentation/screens/archived_products_screen.dart';
 import 'package:storemate/features/inventory/presentation/screens/product_details_screen.dart';
 
 class InventoryScreen extends StatefulWidget {
@@ -101,6 +102,32 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
       _showMessage('Inventory updated successfully.');
     }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Open Archived Products screen
+  // ---------------------------------------------------------------------------
+
+  Future<void> _openArchivedProductsScreen() async {
+    final wasProductRestored = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (context) {
+          return const ArchivedProductsScreen();
+        },
+      ),
+    );
+
+    if (wasProductRestored != true || !mounted) {
+      return;
+    }
+
+    await _loadProducts(showLoadingIndicator: false);
+
+    if (!mounted) {
+      return;
+    }
+
+    _showMessage('Product restored successfully.');
   }
 
   // ---------------------------------------------------------------------------
@@ -259,7 +286,10 @@ class _InventoryScreenState extends State<InventoryScreen> {
         bottom: false,
         child: Column(
           children: [
-            _InventoryHeader(onAddProduct: _openAddProductScreen),
+            _InventoryHeader(
+              onAddProduct: _openAddProductScreen,
+              onOpenArchivedProducts: _openArchivedProductsScreen,
+            ),
 
             Expanded(child: _buildContent(theme)),
           ],
@@ -402,9 +432,13 @@ class _InventoryScreenState extends State<InventoryScreen> {
 // =============================================================================
 
 class _InventoryHeader extends StatelessWidget {
-  const _InventoryHeader({required this.onAddProduct});
+  const _InventoryHeader({
+    required this.onAddProduct,
+    required this.onOpenArchivedProducts,
+  });
 
   final VoidCallback onAddProduct;
+  final VoidCallback onOpenArchivedProducts;
 
   @override
   Widget build(BuildContext context) {
@@ -437,10 +471,46 @@ class _InventoryHeader extends StatelessWidget {
             ),
           ),
 
-          FilledButton.icon(
-            onPressed: onAddProduct,
-            icon: const Icon(Icons.add_rounded),
-            label: const Text('Add'),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              FilledButton.icon(
+                onPressed: onAddProduct,
+                icon: const Icon(Icons.add_rounded),
+                label: const Text('Add'),
+              ),
+
+              const SizedBox(width: 4),
+
+              PopupMenuButton<String>(
+                tooltip: 'More options',
+                onSelected: (value) {
+                  if (value == 'archived_products') {
+                    onOpenArchivedProducts();
+                  }
+                },
+                itemBuilder: (context) {
+                  return [
+                    PopupMenuItem<String>(
+                      value: 'archived_products',
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.inventory_2_outlined,
+                            color: theme.colorScheme.onSurface,
+                          ),
+
+                          const SizedBox(width: 12),
+
+                          const Text('Archived Products'),
+                        ],
+                      ),
+                    ),
+                  ];
+                },
+                icon: const Icon(Icons.more_vert_rounded),
+              ),
+            ],
           ),
         ],
       ),
