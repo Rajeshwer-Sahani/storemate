@@ -3,6 +3,7 @@ class ProductModel {
     required this.id,
     required this.storeId,
     this.categoryId,
+    this.categoryName,
     required this.name,
     this.brand,
     this.sku,
@@ -18,7 +19,9 @@ class ProductModel {
 
   final String id;
   final String storeId;
+
   final String? categoryId;
+  final String? categoryName;
 
   final String name;
   final String? brand;
@@ -38,30 +41,57 @@ class ProductModel {
   final DateTime updatedAt;
 
   // ---------------------------------------------------------------------------
-  // Convert Supabase JSON data into a ProductModel object
+  // Convert Supabase JSON data into ProductModel
   // ---------------------------------------------------------------------------
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
+    final categoryData = json['product_categories'];
+
+    String? categoryName;
+
+    if (categoryData is Map) {
+      categoryName = categoryData['name']?.toString();
+    }
+
     return ProductModel(
-      id: json['id'] as String,
-      storeId: json['store_id'] as String,
-      categoryId: json['category_id'] as String?,
-      name: json['name'] as String,
-      brand: json['brand'] as String?,
-      sku: json['sku'] as String?,
-      purchasePrice: (json['purchase_price'] as num).toDouble(),
-      sellingPrice: (json['selling_price'] as num).toDouble(),
-      stockQuantity: json['stock_quantity'] as int,
-      lowStockThreshold: json['low_stock_threshold'] as int,
-      description: json['description'] as String?,
-      isActive: json['is_active'] as bool,
-      createdAt: DateTime.parse(json['created_at'] as String),
-      updatedAt: DateTime.parse(json['updated_at'] as String),
+      id: json['id']?.toString() ?? '',
+
+      storeId: json['store_id']?.toString() ?? '',
+
+      categoryId: json['category_id']?.toString(),
+
+      categoryName: categoryName ?? json['category_name']?.toString(),
+
+      name: json['name']?.toString() ?? 'Unnamed Product',
+
+      brand: json['brand']?.toString(),
+
+      sku: json['sku']?.toString(),
+
+      purchasePrice: (json['purchase_price'] as num?)?.toDouble() ?? 0.0,
+
+      sellingPrice: (json['selling_price'] as num?)?.toDouble() ?? 0.0,
+
+      stockQuantity: (json['stock_quantity'] as num?)?.toInt() ?? 0,
+
+      lowStockThreshold: (json['low_stock_threshold'] as num?)?.toInt() ?? 0,
+
+      description: json['description']?.toString(),
+
+      isActive: json['is_active'] as bool? ?? true,
+
+      createdAt:
+          DateTime.tryParse(json['created_at']?.toString() ?? '') ??
+          DateTime.now(),
+
+      updatedAt:
+          DateTime.tryParse(json['updated_at']?.toString() ?? '') ??
+          DateTime.now(),
     );
   }
 
   // ---------------------------------------------------------------------------
-  // Convert ProductModel into JSON for Supabase
+  // Convert ProductModel into JSON
   // ---------------------------------------------------------------------------
 
   Map<String, dynamic> toJson() {

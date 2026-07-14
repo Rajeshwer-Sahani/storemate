@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:storemate/features/inventory/data/models/product_model.dart';
 
 import 'package:storemate/features/inventory/data/services/inventory_service.dart';
 import 'package:storemate/features/inventory/presentation/screens/add_product_screen.dart';
+import 'package:storemate/features/inventory/presentation/screens/product_details_screen.dart';
 
 class InventoryScreen extends StatefulWidget {
   const InventoryScreen({super.key});
@@ -100,6 +102,25 @@ class _InventoryScreenState extends State<InventoryScreen> {
       _showMessage('Inventory updated successfully.');
     }
   }
+
+  // ---------------------------------------------------------------------------
+// Open Product Details screen
+// ---------------------------------------------------------------------------
+
+Future<void> _openProductDetails(
+  Map<String, dynamic> product,
+) async {
+  final productModel = ProductModel.fromJson(product);
+
+  await Navigator.of(context).push(
+    MaterialPageRoute(
+      builder: (_) => ProductDetailsScreen(
+        product: productModel,
+      ),
+    ),
+  );
+}
+
 
   // ---------------------------------------------------------------------------
   // Snackbar
@@ -314,6 +335,9 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
                   return _ProductCard(
                     product: product,
+                    onTap: () {
+                      _openProductDetails(product);
+                    },
                     readInteger: _readInteger,
                     readDouble: _readDouble,
                   );
@@ -513,11 +537,14 @@ class _InventorySummaryCard extends StatelessWidget {
 class _ProductCard extends StatelessWidget {
   const _ProductCard({
     required this.product,
+    required this.onTap,
     required this.readInteger,
     required this.readDouble,
   });
 
   final Map<String, dynamic> product;
+
+  final VoidCallback onTap;
 
   final int Function(dynamic value) readInteger;
 
@@ -574,10 +601,7 @@ class _ProductCard extends StatelessWidget {
       color: colorScheme.surface,
       borderRadius: BorderRadius.circular(20),
       child: InkWell(
-        onTap: () {
-          // Product details and editing
-          // will be connected later.
-        },
+        onTap: onTap,
         borderRadius: BorderRadius.circular(20),
         child: Container(
           padding: const EdgeInsets.all(16),
