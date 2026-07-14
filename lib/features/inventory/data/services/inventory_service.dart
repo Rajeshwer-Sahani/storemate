@@ -106,6 +106,68 @@ class InventoryService {
   }
 
   // ---------------------------------------------------------------------------
+  // Update an existing product belonging to the current store
+  // ---------------------------------------------------------------------------
+
+  Future<void> updateProduct({
+    required String productId,
+    required String name,
+    String? categoryId,
+    String? brand,
+    String? sku,
+    required double purchasePrice,
+    required double sellingPrice,
+    required int stockQuantity,
+    required int lowStockThreshold,
+    String? description,
+  }) async {
+    final storeId = await getCurrentStoreId();
+
+    final trimmedName = name.trim();
+
+    if (productId.trim().isEmpty) {
+      throw ArgumentError('A valid product ID is required.');
+    }
+
+    if (trimmedName.isEmpty) {
+      throw ArgumentError('Product name cannot be empty.');
+    }
+
+    if (purchasePrice < 0) {
+      throw ArgumentError('Purchase price cannot be negative.');
+    }
+
+    if (sellingPrice < 0) {
+      throw ArgumentError('Selling price cannot be negative.');
+    }
+
+    if (stockQuantity < 0) {
+      throw ArgumentError('Stock quantity cannot be negative.');
+    }
+
+    if (lowStockThreshold < 0) {
+      throw ArgumentError('Low-stock threshold cannot be negative.');
+    }
+
+    await _supabase
+        .from('products')
+        .update({
+          'category_id': categoryId,
+          'name': trimmedName,
+          'brand': _emptyStringToNull(brand),
+          'sku': _emptyStringToNull(sku),
+          'purchase_price': purchasePrice,
+          'selling_price': sellingPrice,
+          'stock_quantity': stockQuantity,
+          'low_stock_threshold': lowStockThreshold,
+          'description': _emptyStringToNull(description),
+        })
+        .eq('id', productId)
+        .eq('store_id', storeId)
+        .eq('is_active', true);
+  }
+
+  // ---------------------------------------------------------------------------
   // Convert empty optional text into null before saving it to Supabase
   // ---------------------------------------------------------------------------
 

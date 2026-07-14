@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:storemate/features/inventory/data/models/product_model.dart';
+import 'package:storemate/features/inventory/presentation/screens/edit_product_screen.dart';
 
 class ProductDetailsScreen extends StatelessWidget {
   const ProductDetailsScreen({required this.product, super.key});
@@ -71,7 +72,29 @@ class ProductDetailsScreen extends StatelessWidget {
         : Colors.green.withValues(alpha: 0.10);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Product Details'), centerTitle: false),
+      appBar: AppBar(
+        title: const Text('Product Details'),
+        centerTitle: false,
+        actions: [
+          IconButton(
+            tooltip: 'Edit product',
+            onPressed: () async {
+              final wasUpdated = await Navigator.of(context).push<bool>(
+                MaterialPageRoute(
+                  builder: (_) => EditProductScreen(product: product),
+                ),
+              );
+
+              if (wasUpdated == true && context.mounted) {
+                Navigator.of(context).pop(true);
+              }
+            },
+            icon: const Icon(Icons.edit_outlined),
+          ),
+
+          const SizedBox(width: 8),
+        ],
+      ),
       body: SafeArea(
         top: false,
         child: ListView(

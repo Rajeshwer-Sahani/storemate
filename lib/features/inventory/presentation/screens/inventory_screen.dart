@@ -104,32 +104,79 @@ class _InventoryScreenState extends State<InventoryScreen> {
   }
 
   // ---------------------------------------------------------------------------
-// Open Product Details screen
-// ---------------------------------------------------------------------------
+  // Open Product Details screen
+  // ---------------------------------------------------------------------------
 
-Future<void> _openProductDetails(
-  Map<String, dynamic> product,
-) async {
-  final productModel = ProductModel.fromJson(product);
+  Future<void> _openProductDetails(Map<String, dynamic> product) async {
+    final productModel = ProductModel.fromJson(product);
 
-  await Navigator.of(context).push(
-    MaterialPageRoute(
-      builder: (_) => ProductDetailsScreen(
-        product: productModel,
+    final wasUpdated = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (context) {
+          return ProductDetailsScreen(product: productModel);
+        },
       ),
-    ),
-  );
-}
+    );
 
+    if (!mounted || wasUpdated != true) {
+      return;
+    }
+
+    await _loadProducts();
+
+    if (!mounted) {
+      return;
+    }
+
+    _showMessage('Product updated successfully.');
+  }
 
   // ---------------------------------------------------------------------------
   // Snackbar
   // ---------------------------------------------------------------------------
 
-  void _showMessage(String message) {
+  void _showMessage(String message, {bool isError = false}) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
+      ..showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(
+                isError
+                    ? Icons.error_outline_rounded
+                    : Icons.check_circle_outline_rounded,
+                color: Colors.white,
+                size: 21,
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  message,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: isError
+              ? colorScheme.error
+              : const Color(0xFF16A34A),
+          behavior: SnackBarBehavior.floating,
+          elevation: 6,
+          margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          duration: const Duration(seconds: 3),
+        ),
+      );
   }
 
   // ---------------------------------------------------------------------------
