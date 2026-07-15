@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:storemate/features/inventory/data/models/product_model.dart';
-
+import 'package:storemate/features/inventory/presentation/screens/manage_categories_screen.dart';
 import 'package:storemate/features/inventory/data/services/inventory_service.dart';
 import 'package:storemate/features/inventory/presentation/screens/add_product_screen.dart';
 import 'package:storemate/features/inventory/presentation/screens/archived_products_screen.dart';
@@ -152,6 +152,28 @@ class _InventoryScreenState extends State<InventoryScreen> {
     }
 
     _showMessage('Product restored successfully.');
+  }
+
+  // ---------------------------------------------------------------------------
+  // Open Manage Categories screen
+  // ---------------------------------------------------------------------------
+
+  Future<void> _openManageCategoriesScreen() async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute(
+        builder: (context) {
+          return const ManageCategoriesScreen();
+        },
+      ),
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    // Refresh Inventory because category names may have been renamed
+    // while the owner was managing categories.
+    await _loadProducts(showLoadingIndicator: false);
   }
 
   // ---------------------------------------------------------------------------
@@ -422,6 +444,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
               _InventoryHeader(
                 onAddProduct: _openAddProductScreen,
                 onOpenArchivedProducts: _openArchivedProductsScreen,
+                onOpenManageCategories: _openManageCategoriesScreen,
               ),
 
               Expanded(child: _buildContent(theme)),
@@ -1100,10 +1123,12 @@ class _InventoryHeader extends StatelessWidget {
   const _InventoryHeader({
     required this.onAddProduct,
     required this.onOpenArchivedProducts,
+    required this.onOpenManageCategories,
   });
 
   final VoidCallback onAddProduct;
   final VoidCallback onOpenArchivedProducts;
+  final VoidCallback onOpenManageCategories;
 
   @override
   Widget build(BuildContext context) {
@@ -1150,12 +1175,31 @@ class _InventoryHeader extends StatelessWidget {
               PopupMenuButton<String>(
                 tooltip: 'More options',
                 onSelected: (value) {
+                  if (value == 'manage_categories') {
+                    onOpenManageCategories();
+                    return;
+                  }
+
                   if (value == 'archived_products') {
                     onOpenArchivedProducts();
                   }
                 },
                 itemBuilder: (context) {
                   return [
+                    PopupMenuItem<String>(
+                      value: 'manage_categories',
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.category_outlined,
+                            color: theme.colorScheme.onSurface,
+                          ),
+                          const SizedBox(width: 12),
+                          const Text('Manage Categories'),
+                        ],
+                      ),
+                    ),
+
                     PopupMenuItem<String>(
                       value: 'archived_products',
                       child: Row(
@@ -1164,9 +1208,7 @@ class _InventoryHeader extends StatelessWidget {
                             Icons.inventory_2_outlined,
                             color: theme.colorScheme.onSurface,
                           ),
-
                           const SizedBox(width: 12),
-
                           const Text('Archived Products'),
                         ],
                       ),

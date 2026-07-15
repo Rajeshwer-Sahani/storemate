@@ -51,6 +51,48 @@ class InventoryService {
   }
 
   // ---------------------------------------------------------------------------
+  // Get product categories with active product counts for the current store
+  // ---------------------------------------------------------------------------
+
+  Future<List<Map<String, dynamic>>>
+  getProductCategoriesWithProductCount() async {
+    final storeId = await getCurrentStoreId();
+
+    final response = await _supabase
+        .from('product_categories')
+        .select('''
+        id,
+        name,
+        created_at,
+        products (
+          id,
+          is_active
+        )
+      ''')
+        .eq('store_id', storeId)
+        .order('name');
+
+    final categories = List<Map<String, dynamic>>.from(response);
+
+    return categories.map((category) {
+      final products = List<Map<String, dynamic>>.from(
+        category['products'] ?? [],
+      );
+
+      final activeProductCount = products.where((product) {
+        return product['is_active'] == true;
+      }).length;
+
+      return <String, dynamic>{
+        'id': category['id'],
+        'name': category['name'],
+        'created_at': category['created_at'],
+        'product_count': activeProductCount,
+      };
+    }).toList();
+  }
+
+  // ---------------------------------------------------------------------------
   // Create a new product category
   // ---------------------------------------------------------------------------
 
@@ -71,6 +113,90 @@ class InventoryService {
         .single();
 
     return response;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Rename a product category belonging to the current store
+  // ---------------------------------------------------------------------------
+
+  Future<void> renameProductCategory({
+    required String categoryId,
+    required String name,
+  }) async {
+    final storeId = await getCurrentStoreId();
+    final trimmedName = name.trim();
+
+    if (categoryId.trim().isEmpty) {
+      throw ArgumentError('A valid category ID is required.');
+    }
+
+    if (trimmedName.isEmpty) {
+      throw ArgumentError('Category name cannot be empty.');
+    }
+
+    final existingCategory = await _supabase
+        .from('product_categories')
+        .select('id')
+        .eq('id', categoryId)
+        .eq('store_id', storeId)
+        .maybeSingle();
+
+    if (existingCategory == null) {
+      throw Exception(
+        'This category was not found or does not belong to your store.',
+      );
+    }
+
+    await _supabase
+        .from('product_categories')
+        .update({'name': trimmedName})
+        .eq('id', categoryId)
+        .eq('store_id', storeId);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Safely delete an unused product category from the current store
+  // ---------------------------------------------------------------------------
+
+  Future<void> deleteProductCategory({required String categoryId}) async {
+    final storeId = await getCurrentStoreId();
+
+    if (categoryId.trim().isEmpty) {
+      throw ArgumentError('A valid category ID is required.');
+    }
+
+    final existingCategory = await _supabase
+        .from('product_categories')
+        .select('id, name')
+        .eq('id', categoryId)
+        .eq('store_id', storeId)
+        .maybeSingle();
+
+    if (existingCategory == null) {
+      throw Exception(
+        'This category was not found or does not belong to your store.',
+      );
+    }
+
+    final linkedProduct = await _supabase
+        .from('products')
+        .select('id')
+        .eq('store_id', storeId)
+        .eq('category_id', categoryId)
+        .limit(1)
+        .maybeSingle();
+
+    if (linkedProduct != null) {
+      throw Exception(
+        'This category cannot be deleted because products are assigned to it.',
+      );
+    }
+
+    await _supabase
+        .from('product_categories')
+        .delete()
+        .eq('id', categoryId)
+        .eq('store_id', storeId);
   }
 
   // ---------------------------------------------------------------------------
