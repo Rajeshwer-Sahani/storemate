@@ -6,6 +6,22 @@ import 'package:storemate/features/inventory/presentation/screens/add_product_sc
 import 'package:storemate/features/inventory/presentation/screens/archived_products_screen.dart';
 import 'package:storemate/features/inventory/presentation/screens/product_details_screen.dart';
 
+// =============================================================================
+// Inventory Filter and Sort Options
+// =============================================================================
+
+enum ProductStockFilter { all, inStock, lowStock, outOfStock }
+
+enum ProductSortOption {
+  newestFirst,
+  nameAscending,
+  nameDescending,
+  priceLowToHigh,
+  priceHighToLow,
+  stockLowToHigh,
+  stockHighToLow,
+}
+
 class InventoryScreen extends StatefulWidget {
   const InventoryScreen({super.key});
 
@@ -19,6 +35,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
   final InventoryService _inventoryService = InventoryService();
 
   final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
 
   List<Map<String, dynamic>> _products = [];
 
@@ -27,6 +44,10 @@ class _InventoryScreenState extends State<InventoryScreen> {
   String? _errorMessage;
 
   String _searchQuery = '';
+
+  ProductStockFilter _selectedStockFilter = ProductStockFilter.all;
+
+  ProductSortOption _selectedSortOption = ProductSortOption.newestFirst;
 
   // ---------------------------------------------------------------------------
   // Screen lifecycle
@@ -42,6 +63,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
   @override
   void dispose() {
     _searchController.dispose();
+    _searchFocusNode.dispose();
 
     super.dispose();
   }
@@ -215,32 +237,120 @@ class _InventoryScreenState extends State<InventoryScreen> {
   List<Map<String, dynamic>> get _filteredProducts {
     final normalizedQuery = _searchQuery.trim().toLowerCase();
 
-    if (normalizedQuery.isEmpty) {
-      return _products;
+    // Create a new list so filtering and sorting never modify _products.
+    var visibleProducts = List<Map<String, dynamic>>.from(_products);
+
+    // ---------------------------------------------------------------------------
+    // Apply stock filter
+    // ---------------------------------------------------------------------------
+
+    visibleProducts = visibleProducts.where((product) {
+      final stockQuantity = _readInteger(product['stock_quantity']);
+
+      final lowStockThreshold = _readInteger(product['low_stock_threshold']);
+
+      switch (_selectedStockFilter) {
+        case ProductStockFilter.all:
+          return true;
+
+        case ProductStockFilter.inStock:
+          return stockQuantity > lowStockThreshold;
+
+        case ProductStockFilter.lowStock:
+          return stockQuantity > 0 && stockQuantity <= lowStockThreshold;
+
+        case ProductStockFilter.outOfStock:
+          return stockQuantity == 0;
+      }
+    }).toList();
+
+    // ---------------------------------------------------------------------------
+    // Apply product search
+    // ---------------------------------------------------------------------------
+
+    if (normalizedQuery.isNotEmpty) {
+      visibleProducts = visibleProducts.where((product) {
+        final productName = (product['name'] ?? '')
+            .toString()
+            .trim()
+            .toLowerCase();
+
+        final brand = (product['brand'] ?? '').toString().trim().toLowerCase();
+
+        final sku = (product['sku'] ?? '').toString().trim().toLowerCase();
+
+        final categoryData = product['product_categories'];
+
+        final categoryName = categoryData is Map
+            ? (categoryData['name'] ?? '').toString().trim().toLowerCase()
+            : '';
+
+        return productName.contains(normalizedQuery) ||
+            brand.contains(normalizedQuery) ||
+            categoryName.contains(normalizedQuery) ||
+            sku.contains(normalizedQuery);
+      }).toList();
     }
 
-    return _products.where((product) {
-      final productName = (product['name'] ?? '')
-          .toString()
-          .trim()
-          .toLowerCase();
+    // ---------------------------------------------------------------------------
+    // Apply product sorting
+    // ---------------------------------------------------------------------------
 
-      final brand = (product['brand'] ?? '').toString().trim().toLowerCase();
+    visibleProducts.sort((firstProduct, secondProduct) {
+      switch (_selectedSortOption) {
+        case ProductSortOption.newestFirst:
+          final firstCreatedAt = _readDateTime(firstProduct['created_at']);
 
-      final sku = (product['sku'] ?? '').toString().trim().toLowerCase();
+          final secondCreatedAt = _readDateTime(secondProduct['created_at']);
 
-      final categoryData = product['product_categories'];
+          return secondCreatedAt.compareTo(firstCreatedAt);
 
-      final categoryName = categoryData is Map
-          ? (categoryData['name'] ?? '').toString().trim().toLowerCase()
-          : '';
+        case ProductSortOption.nameAscending:
+          return _readProductName(
+            firstProduct,
+          ).compareTo(_readProductName(secondProduct));
 
-      return productName.contains(normalizedQuery) ||
-          brand.contains(normalizedQuery) ||
-          sku.contains(normalizedQuery) ||
-          categoryName.contains(normalizedQuery);
-    }).toList();
+        case ProductSortOption.nameDescending:
+          return _readProductName(
+            secondProduct,
+          ).compareTo(_readProductName(firstProduct));
+
+        case ProductSortOption.priceLowToHigh:
+          final firstPrice = _readDouble(firstProduct['selling_price']);
+
+          final secondPrice = _readDouble(secondProduct['selling_price']);
+
+          return firstPrice.compareTo(secondPrice);
+
+        case ProductSortOption.priceHighToLow:
+          final firstPrice = _readDouble(firstProduct['selling_price']);
+
+          final secondPrice = _readDouble(secondProduct['selling_price']);
+
+          return secondPrice.compareTo(firstPrice);
+
+        case ProductSortOption.stockLowToHigh:
+          final firstStock = _readInteger(firstProduct['stock_quantity']);
+
+          final secondStock = _readInteger(secondProduct['stock_quantity']);
+
+          return firstStock.compareTo(secondStock);
+
+        case ProductSortOption.stockHighToLow:
+          final firstStock = _readInteger(firstProduct['stock_quantity']);
+
+          final secondStock = _readInteger(secondProduct['stock_quantity']);
+
+          return secondStock.compareTo(firstStock);
+      }
+    });
+
+    return visibleProducts;
   }
+
+  // ---------------------------------------------------------------------------
+  // Inventory summary values
+  // ---------------------------------------------------------------------------
 
   int get _totalProducts {
     return _products.length;
@@ -260,6 +370,19 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
       return stockQuantity <= lowStockThreshold;
     }).length;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Product value helpers
+  // ---------------------------------------------------------------------------
+
+  String _readProductName(Map<String, dynamic> product) {
+    return (product['name'] ?? '').toString().trim().toLowerCase();
+  }
+
+  DateTime _readDateTime(dynamic value) {
+    return DateTime.tryParse(value?.toString() ?? '') ??
+        DateTime.fromMillisecondsSinceEpoch(0);
   }
 
   int _readInteger(dynamic value) {
@@ -290,7 +413,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
       body: GestureDetector(
         behavior: HitTestBehavior.translucent,
         onTap: () {
-           FocusManager.instance.primaryFocus?.unfocus();
+          FocusManager.instance.primaryFocus?.unfocus();
         },
         child: SafeArea(
           bottom: false,
@@ -300,7 +423,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                 onAddProduct: _openAddProductScreen,
                 onOpenArchivedProducts: _openArchivedProductsScreen,
               ),
-        
+
               Expanded(child: _buildContent(theme)),
             ],
           ),
@@ -351,37 +474,102 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
                   const SizedBox(height: 20),
 
-                  TextField(
-                    controller: _searchController,
-                    textInputAction: TextInputAction.search,
-                    autocorrect: false,
-                    enableSuggestions: false,
-                    decoration: InputDecoration(
-                      hintText: 'Search products, brands or SKU',
-                      prefixIcon: const Icon(Icons.search_rounded),
-                      suffixIcon: _searchQuery.isEmpty
-                          ? null
-                          : IconButton(
-                              tooltip: 'Clear search',
-                              onPressed: () {
-                                _searchController.clear();
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: _searchController,
+                          focusNode: _searchFocusNode,
+                          textInputAction: TextInputAction.search,
+                          autocorrect: false,
+                          enableSuggestions: false,
+                          onChanged: (value) {
+                            setState(() {
+                              _searchQuery = value;
+                            });
+                          },
+                          decoration: InputDecoration(
+                            hintText: 'Search products, brands or SKU',
+                            prefixIcon: const Icon(Icons.search_rounded),
+                            suffixIcon: _searchQuery.isEmpty
+                                ? null
+                                : IconButton(
+                                    tooltip: 'Clear search',
+                                    onPressed: () {
+                                      _searchController.clear();
+                                      _searchFocusNode.unfocus();
 
-                                setState(() {
-                                  _searchQuery = '';
-                                });
+                                      setState(() {
+                                        _searchQuery = '';
+                                      });
+                                    },
+                                    icon: const Icon(Icons.close_rounded),
+                                  ),
+                          ),
+                        ),
+                      ),
 
-                                FocusScope.of(context).unfocus();
-                              },
-                              icon: const Icon(Icons.close_rounded),
+                      const SizedBox(width: 12),
+
+                      Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          SizedBox(
+                            width: 56,
+                            height: 56,
+                            child: OutlinedButton(
+                              onPressed: _showFilterAndSortSheet,
+                              style: OutlinedButton.styleFrom(
+                                padding: EdgeInsets.zero,
+                                side: BorderSide(
+                                  color: _hasActiveFilterOrSort
+                                      ? Theme.of(context).colorScheme.primary
+                                      : Theme.of(
+                                          context,
+                                        ).colorScheme.outlineVariant,
+                                ),
+                                backgroundColor: _hasActiveFilterOrSort
+                                    ? Theme.of(context).colorScheme.primary
+                                          .withValues(alpha: 0.10)
+                                    : Theme.of(context).colorScheme.surface,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                              ),
+                              child: Icon(
+                                Icons.tune_rounded,
+                                color: _hasActiveFilterOrSort
+                                    ? Theme.of(context).colorScheme.primary
+                                    : Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
+                              ),
                             ),
-                    ),
-                    onChanged: (value) {
-                      setState(() {
-                        _searchQuery = value;
-                      });
-                    },
-                  ),
+                          ),
 
+                          if (_hasActiveFilterOrSort)
+                            Positioned(
+                              top: -3,
+                              right: -3,
+                              child: Container(
+                                width: 12,
+                                height: 12,
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: Theme.of(
+                                      context,
+                                    ).colorScheme.surface,
+                                    width: 2,
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 24),
 
                   Row(
@@ -443,6 +631,464 @@ class _InventoryScreenState extends State<InventoryScreen> {
         ],
       ),
     );
+  }
+
+  bool get _hasActiveFilterOrSort {
+    return _selectedStockFilter != ProductStockFilter.all ||
+        _selectedSortOption != ProductSortOption.newestFirst;
+  }
+
+  Future<void> _showFilterAndSortSheet() async {
+    ProductStockFilter temporaryStockFilter = _selectedStockFilter;
+    ProductSortOption temporarySortOption = _selectedSortOption;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (bottomSheetContext) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            final colorScheme = Theme.of(context).colorScheme;
+            final textTheme = Theme.of(context).textTheme;
+
+            return Container(
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.sizeOf(context).height * 0.88,
+              ),
+              decoration: BoxDecoration(
+                color: colorScheme.surface,
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(32),
+                ),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const SizedBox(height: 12),
+
+                  // Bottom-sheet drag handle
+                  Container(
+                    width: 44,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: colorScheme.outlineVariant,
+                      borderRadius: BorderRadius.circular(100),
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  // Header
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 48,
+                          height: 48,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: colorScheme.primary.withValues(alpha: 0.10),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Icon(
+                            Icons.tune_rounded,
+                            size: 24,
+                            color: colorScheme.primary,
+                          ),
+                        ),
+
+                        const SizedBox(width: 14),
+
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Filter & Sort',
+                                style: textTheme.titleLarge?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              const SizedBox(height: 3),
+                              Text(
+                                'Refine how your products are displayed.',
+                                style: textTheme.bodyMedium?.copyWith(
+                                  color: colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        IconButton(
+                          tooltip: 'Close',
+                          onPressed: () {
+                            Navigator.of(bottomSheetContext).pop();
+                          },
+                          icon: const Icon(Icons.close_rounded),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 24),
+
+                  Divider(height: 1, color: colorScheme.outlineVariant),
+
+                  Flexible(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // -----------------------------------------------------
+                          // Stock filter
+                          // -----------------------------------------------------
+                          Text(
+                            'Stock Status',
+                            style: textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+
+                          const SizedBox(height: 6),
+
+                          Text(
+                            'Show products based on their stock availability.',
+                            style: textTheme.bodyMedium?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          Wrap(
+                            spacing: 10,
+                            runSpacing: 10,
+                            children: ProductStockFilter.values.map((filter) {
+                              final isSelected = temporaryStockFilter == filter;
+
+                              return ChoiceChip(
+                                selected: isSelected,
+                                showCheckmark: false,
+                                label: Text(_stockFilterLabel(filter)),
+                                avatar: Icon(
+                                  _stockFilterIcon(filter),
+                                  size: 18,
+                                  color: isSelected
+                                      ? colorScheme.onPrimary
+                                      : colorScheme.onSurfaceVariant,
+                                ),
+                                labelStyle: TextStyle(
+                                  color: isSelected
+                                      ? colorScheme.onPrimary
+                                      : colorScheme.onSurface,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                selectedColor: colorScheme.primary,
+                                backgroundColor:
+                                    colorScheme.surfaceContainerLowest,
+                                side: BorderSide(
+                                  color: isSelected
+                                      ? colorScheme.primary
+                                      : colorScheme.outlineVariant,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 10,
+                                ),
+                                onSelected: (_) {
+                                  setModalState(() {
+                                    temporaryStockFilter = filter;
+                                  });
+                                },
+                              );
+                            }).toList(),
+                          ),
+
+                          const SizedBox(height: 30),
+
+                          // -----------------------------------------------------
+                          // Sort options
+                          // -----------------------------------------------------
+                          Text(
+                            'Sort Products',
+                            style: textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+
+                          const SizedBox(height: 6),
+
+                          Text(
+                            'Choose the order in which products appear.',
+                            style: textTheme.bodyMedium?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+
+                          const SizedBox(height: 16),
+
+                          Container(
+                            decoration: BoxDecoration(
+                              color: colorScheme.surfaceContainerLowest,
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: colorScheme.outlineVariant,
+                              ),
+                            ),
+                            child: Column(
+                              children: ProductSortOption.values.map((
+                                sortOption,
+                              ) {
+                                final isSelected =
+                                    temporarySortOption == sortOption;
+
+                                final isLast =
+                                    sortOption == ProductSortOption.values.last;
+
+                                return Column(
+                                  children: [
+                                    InkWell(
+                                      borderRadius: BorderRadius.circular(18),
+                                      onTap: () {
+                                        setModalState(() {
+                                          temporarySortOption = sortOption;
+                                        });
+                                      },
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                          vertical: 15,
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            Container(
+                                              width: 42,
+                                              height: 42,
+                                              decoration: BoxDecoration(
+                                                color: isSelected
+                                                    ? colorScheme.primary
+                                                          .withValues(
+                                                            alpha: 0.10,
+                                                          )
+                                                    : colorScheme
+                                                          .surfaceContainer,
+                                                borderRadius:
+                                                    BorderRadius.circular(13),
+                                              ),
+                                              child: Icon(
+                                                _sortOptionIcon(sortOption),
+                                                size: 21,
+                                                color: isSelected
+                                                    ? colorScheme.primary
+                                                    : colorScheme
+                                                          .onSurfaceVariant,
+                                              ),
+                                            ),
+
+                                            const SizedBox(width: 14),
+
+                                            Expanded(
+                                              child: Text(
+                                                _sortOptionLabel(sortOption),
+                                                style: textTheme.bodyLarge
+                                                    ?.copyWith(
+                                                      fontWeight:
+                                                          FontWeight.w600,
+                                                    ),
+                                              ),
+                                            ),
+
+                                            Radio<ProductSortOption>(
+                                              value: sortOption,
+                                              groupValue: temporarySortOption,
+                                              onChanged: (value) {
+                                                if (value == null) {
+                                                  return;
+                                                }
+
+                                                setModalState(() {
+                                                  temporarySortOption = value;
+                                                });
+                                              },
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+
+                                    if (!isLast)
+                                      Divider(
+                                        height: 1,
+                                        indent: 72,
+                                        color: colorScheme.outlineVariant,
+                                      ),
+                                  ],
+                                );
+                              }).toList(),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  // -------------------------------------------------------------
+                  // Bottom actions
+                  // -------------------------------------------------------------
+                  Container(
+                    padding: EdgeInsets.fromLTRB(
+                      24,
+                      16,
+                      24,
+                      16 + MediaQuery.paddingOf(context).bottom,
+                    ),
+                    decoration: BoxDecoration(
+                      color: colorScheme.surface,
+                      border: Border(
+                        top: BorderSide(color: colorScheme.outlineVariant),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: SizedBox(
+                            height: 52,
+                            child: OutlinedButton(
+                              onPressed: () {
+                                setState(() {
+                                  _selectedStockFilter = ProductStockFilter.all;
+                                  _selectedSortOption =
+                                      ProductSortOption.newestFirst;
+                                });
+
+                                Navigator.of(bottomSheetContext).pop();
+                              },
+                              child: const Text('Reset'),
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(width: 12),
+
+                        Expanded(
+                          flex: 2,
+                          child: SizedBox(
+                            height: 52,
+                            child: FilledButton.icon(
+                              onPressed: () {
+                                setState(() {
+                                  _selectedStockFilter = temporaryStockFilter;
+
+                                  _selectedSortOption = temporarySortOption;
+                                });
+
+                                Navigator.of(bottomSheetContext).pop();
+                              },
+                              icon: const Icon(Icons.check_rounded, size: 20),
+                              label: const Text('Apply Filters'),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  String _stockFilterLabel(ProductStockFilter filter) {
+    switch (filter) {
+      case ProductStockFilter.all:
+        return 'All Products';
+
+      case ProductStockFilter.inStock:
+        return 'In Stock';
+
+      case ProductStockFilter.lowStock:
+        return 'Low Stock';
+
+      case ProductStockFilter.outOfStock:
+        return 'Out of Stock';
+    }
+  }
+
+  IconData _stockFilterIcon(ProductStockFilter filter) {
+    switch (filter) {
+      case ProductStockFilter.all:
+        return Icons.inventory_2_outlined;
+
+      case ProductStockFilter.inStock:
+        return Icons.check_circle_outline_rounded;
+
+      case ProductStockFilter.lowStock:
+        return Icons.warning_amber_rounded;
+
+      case ProductStockFilter.outOfStock:
+        return Icons.remove_shopping_cart_outlined;
+    }
+  }
+
+  String _sortOptionLabel(ProductSortOption option) {
+    switch (option) {
+      case ProductSortOption.newestFirst:
+        return 'Newest First';
+
+      case ProductSortOption.nameAscending:
+        return 'Name: A–Z';
+
+      case ProductSortOption.nameDescending:
+        return 'Name: Z–A';
+
+      case ProductSortOption.priceLowToHigh:
+        return 'Price: Low to High';
+
+      case ProductSortOption.priceHighToLow:
+        return 'Price: High to Low';
+
+      case ProductSortOption.stockLowToHigh:
+        return 'Stock: Low to High';
+
+      case ProductSortOption.stockHighToLow:
+        return 'Stock: High to Low';
+    }
+  }
+
+  IconData _sortOptionIcon(ProductSortOption option) {
+    switch (option) {
+      case ProductSortOption.newestFirst:
+        return Icons.schedule_rounded;
+
+      case ProductSortOption.nameAscending:
+        return Icons.sort_by_alpha_rounded;
+
+      case ProductSortOption.nameDescending:
+        return Icons.sort_by_alpha_rounded;
+
+      case ProductSortOption.priceLowToHigh:
+        return Icons.trending_up_rounded;
+
+      case ProductSortOption.priceHighToLow:
+        return Icons.trending_down_rounded;
+
+      case ProductSortOption.stockLowToHigh:
+        return Icons.south_rounded;
+
+      case ProductSortOption.stockHighToLow:
+        return Icons.north_rounded;
+    }
   }
 }
 
