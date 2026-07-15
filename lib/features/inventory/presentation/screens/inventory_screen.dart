@@ -26,6 +26,8 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
   String? _errorMessage;
 
+  String _searchQuery = '';
+
   // ---------------------------------------------------------------------------
   // Screen lifecycle
   // ---------------------------------------------------------------------------
@@ -211,29 +213,32 @@ class _InventoryScreenState extends State<InventoryScreen> {
   // ---------------------------------------------------------------------------
 
   List<Map<String, dynamic>> get _filteredProducts {
-    final searchQuery = _searchController.text.trim().toLowerCase();
+    final normalizedQuery = _searchQuery.trim().toLowerCase();
 
-    if (searchQuery.isEmpty) {
+    if (normalizedQuery.isEmpty) {
       return _products;
     }
 
     return _products.where((product) {
-      final productName = (product['name'] ?? '').toString().toLowerCase();
+      final productName = (product['name'] ?? '')
+          .toString()
+          .trim()
+          .toLowerCase();
 
-      final brand = (product['brand'] ?? '').toString().toLowerCase();
+      final brand = (product['brand'] ?? '').toString().trim().toLowerCase();
 
-      final sku = (product['sku'] ?? '').toString().toLowerCase();
+      final sku = (product['sku'] ?? '').toString().trim().toLowerCase();
 
       final categoryData = product['product_categories'];
 
       final categoryName = categoryData is Map
-          ? (categoryData['name'] ?? '').toString().toLowerCase()
+          ? (categoryData['name'] ?? '').toString().trim().toLowerCase()
           : '';
 
-      return productName.contains(searchQuery) ||
-          brand.contains(searchQuery) ||
-          sku.contains(searchQuery) ||
-          categoryName.contains(searchQuery);
+      return productName.contains(normalizedQuery) ||
+          brand.contains(normalizedQuery) ||
+          sku.contains(normalizedQuery) ||
+          categoryName.contains(normalizedQuery);
     }).toList();
   }
 
@@ -282,17 +287,23 @@ class _InventoryScreenState extends State<InventoryScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      body: SafeArea(
-        bottom: false,
-        child: Column(
-          children: [
-            _InventoryHeader(
-              onAddProduct: _openAddProductScreen,
-              onOpenArchivedProducts: _openArchivedProductsScreen,
-            ),
-
-            Expanded(child: _buildContent(theme)),
-          ],
+      body: GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onTap: () {
+           FocusManager.instance.primaryFocus?.unfocus();
+        },
+        child: SafeArea(
+          bottom: false,
+          child: Column(
+            children: [
+              _InventoryHeader(
+                onAddProduct: _openAddProductScreen,
+                onOpenArchivedProducts: _openArchivedProductsScreen,
+              ),
+        
+              Expanded(child: _buildContent(theme)),
+            ],
+          ),
         ),
       ),
     );
@@ -343,23 +354,31 @@ class _InventoryScreenState extends State<InventoryScreen> {
                   TextField(
                     controller: _searchController,
                     textInputAction: TextInputAction.search,
+                    autocorrect: false,
+                    enableSuggestions: false,
                     decoration: InputDecoration(
                       hintText: 'Search products, brands or SKU',
                       prefixIcon: const Icon(Icons.search_rounded),
-                      suffixIcon: _searchController.text.isEmpty
+                      suffixIcon: _searchQuery.isEmpty
                           ? null
                           : IconButton(
                               tooltip: 'Clear search',
                               onPressed: () {
                                 _searchController.clear();
 
-                                setState(() {});
+                                setState(() {
+                                  _searchQuery = '';
+                                });
+
+                                FocusScope.of(context).unfocus();
                               },
                               icon: const Icon(Icons.close_rounded),
                             ),
                     ),
-                    onChanged: (_) {
-                      setState(() {});
+                    onChanged: (value) {
+                      setState(() {
+                        _searchQuery = value;
+                      });
                     },
                   ),
 
@@ -369,7 +388,9 @@ class _InventoryScreenState extends State<InventoryScreen> {
                     children: [
                       Expanded(
                         child: Text(
-                          'All Products',
+                          _searchQuery.trim().isEmpty
+                              ? 'All Products'
+                              : 'Search Results',
                           style: theme.textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.w700,
                           ),
@@ -395,9 +416,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
           if (_filteredProducts.isEmpty)
             SliverFillRemaining(
               hasScrollBody: false,
-              child: _NoSearchResultsState(
-                searchQuery: _searchController.text.trim(),
-              ),
+              child: _NoSearchResultsState(searchQuery: _searchQuery.trim()),
             )
           else
             SliverPadding(
