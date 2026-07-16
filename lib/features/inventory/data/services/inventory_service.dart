@@ -373,6 +373,53 @@ class InventoryService {
   }
 
   // ---------------------------------------------------------------------------
+  // Securely adjust product stock using the database RPC
+  // ---------------------------------------------------------------------------
+
+  Future<Map<String, dynamic>> adjustProductStock({
+    required String productId,
+    required String adjustmentType,
+    required int quantity,
+    String? note,
+  }) async {
+    final response = await _supabase.rpc(
+      'adjust_product_stock',
+      params: {
+        'p_product_id': productId,
+        'p_adjustment_type': adjustmentType,
+        'p_quantity': quantity,
+        'p_note': note?.trim().isEmpty ?? true ? null : note!.trim(),
+      },
+    );
+
+    return Map<String, dynamic>.from(response as Map);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Fetch stock adjustment history for a product
+  // ---------------------------------------------------------------------------
+
+  Future<List<Map<String, dynamic>>> getStockAdjustmentHistory(
+    String productId,
+  ) async {
+    final response = await _supabase
+        .from('stock_adjustments')
+        .select('''
+        id,
+        adjustment_type,
+        quantity_change,
+        previous_stock,
+        updated_stock,
+        note,
+        created_at
+      ''')
+        .eq('product_id', productId)
+        .order('created_at', ascending: false);
+
+    return List<Map<String, dynamic>>.from(response);
+  }
+
+  // ---------------------------------------------------------------------------
   // Convert empty optional text into null before saving it to Supabase
   // ---------------------------------------------------------------------------
 

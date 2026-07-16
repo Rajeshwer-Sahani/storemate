@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:storemate/features/inventory/data/services/inventory_service.dart';
 import 'package:storemate/features/inventory/data/models/product_model.dart';
 import 'package:storemate/features/inventory/presentation/screens/edit_product_screen.dart';
+import 'package:storemate/features/inventory/presentation/widgets/adjust_stock_bottom_sheet.dart';
 
 class ProductDetailsScreen extends StatelessWidget {
   ProductDetailsScreen({required this.product, super.key});
@@ -554,6 +555,47 @@ class ProductDetailsScreen extends StatelessWidget {
                       : colorScheme.onSurface,
                   height: 1.5,
                 ),
+              ),
+            ),
+
+            const SizedBox(height: 32),
+
+            SizedBox(
+              width: double.infinity,
+              height: 56,
+              child: FilledButton.icon(
+                icon: const Icon(Icons.swap_horiz_rounded),
+                label: const Text('Adjust Stock'),
+                onPressed: () async {
+                  final result =
+                      await showModalBottomSheet<Map<String, dynamic>>(
+                        context: context,
+                        isScrollControlled: true,
+                        useSafeArea: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (_) {
+                          return AdjustStockBottomSheet(
+                            product: {
+                              'id': product.id,
+                              'name': product.name,
+                              'stock_quantity': product.stockQuantity,
+                              'brand': product.brand,
+                              'product_categories': {
+                                'name': product.categoryName,
+                              },
+                            },
+                          );
+                        },
+                      );
+
+                  if (!context.mounted || result == null) {
+                    return;
+                  }
+
+                  // Return only a success flag to InventoryScreen.
+                  // The InventoryScreen only needs to know that something changed.
+                  Navigator.of(context).pop(true);
+                },
               ),
             ),
           ],
