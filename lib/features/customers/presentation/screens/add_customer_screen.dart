@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:storemate/core/widgets/app_snackbar.dart';
 
 import '../../data/services/customer_service.dart';
 
@@ -69,17 +70,13 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Customer added successfully.')),
-      );
+      AppSnackbar.success(context, message: 'Customer added successfully.');
 
       Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(e.toString())));
+      AppSnackbar.error(context, message: e.toString());
     } finally {
       if (mounted) {
         setState(() {
@@ -230,7 +227,10 @@ class _AddCustomerScreenState extends State<AddCustomerScreen> {
                           ? const SizedBox(
                               width: 22,
                               height: 22,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
                             )
                           : const Text('Save Customer'),
                     ),

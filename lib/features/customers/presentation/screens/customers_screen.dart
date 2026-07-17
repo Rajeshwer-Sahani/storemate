@@ -85,13 +85,17 @@ class _CustomersScreenState extends State<CustomersScreen> {
     _loadCustomers();
   }
 
-  void _openCustomer(CustomerModel customer) {
-    Navigator.push(
+  Future<void> _openCustomer(CustomerModel customer) async {
+    final updated = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
         builder: (_) => CustomerDetailsScreen(customer: customer),
       ),
     );
+
+    if (updated == true) {
+      await _loadCustomers();
+    }
   }
 
   @override

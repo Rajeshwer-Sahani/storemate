@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:storemate/features/customers/presentation/screens/edit_customer_screen.dart';
 import '../widgets/customer_avatar.dart';
 import '../../data/models/customer_model.dart';
 
@@ -68,23 +69,16 @@ class CustomerDetailsScreen extends StatelessWidget {
             tooltip: 'Edit Customer',
             icon: const Icon(Icons.edit_outlined),
             onPressed: () async {
-              // TODO:
-              // Navigate after EditCustomerScreen is created.
+              final updated = await Navigator.push<bool>(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => EditCustomerScreen(customer: customer),
+                ),
+              );
 
-              /*
-      final updated = await Navigator.push<bool>(
-        context,
-        MaterialPageRoute(
-          builder: (_) => EditCustomerScreen(
-            customer: customer,
-          ),
-        ),
-      );
-
-      if (updated == true && context.mounted) {
-        Navigator.pop(context, true);
-      }
-      */
+              if (updated == true && context.mounted) {
+                Navigator.pop(context, true);
+              }
             },
           ),
 
