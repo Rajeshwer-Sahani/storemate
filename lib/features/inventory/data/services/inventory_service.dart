@@ -399,13 +399,24 @@ class InventoryService {
   // Fetch stock adjustment history for a product
   // ---------------------------------------------------------------------------
 
-  Future<List<Map<String, dynamic>>> getStockAdjustmentHistory(
-    String productId,
-  ) async {
+  // ---------------------------------------------------------------------------
+  // Fetch stock adjustment history for a product
+  // ---------------------------------------------------------------------------
+
+  Future<List<Map<String, dynamic>>> getStockAdjustmentHistory({
+    required String productId,
+  }) async {
+    if (productId.trim().isEmpty) {
+      throw ArgumentError('Product ID cannot be empty.');
+    }
+
+    final storeId = await getCurrentStoreId();
+
     final response = await _supabase
         .from('stock_adjustments')
         .select('''
         id,
+        product_id,
         adjustment_type,
         quantity_change,
         previous_stock,
@@ -413,6 +424,7 @@ class InventoryService {
         note,
         created_at
       ''')
+        .eq('store_id', storeId)
         .eq('product_id', productId)
         .order('created_at', ascending: false);
 
