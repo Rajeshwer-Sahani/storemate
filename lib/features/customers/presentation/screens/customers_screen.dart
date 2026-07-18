@@ -11,6 +11,7 @@ import '../widgets/customer_search_bar.dart';
 
 import 'add_customer_screen.dart';
 import 'customer_details_screen.dart';
+import 'package:storemate/core/widgets/app_section_header.dart';
 
 class CustomersScreen extends StatefulWidget {
   const CustomersScreen({super.key});
@@ -112,7 +113,6 @@ class _CustomersScreenState extends State<CustomersScreen> {
                 subtitle: 'Manage your customer records',
 
                 actionButton: SizedBox(
-                  
                   child: FilledButton.icon(
                     onPressed: _openAddCustomer,
                     icon: const Icon(Icons.add),
@@ -141,6 +141,18 @@ class _CustomersScreenState extends State<CustomersScreen> {
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                 child: CustomerSearchBar(onChanged: _searchCustomers),
+              ),
+
+              AppSectionHeader(
+                title: 'All Customers',
+
+                trailing: Text(
+                  '${_customers.length} customer${_customers.length == 1 ? '' : 's'}',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
               ),
 
               Expanded(
