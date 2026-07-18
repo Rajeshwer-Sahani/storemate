@@ -9,11 +9,7 @@ class AppSectionHeader extends StatelessWidget {
   });
 
   final String title;
-
-  /// Widget displayed on the right side.
-  /// Usually a Text showing count.
   final Widget? trailing;
-
   final EdgeInsetsGeometry? padding;
 
   @override
@@ -22,11 +18,8 @@ class AppSectionHeader extends StatelessWidget {
 
     return Padding(
       padding: padding ??
-          const EdgeInsets.fromLTRB(
-            20,
-            8,
-            20,
-            16,
+          const EdgeInsets.symmetric(
+            vertical: 8,
           ),
       child: Row(
         children: [
@@ -38,7 +31,6 @@ class AppSectionHeader extends StatelessWidget {
               ),
             ),
           ),
-
           if (trailing != null) trailing!,
         ],
       ),

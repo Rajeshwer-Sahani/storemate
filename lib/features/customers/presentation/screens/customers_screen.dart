@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:storemate/core/widgets/app_module_header.dart';
 import 'package:storemate/core/widgets/app_page_scaffold.dart';
+import 'package:storemate/features/customers/presentation/screens/archived_customers_screen.dart';
 
 import '../../data/models/customer_model.dart';
 import '../../data/services/customer_service.dart';
@@ -101,6 +102,18 @@ class _CustomersScreenState extends State<CustomersScreen> {
     }
   }
 
+  // Opens the Archived Customers screen and refreshes the customer list if any changes were made.
+  Future<void> _openArchivedCustomers() async {
+    final updated = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => const ArchivedCustomersScreen()),
+    );
+
+    if (updated == true) {
+      await _loadCustomers();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return AppPageScaffold(
@@ -126,12 +139,24 @@ class _CustomersScreenState extends State<CustomersScreen> {
 
               splashRadius: 22,
 
-              onSelected: (value) {},
+              onSelected: (value) {
+                switch (value) {
+                  case 'archived':
+                    _openArchivedCustomers();
+                    break;
+                }
+              },
 
               itemBuilder: (context) => const [
                 PopupMenuItem(
                   value: 'archived',
-                  child: Text('Archived Customers'),
+                  child: Row(
+                    children: const [
+                      Icon(Icons.archive_outlined),
+                      SizedBox(width: 12),
+                      Text('Archived Customers'),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -145,14 +170,16 @@ class _CustomersScreenState extends State<CustomersScreen> {
             ),
           ),
 
-          AppSectionHeader(
-            title: 'All Customers',
-
-            trailing: Text(
-              '${_customers.length} customer${_customers.length == 1 ? '' : 's'}',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                fontWeight: FontWeight.w500,
+          Padding(
+             padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: AppSectionHeader(
+              title: 'All Customers',
+              trailing: Text(
+                '${_customers.length} customer${_customers.length == 1 ? '' : 's'}',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
           ),

@@ -3,9 +3,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/customer_model.dart';
 
 class CustomerService {
-  CustomerService({
-    SupabaseClient? client,
-  }) : _client = client ?? Supabase.instance.client;
+  CustomerService({SupabaseClient? client})
+    : _client = client ?? Supabase.instance.client;
 
   final SupabaseClient _client;
 
@@ -94,9 +93,31 @@ class CustomerService {
   Future<void> archiveCustomer(String customerId) async {
     await _client
         .from(_customersTable)
-        .update({
-          'is_archived': true,
-        })
+        .update({'is_archived': true})
+        .eq('id', customerId);
+  }
+
+  /// Fetch all archived customers
+  Future<List<CustomerModel>> getArchivedCustomers() async {
+    final storeId = await _getStoreId();
+
+    final response = await _client
+        .from(_customersTable)
+        .select()
+        .eq('store_id', storeId)
+        .eq('is_archived', true)
+        .order('created_at', ascending: false);
+
+    return (response as List)
+        .map((json) => CustomerModel.fromJson(json))
+        .toList();
+  }
+
+  /// Restore archived customer
+  Future<void> restoreCustomer(String customerId) async {
+    await _client
+        .from(_customersTable)
+        .update({'is_archived': false})
         .eq('id', customerId);
   }
 
@@ -109,9 +130,7 @@ class CustomerService {
         .select()
         .eq('store_id', storeId)
         .eq('is_archived', false)
-        .or(
-          'full_name.ilike.%$query%,phone_number.ilike.%$query%',
-        )
+        .or('full_name.ilike.%$query%,phone_number.ilike.%$query%')
         .order('full_name');
 
     return (response as List)

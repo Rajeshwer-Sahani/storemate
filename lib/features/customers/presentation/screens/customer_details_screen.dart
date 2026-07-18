@@ -1,12 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:storemate/core/widgets/app_snackbar.dart';
 import 'package:storemate/features/customers/presentation/screens/edit_customer_screen.dart';
+import 'package:storemate/features/customers/presentation/widgets/archive_customer_dialog.dart';
 import '../widgets/customer_avatar.dart';
 import '../../data/models/customer_model.dart';
+import 'package:storemate/features/customers/data/services/customer_service.dart';
 
-class CustomerDetailsScreen extends StatelessWidget {
+class CustomerDetailsScreen extends StatefulWidget {
   const CustomerDetailsScreen({super.key, required this.customer});
 
   final CustomerModel customer;
+
+  @override
+  State<CustomerDetailsScreen> createState() => _CustomerDetailsScreenState();
+}
+
+class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
+  final CustomerService _customerService = CustomerService();
 
   void _showComingSoon(BuildContext context, String feature) {
     ScaffoldMessenger.of(
@@ -15,7 +25,32 @@ class CustomerDetailsScreen extends StatelessWidget {
   }
 
   // -----------------------------------------------------------------------------
-  // Delete Confirmation Dialog
+  // Archive Customer
+  // -----------------------------------------------------------------------------
+  Future<void> _archiveCustomer() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) =>
+          ArchiveCustomerDialog(customerName: widget.customer.fullName),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      await _customerService.archiveCustomer(widget.customer.id);
+
+      if (!mounted) return;
+
+      AppSnackbar.success(context, message: 'Customer archived successfully.');
+
+      Navigator.pop(context, true);
+    } catch (e) {
+      if (!mounted) return;
+
+      AppSnackbar.error(context, message: e.toString());
+    }
+  }
+
   // -----------------------------------------------------------------------------
   void _showDeleteConfirmation(BuildContext context) {
     showDialog(
@@ -72,7 +107,7 @@ class CustomerDetailsScreen extends StatelessWidget {
               final updated = await Navigator.push<bool>(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => EditCustomerScreen(customer: customer),
+                  builder: (_) => EditCustomerScreen(customer: widget.customer),
                 ),
               );
 
@@ -86,9 +121,8 @@ class CustomerDetailsScreen extends StatelessWidget {
             onSelected: (value) {
               switch (value) {
                 case 'archive':
-                  _showComingSoon(context, 'Archive Customer');
+                  _archiveCustomer();
                   break;
-
                 case 'delete':
                   _showDeleteConfirmation(context);
                   break;
@@ -114,12 +148,15 @@ class CustomerDetailsScreen extends StatelessWidget {
                   ),
                   child: Column(
                     children: [
-                      CustomerAvatar(fullName: customer.fullName, radius: 38),
+                      CustomerAvatar(
+                        fullName: widget.customer.fullName,
+                        radius: 38,
+                      ),
 
                       const SizedBox(height: 20),
 
                       Text(
-                        customer.fullName,
+                        widget.customer.fullName,
                         textAlign: TextAlign.center,
                         style: theme.textTheme.headlineSmall?.copyWith(
                           fontWeight: FontWeight.bold,
@@ -138,7 +175,7 @@ class CustomerDetailsScreen extends StatelessWidget {
                           ),
                           const SizedBox(width: 6),
                           Text(
-                            customer.phoneNumber,
+                            widget.customer.phoneNumber,
                             style: theme.textTheme.titleMedium,
                           ),
                         ],
@@ -156,7 +193,7 @@ class CustomerDetailsScreen extends StatelessWidget {
                           ),
                           const SizedBox(width: 6),
                           Text(
-                            'Customer since ${_formatMonthYear(customer.createdAt)}',
+                            'Customer since ${_formatMonthYear(widget.customer.createdAt)}',
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: theme.colorScheme.onSurfaceVariant,
                             ),
@@ -185,39 +222,39 @@ class CustomerDetailsScreen extends StatelessWidget {
 
                       const SizedBox(height: 20),
 
-                      if (customer.email != null &&
-                          customer.email!.trim().isNotEmpty)
+                      if (widget.customer.email != null &&
+                          widget.customer.email!.trim().isNotEmpty)
                         ListTile(
                           contentPadding: EdgeInsets.zero,
                           leading: const Icon(Icons.email_outlined),
                           title: const Text('Email'),
-                          subtitle: Text(customer.email!),
+                          subtitle: Text(widget.customer.email!),
                         ),
 
-                      if (customer.address != null &&
-                          customer.address!.trim().isNotEmpty)
+                      if (widget.customer.address != null &&
+                          widget.customer.address!.trim().isNotEmpty)
                         ListTile(
                           contentPadding: EdgeInsets.zero,
                           leading: const Icon(Icons.location_on_outlined),
                           title: const Text('Address'),
-                          subtitle: Text(customer.address!),
+                          subtitle: Text(widget.customer.address!),
                         ),
 
-                      if (customer.notes != null &&
-                          customer.notes!.trim().isNotEmpty)
+                      if (widget.customer.notes != null &&
+                          widget.customer.notes!.trim().isNotEmpty)
                         ListTile(
                           contentPadding: EdgeInsets.zero,
                           leading: const Icon(Icons.note_alt_outlined),
                           title: const Text('Notes'),
-                          subtitle: Text(customer.notes!),
+                          subtitle: Text(widget.customer.notes!),
                         ),
 
-                      if ((customer.email == null ||
-                              customer.email!.trim().isEmpty) &&
-                          (customer.address == null ||
-                              customer.address!.trim().isEmpty) &&
-                          (customer.notes == null ||
-                              customer.notes!.trim().isEmpty))
+                      if ((widget.customer.email == null ||
+                              widget.customer.email!.trim().isEmpty) &&
+                          (widget.customer.address == null ||
+                              widget.customer.address!.trim().isEmpty) &&
+                          (widget.customer.notes == null ||
+                              widget.customer.notes!.trim().isEmpty))
                         Padding(
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           child: Text(
