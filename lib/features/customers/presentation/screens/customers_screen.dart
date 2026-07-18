@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:storemate/core/widgets/app_module_header.dart';
+import 'package:storemate/core/widgets/app_page_scaffold.dart';
 
 import '../../data/models/customer_model.dart';
 import '../../data/services/customer_service.dart';
@@ -7,7 +8,7 @@ import '../../data/services/customer_service.dart';
 import '../widgets/customer_card.dart';
 import '../widgets/customer_empty_state.dart';
 import '../widgets/customer_loading_widget.dart';
-import '../widgets/customer_search_bar.dart';
+import 'package:storemate/core/widgets/app_search_field.dart';
 
 import 'add_customer_screen.dart';
 import 'customer_details_screen.dart';
@@ -102,92 +103,89 @@ class _CustomersScreenState extends State<CustomersScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: _loadCustomers,
-          child: Column(
-            children: [
-              AppModuleHeader(
-                title: 'Customers',
-                subtitle: 'Manage your customer records',
+    return AppPageScaffold(
+      onRefresh: _loadCustomers,
+      child: Column(
+        children: [
+          AppModuleHeader(
+            title: 'Customers',
+            subtitle: 'Manage your customer records',
 
-                actionButton: SizedBox(
-                  child: FilledButton.icon(
-                    onPressed: _openAddCustomer,
-                    icon: const Icon(Icons.add),
-                    label: const Text('Add'),
-                  ),
-                ),
-
-                menuButton: PopupMenuButton<String>(
-                  tooltip: 'More',
-
-                  icon: const Icon(Icons.more_vert_rounded, size: 28),
-
-                  splashRadius: 22,
-
-                  onSelected: (value) {},
-
-                  itemBuilder: (context) => const [
-                    PopupMenuItem(
-                      value: 'archived',
-                      child: Text('Archived Customers'),
-                    ),
-                  ],
-                ),
+            actionButton: SizedBox(
+              child: FilledButton.icon(
+                onPressed: _openAddCustomer,
+                icon: const Icon(Icons.add),
+                label: const Text('Add'),
               ),
+            ),
 
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                child: CustomerSearchBar(onChanged: _searchCustomers),
-              ),
+            menuButton: PopupMenuButton<String>(
+              tooltip: 'More',
 
-              AppSectionHeader(
-                title: 'All Customers',
+              icon: const Icon(Icons.more_vert_rounded, size: 28),
 
-                trailing: Text(
-                  '${_customers.length} customer${_customers.length == 1 ? '' : 's'}',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w500,
-                  ),
+              splashRadius: 22,
+
+              onSelected: (value) {},
+
+              itemBuilder: (context) => const [
+                PopupMenuItem(
+                  value: 'archived',
+                  child: Text('Archived Customers'),
                 ),
+              ],
+            ),
+          ),
+
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: AppSearchField(
+              hintText: 'Search by name or phone',
+              onChanged: _searchCustomers,
+            ),
+          ),
+
+          AppSectionHeader(
+            title: 'All Customers',
+
+            trailing: Text(
+              '${_customers.length} customer${_customers.length == 1 ? '' : 's'}',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w500,
               ),
+            ),
+          ),
 
-              Expanded(
-                child: Builder(
-                  builder: (_) {
-                    if (_isLoading) {
-                      return const CustomerLoadingWidget();
-                    }
+          Expanded(
+            child: Builder(
+              builder: (_) {
+                if (_isLoading) {
+                  return const CustomerLoadingWidget();
+                }
 
-                    if (_customers.isEmpty) {
-                      return CustomerEmptyState(
-                        onAddCustomer: _openAddCustomer,
-                      );
-                    }
+                if (_customers.isEmpty) {
+                  return CustomerEmptyState(onAddCustomer: _openAddCustomer);
+                }
 
-                    return ListView.separated(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
-                      itemCount: _customers.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 12),
-                      itemBuilder: (_, index) {
-                        final customer = _customers[index];
+                return ListView.separated(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
+                  itemCount: _customers.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                  itemBuilder: (_, index) {
+                    final customer = _customers[index];
 
-                        return CustomerCard(
-                          customer: customer,
-                          onTap: () => _openCustomer(customer),
-                        );
-                      },
+                    return CustomerCard(
+                      customer: customer,
+                      onTap: () => _openCustomer(customer),
                     );
                   },
-                ),
-              ),
-            ],
+                );
+              },
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
