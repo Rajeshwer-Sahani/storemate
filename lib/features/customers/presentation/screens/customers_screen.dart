@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:storemate/core/widgets/app_module_header.dart';
 
 import '../../data/models/customer_model.dart';
 import '../../data/services/customer_service.dart';
@@ -101,52 +102,79 @@ class _CustomersScreenState extends State<CustomersScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Customers')),
+      body: SafeArea(
+        child: RefreshIndicator(
+          onRefresh: _loadCustomers,
+          child: Column(
+            children: [
+              AppModuleHeader(
+                title: 'Customers',
+                subtitle: 'Manage your customer records',
 
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _openAddCustomer,
-        icon: const Icon(Icons.person_add_alt_1),
-        label: const Text('Add Customer'),
-      ),
+                actionButton: SizedBox(
+                  
+                  child: FilledButton.icon(
+                    onPressed: _openAddCustomer,
+                    icon: const Icon(Icons.add),
+                    label: const Text('Add'),
+                  ),
+                ),
 
-      body: RefreshIndicator(
-        onRefresh: _loadCustomers,
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: CustomerSearchBar(onChanged: _searchCustomers),
-            ),
+                menuButton: PopupMenuButton<String>(
+                  tooltip: 'More',
 
-            Expanded(
-              child: Builder(
-                builder: (_) {
-                  if (_isLoading) {
-                    return const CustomerLoadingWidget();
-                  }
+                  icon: const Icon(Icons.more_vert_rounded, size: 28),
 
-                  if (_customers.isEmpty) {
-                    return CustomerEmptyState(onAddCustomer: _openAddCustomer);
-                  }
+                  splashRadius: 22,
 
-                  return ListView.separated(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
-                    itemCount: _customers.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 12),
-                    itemBuilder: (_, index) {
-                      final customer = _customers[index];
+                  onSelected: (value) {},
 
-                      return CustomerCard(
-                        customer: customer,
-                        onTap: () => _openCustomer(customer),
-                      );
-                    },
-                  );
-                },
+                  itemBuilder: (context) => const [
+                    PopupMenuItem(
+                      value: 'archived',
+                      child: Text('Archived Customers'),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                child: CustomerSearchBar(onChanged: _searchCustomers),
+              ),
+
+              Expanded(
+                child: Builder(
+                  builder: (_) {
+                    if (_isLoading) {
+                      return const CustomerLoadingWidget();
+                    }
+
+                    if (_customers.isEmpty) {
+                      return CustomerEmptyState(
+                        onAddCustomer: _openAddCustomer,
+                      );
+                    }
+
+                    return ListView.separated(
+                      physics: const AlwaysScrollableScrollPhysics(),
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
+                      itemCount: _customers.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 12),
+                      itemBuilder: (_, index) {
+                        final customer = _customers[index];
+
+                        return CustomerCard(
+                          customer: customer,
+                          onTap: () => _openCustomer(customer),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

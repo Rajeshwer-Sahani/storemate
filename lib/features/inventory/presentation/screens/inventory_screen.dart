@@ -1215,7 +1215,7 @@ class _InventoryHeader extends StatelessWidget {
                     ),
                   ];
                 },
-                icon: const Icon(Icons.more_vert_rounded),
+                icon: const Icon(Icons.more_vert_rounded, size: 28),
               ),
             ],
           ),
