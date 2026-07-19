@@ -4,10 +4,12 @@ import 'package:storemate/core/widgets/app_empty_state.dart';
 
 import 'package:storemate/core/widgets/app_search_field.dart';
 import 'package:storemate/core/widgets/app_section_header.dart';
+import 'package:storemate/core/widgets/app_snackbar.dart';
+import 'package:storemate/features/customers/presentation/widgets/archived_customer_card.dart';
+import 'package:storemate/features/customers/presentation/widgets/restore_customer_bottom_sheet.dart';
 
 import '../../data/models/customer_model.dart';
 import '../../data/services/customer_service.dart';
-import '../widgets/customer_card.dart';
 
 class ArchivedCustomersScreen extends StatefulWidget {
   const ArchivedCustomersScreen({super.key});
@@ -73,6 +75,29 @@ class _ArchivedCustomersScreenState extends State<ArchivedCustomersScreen> {
     });
   }
 
+  // Restores an archived customer by calling the restoreCustomer method from the CustomerService.
+  Future<void> _restoreCustomer(CustomerModel customer) async {
+    final confirmed = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) =>
+          RestoreCustomerBottomSheet(customerName: customer.fullName),
+    );
+
+    if (confirmed != true) return;
+
+    await _customerService.restoreCustomer(customer.id);
+
+    if (!mounted) return;
+
+    AppSnackbar.success(context, message: 'Customer restored successfully.');
+
+    await _loadCustomers();
+    if (!mounted) return;
+
+    Navigator.pop(context, true);
+  }
+
   // Builds the body of the screen based on the current state (loading, empty, or list of customers).
   Widget _buildBody() {
     if (_isLoading) {
@@ -95,7 +120,10 @@ class _ArchivedCustomersScreenState extends State<ArchivedCustomersScreen> {
       itemBuilder: (context, index) {
         final customer = _filteredCustomers[index];
 
-        return CustomerCard(customer: customer);
+        return ArchivedCustomerCard(
+          customer: customer,
+          onRestore: () => _restoreCustomer(customer),
+        );
       },
     );
   }

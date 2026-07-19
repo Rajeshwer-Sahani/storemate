@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:storemate/core/widgets/%20app_refreshable_empty_state.dart';
 import 'package:storemate/core/widgets/app_module_header.dart';
 import 'package:storemate/core/widgets/app_page_scaffold.dart';
 import 'package:storemate/features/customers/presentation/screens/archived_customers_screen.dart';
@@ -171,7 +172,7 @@ class _CustomersScreenState extends State<CustomersScreen> {
           ),
 
           Padding(
-             padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 16),
             child: AppSectionHeader(
               title: 'All Customers',
               trailing: Text(
@@ -192,9 +193,10 @@ class _CustomersScreenState extends State<CustomersScreen> {
                 }
 
                 if (_customers.isEmpty) {
-                  return CustomerEmptyState(onAddCustomer: _openAddCustomer);
+                  return AppRefreshableEmptyState(
+                    child: CustomerEmptyState(onAddCustomer: _openAddCustomer),
+                  );
                 }
-
                 return ListView.separated(
                   physics: const AlwaysScrollableScrollPhysics(),
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
