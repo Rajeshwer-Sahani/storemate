@@ -18,11 +18,11 @@ class CustomerDetailsScreen extends StatefulWidget {
 class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   final CustomerService _customerService = CustomerService();
 
-  void _showComingSoon(BuildContext context, String feature) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text('$feature will be available soon.')));
-  }
+  // void _showComingSoon(BuildContext context, String feature) {
+  //   ScaffoldMessenger.of(
+  //     context,
+  //   ).showSnackBar(SnackBar(content: Text('$feature will be available soon.')));
+  // }
 
   // -----------------------------------------------------------------------------
   // Archive Customer
