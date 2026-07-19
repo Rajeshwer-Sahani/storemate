@@ -6,12 +6,10 @@ class ArchivedProductsScreen extends StatefulWidget {
   const ArchivedProductsScreen({super.key});
 
   @override
-  State<ArchivedProductsScreen> createState() =>
-      _ArchivedProductsScreenState();
+  State<ArchivedProductsScreen> createState() => _ArchivedProductsScreenState();
 }
 
-class _ArchivedProductsScreenState
-    extends State<ArchivedProductsScreen> {
+class _ArchivedProductsScreenState extends State<ArchivedProductsScreen> {
   final InventoryService _inventoryService = InventoryService();
 
   List<Map<String, dynamic>> _archivedProducts = [];
@@ -39,8 +37,7 @@ class _ArchivedProductsScreenState
     }
 
     try {
-      final products =
-          await _inventoryService.getArchivedProducts();
+      final products = await _inventoryService.getArchivedProducts();
 
       if (!mounted) {
         return;
@@ -57,8 +54,7 @@ class _ArchivedProductsScreenState
 
       setState(() {
         _isLoading = false;
-        _errorMessage =
-            'Unable to load archived products. Please try again.';
+        _errorMessage = 'Unable to load archived products. Please try again.';
       });
     }
   }
@@ -67,35 +63,26 @@ class _ArchivedProductsScreenState
   // Show restore confirmation
   // ---------------------------------------------------------------------------
 
-  Future<void> _showRestoreConfirmation(
-    Map<String, dynamic> product,
-  ) async {
-    final productName =
-        product['name']?.toString() ?? 'this product';
+  Future<void> _showRestoreConfirmation(Map<String, dynamic> product) async {
+    final productName = product['name']?.toString() ?? 'this product';
 
     final shouldRestore = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (bottomSheetContext) {
-        final colorScheme =
-            Theme.of(bottomSheetContext).colorScheme;
+        final colorScheme = Theme.of(bottomSheetContext).colorScheme;
 
         return Container(
           padding: EdgeInsets.fromLTRB(
             24,
             12,
             24,
-            MediaQuery.paddingOf(
-                  bottomSheetContext,
-                ).bottom +
-                20,
+            MediaQuery.paddingOf(bottomSheetContext).bottom + 20,
           ),
           decoration: BoxDecoration(
             color: colorScheme.surface,
-            borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(28),
-            ),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -118,9 +105,7 @@ class _ArchivedProductsScreenState
                 height: 72,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: colorScheme.primary.withValues(
-                    alpha: 0.10,
-                  ),
+                  color: colorScheme.primary.withValues(alpha: 0.10),
                   borderRadius: BorderRadius.circular(22),
                 ),
                 child: Icon(
@@ -135,11 +120,8 @@ class _ArchivedProductsScreenState
               Text(
                 'Restore Product?',
                 textAlign: TextAlign.center,
-                style: Theme.of(
-                  bottomSheetContext,
-                ).textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
+                style: Theme.of(bottomSheetContext).textTheme.headlineSmall
+                    ?.copyWith(fontWeight: FontWeight.w700),
               ),
 
               const SizedBox(height: 12),
@@ -149,12 +131,11 @@ class _ArchivedProductsScreenState
                 '$productName? It will appear in your '
                 'active inventory again.',
                 textAlign: TextAlign.center,
-                style: Theme.of(
-                  bottomSheetContext,
-                ).textTheme.bodyLarge?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                  height: 1.5,
-                ),
+                style: Theme.of(bottomSheetContext).textTheme.bodyLarge
+                    ?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                      height: 1.5,
+                    ),
               ),
 
               const SizedBox(height: 28),
@@ -167,28 +148,22 @@ class _ArchivedProductsScreenState
                       height: 50,
                       child: OutlinedButton(
                         onPressed: () {
-                          Navigator.of(
-                            bottomSheetContext,
-                          ).pop(false);
+                          Navigator.of(bottomSheetContext).pop(false);
                         },
                         style: OutlinedButton.styleFrom(
-                          foregroundColor:
-                              colorScheme.primary,
+                          foregroundColor: colorScheme.primary,
                           side: BorderSide(
                             color: colorScheme.primary,
                             width: 1.5,
                           ),
                           padding: EdgeInsets.zero,
                           shape: RoundedRectangleBorder(
-                            borderRadius:
-                                BorderRadius.circular(24),
+                            borderRadius: BorderRadius.circular(24),
                           ),
                         ),
                         child: const Text(
                           'Cancel',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                          ),
+                          style: TextStyle(fontWeight: FontWeight.w700),
                         ),
                       ),
                     ),
@@ -202,30 +177,20 @@ class _ArchivedProductsScreenState
                       height: 50,
                       child: FilledButton.icon(
                         onPressed: () {
-                          Navigator.of(
-                            bottomSheetContext,
-                          ).pop(true);
+                          Navigator.of(bottomSheetContext).pop(true);
                         },
                         style: FilledButton.styleFrom(
-                          backgroundColor:
-                              colorScheme.primary,
-                          foregroundColor:
-                              colorScheme.onPrimary,
+                          backgroundColor: colorScheme.primary,
+                          foregroundColor: colorScheme.onPrimary,
                           padding: EdgeInsets.zero,
                           shape: RoundedRectangleBorder(
-                            borderRadius:
-                                BorderRadius.circular(24),
+                            borderRadius: BorderRadius.circular(24),
                           ),
                         ),
-                        icon: const Icon(
-                          Icons.restore_rounded,
-                          size: 19,
-                        ),
+                        icon: const Icon(Icons.restore_rounded, size: 19),
                         label: const Text(
                           'Restore',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                          ),
+                          style: TextStyle(fontWeight: FontWeight.w700),
                         ),
                       ),
                     ),
@@ -249,24 +214,17 @@ class _ArchivedProductsScreenState
   // Restore product
   // ---------------------------------------------------------------------------
 
-  Future<void> _restoreProduct(
-    Map<String, dynamic> product,
-  ) async {
+  Future<void> _restoreProduct(Map<String, dynamic> product) async {
     final productId = product['id']?.toString();
 
     if (productId == null || productId.isEmpty) {
-      _showMessage(
-        'Unable to restore this product.',
-        isError: true,
-      );
+      _showMessage('Unable to restore this product.', isError: true);
 
       return;
     }
 
     try {
-      await _inventoryService.restoreProduct(
-        productId: productId,
-      );
+      await _inventoryService.restoreProduct(productId: productId);
 
       if (!mounted) {
         return;
@@ -274,13 +232,15 @@ class _ArchivedProductsScreenState
 
       await _loadArchivedProducts();
 
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
 
-      _showMessage(
-        'Product restored successfully.',
-      );
+      _showMessage('Product restored successfully.');
+
+      await Future.delayed(const Duration(milliseconds: 300));
+
+      if (!mounted) return;
+
+      Navigator.pop(context, true);
     } catch (error) {
       if (!mounted) {
         return;
@@ -297,10 +257,7 @@ class _ArchivedProductsScreenState
   // Snackbar
   // ---------------------------------------------------------------------------
 
-  void _showMessage(
-    String message, {
-    bool isError = false,
-  }) {
+  void _showMessage(String message, {bool isError = false}) {
     final colorScheme = Theme.of(context).colorScheme;
 
     ScaffoldMessenger.of(context)
@@ -311,12 +268,7 @@ class _ArchivedProductsScreenState
           backgroundColor: isError
               ? colorScheme.error
               : const Color(0xFF16A34A),
-          margin: const EdgeInsets.fromLTRB(
-            20,
-            0,
-            20,
-            16,
-          ),
+          margin: const EdgeInsets.fromLTRB(20, 0, 20, 16),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
           ),
@@ -371,13 +323,9 @@ class _ArchivedProductsScreenState
   // Screen content
   // ---------------------------------------------------------------------------
 
-  Widget _buildContent(
-    ColorScheme colorScheme,
-  ) {
+  Widget _buildContent(ColorScheme colorScheme) {
     if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
+      return const Center(child: CircularProgressIndicator());
     }
 
     if (_errorMessage != null) {
@@ -387,11 +335,7 @@ class _ArchivedProductsScreenState
         children: [
           const SizedBox(height: 140),
 
-          Icon(
-            Icons.error_outline_rounded,
-            color: colorScheme.error,
-            size: 52,
-          ),
+          Icon(Icons.error_outline_rounded, color: colorScheme.error, size: 52),
 
           const SizedBox(height: 20),
 
@@ -416,9 +360,7 @@ class _ArchivedProductsScreenState
     if (_archivedProducts.isEmpty) {
       return ListView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.symmetric(
-          horizontal: 28,
-        ),
+        padding: const EdgeInsets.symmetric(horizontal: 28),
         children: [
           const SizedBox(height: 150),
 
@@ -428,9 +370,7 @@ class _ArchivedProductsScreenState
               height: 96,
               alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: colorScheme.primary.withValues(
-                  alpha: 0.10,
-                ),
+                color: colorScheme.primary.withValues(alpha: 0.10),
                 borderRadius: BorderRadius.circular(28),
               ),
               child: Icon(
@@ -448,9 +388,7 @@ class _ArchivedProductsScreenState
             textAlign: TextAlign.center,
             style: Theme.of(
               context,
-            ).textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
+            ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
           ),
 
           const SizedBox(height: 12),
@@ -459,9 +397,7 @@ class _ArchivedProductsScreenState
             'Products you archive will appear here '
             'and can be restored at any time.',
             textAlign: TextAlign.center,
-            style: Theme.of(
-              context,
-            ).textTheme.bodyLarge?.copyWith(
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
               color: colorScheme.onSurfaceVariant,
               height: 1.5,
             ),
@@ -472,20 +408,13 @@ class _ArchivedProductsScreenState
 
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(
-        24,
-        20,
-        24,
-        32,
-      ),
+      padding: const EdgeInsets.fromLTRB(24, 20, 24, 32),
       children: [
         Text(
           'Archived Inventory',
           style: Theme.of(
             context,
-          ).textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.w700,
-          ),
+          ).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700),
         ),
 
         const SizedBox(height: 6),
@@ -495,18 +424,14 @@ class _ArchivedProductsScreenState
           '${_archivedProducts.length == 1 ? 'product' : 'products'}',
           style: Theme.of(
             context,
-          ).textTheme.bodyLarge?.copyWith(
-            color: colorScheme.onSurfaceVariant,
-          ),
+          ).textTheme.bodyLarge?.copyWith(color: colorScheme.onSurfaceVariant),
         ),
 
         const SizedBox(height: 20),
 
         ..._archivedProducts.map(
           (product) => Padding(
-            padding: const EdgeInsets.only(
-              bottom: 12,
-            ),
+            padding: const EdgeInsets.only(bottom: 12),
             child: _ArchivedProductCard(
               product: product,
               onRestore: () {
@@ -525,10 +450,7 @@ class _ArchivedProductsScreenState
 // =============================================================================
 
 class _ArchivedProductCard extends StatelessWidget {
-  const _ArchivedProductCard({
-    required this.product,
-    required this.onRestore,
-  });
+  const _ArchivedProductCard({required this.product, required this.onRestore});
 
   final Map<String, dynamic> product;
   final VoidCallback onRestore;
@@ -537,32 +459,22 @@ class _ArchivedProductCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
-    final productName =
-        product['name']?.toString() ?? 'Unnamed product';
+    final productName = product['name']?.toString() ?? 'Unnamed product';
 
-    final brand =
-        product['brand']?.toString();
+    final brand = product['brand']?.toString();
 
-    final categoryData =
-        product['product_categories'];
+    final categoryData = product['product_categories'];
 
-    final categoryName =
-        categoryData is Map<String, dynamic>
+    final categoryName = categoryData is Map<String, dynamic>
         ? categoryData['name']?.toString()
         : null;
 
-    final sellingPrice =
-        (product['selling_price'] as num?)?.toDouble() ??
-        0;
+    final sellingPrice = (product['selling_price'] as num?)?.toDouble() ?? 0;
 
     final details = [
-      if (brand != null && brand.trim().isNotEmpty)
-        brand.trim(),
+      if (brand != null && brand.trim().isNotEmpty) brand.trim(),
 
-      if (
-        categoryName != null &&
-        categoryName.trim().isNotEmpty
-      )
+      if (categoryName != null && categoryName.trim().isNotEmpty)
         categoryName.trim(),
     ].join(' • ');
 
@@ -571,9 +483,7 @@ class _ArchivedProductCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: colorScheme.outlineVariant,
-        ),
+        border: Border.all(color: colorScheme.outlineVariant),
       ),
       child: Row(
         children: [
@@ -582,9 +492,7 @@ class _ArchivedProductCard extends StatelessWidget {
             height: 64,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: colorScheme.primary.withValues(
-                alpha: 0.10,
-              ),
+              color: colorScheme.primary.withValues(alpha: 0.10),
               borderRadius: BorderRadius.circular(18),
             ),
             child: Icon(
@@ -598,16 +506,13 @@ class _ArchivedProductCard extends StatelessWidget {
 
           Expanded(
             child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   productName,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleMedium?.copyWith(
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -619,11 +524,8 @@ class _ArchivedProductCard extends StatelessWidget {
                     details,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(
-                      context,
-                    ).textTheme.bodyMedium?.copyWith(
-                      color:
-                          colorScheme.onSurfaceVariant,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
                     ),
                   ),
                 ],
@@ -632,9 +534,7 @@ class _ArchivedProductCard extends StatelessWidget {
 
                 Text(
                   '₹${sellingPrice.toStringAsFixed(0)}',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.titleMedium?.copyWith(
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w700,
                   ),
                 ),
@@ -649,14 +549,9 @@ class _ArchivedProductCard extends StatelessWidget {
             onPressed: onRestore,
             style: IconButton.styleFrom(
               foregroundColor: colorScheme.primary,
-              backgroundColor:
-                  colorScheme.primary.withValues(
-                    alpha: 0.10,
-                  ),
+              backgroundColor: colorScheme.primary.withValues(alpha: 0.10),
             ),
-            icon: const Icon(
-              Icons.restore_rounded,
-            ),
+            icon: const Icon(Icons.restore_rounded),
           ),
         ],
       ),
