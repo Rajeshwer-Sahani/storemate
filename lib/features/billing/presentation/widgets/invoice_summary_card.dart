@@ -25,10 +25,7 @@ class InvoiceSummaryCard extends StatelessWidget {
         padding: const EdgeInsets.all(18),
         child: Column(
           children: [
-            _SummaryRow(
-              label: 'Subtotal',
-              value: subtotal,
-            ),
+            _SummaryRow(label: 'Subtotal', value: subtotal),
 
             const SizedBox(height: 14),
 
@@ -50,17 +47,10 @@ class InvoiceSummaryCard extends StatelessWidget {
 
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 18),
-              child: Divider(
-                color: colorScheme.outlineVariant,
-                height: 1,
-              ),
+              child: Divider(color: colorScheme.outlineVariant, height: 1),
             ),
 
-            _SummaryRow(
-              label: 'Grand Total',
-              value: grandTotal,
-              isTotal: true,
-            ),
+            _SummaryRow(label: 'Grand Total', value: grandTotal, isTotal: true),
           ],
         ),
       ),
@@ -86,25 +76,19 @@ class _SummaryRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     final textStyle = isTotal
-        ? theme.textTheme.titleLarge?.copyWith(
-            fontWeight: FontWeight.bold,
-          )
+        ? theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800)
         : theme.textTheme.bodyLarge;
 
     return Row(
       children: [
-        Expanded(
-          child: Text(
-            label,
-            style: textStyle,
-          ),
-        ),
+        Expanded(child: Text(label, style: textStyle)),
         Text(
           '$prefix₹${value.toStringAsFixed(2)}',
           style: textStyle?.copyWith(
-            color: valueColor,
+            color: valueColor ?? (isTotal ? Colors.green.shade700 : null),
           ),
         ),
       ],
