@@ -13,8 +13,7 @@ class InvoiceCustomerCard extends StatelessWidget {
   final VoidCallback? onTap;
 
   bool get _hasCustomer =>
-      customerName != null &&
-      customerName!.trim().isNotEmpty;
+      customerName != null && customerName!.trim().isNotEmpty;
 
   @override
   Widget build(BuildContext context) {
@@ -29,18 +28,23 @@ class InvoiceCustomerCard extends StatelessWidget {
           padding: const EdgeInsets.all(18),
           child: Row(
             children: [
-              CircleAvatar(
-                radius: 26,
-                backgroundColor: _hasCustomer
-                    ? colorScheme.primaryContainer
-                    : colorScheme.surfaceContainerHighest,
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  color: colorScheme.primary.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: colorScheme.primary.withValues(alpha: 0.15),
+                  ),
+                ),
+                alignment: Alignment.center,
                 child: Icon(
                   _hasCustomer
-                      ? Icons.person
-                      : Icons.person_add_alt_1,
-                  color: _hasCustomer
-                      ? colorScheme.primary
-                      : colorScheme.onSurfaceVariant,
+                      ? Icons.person_rounded
+                      : Icons.person_add_alt_1_rounded,
+                  color: colorScheme.primary,
+                  size: 26,
                 ),
               ),
 
@@ -48,13 +52,11 @@ class InvoiceCustomerCard extends StatelessWidget {
 
               Expanded(
                 child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      _hasCustomer
-                          ? customerName!
-                          : 'Select Customer',
+                      _hasCustomer ? customerName! : 'Select Customer',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.titleMedium?.copyWith(
@@ -67,7 +69,7 @@ class InvoiceCustomerCard extends StatelessWidget {
                     Text(
                       _hasCustomer
                           ? (customerPhone ?? '')
-                          : 'Tap to choose a customer',
+                          : 'Select a customer for this invoice',
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.bodyMedium?.copyWith(
@@ -80,10 +82,27 @@ class InvoiceCustomerCard extends StatelessWidget {
 
               const SizedBox(width: 12),
 
-              FilledButton.tonal(
+              FilledButton.icon(
                 onPressed: onTap,
-                child: Text(
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size(90, 44),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                icon: Icon(
+                  _hasCustomer
+                      ? Icons.swap_horiz_rounded
+                      : Icons.person_search_rounded,
+                  size: 18,
+                ),
+                label: Text(
                   _hasCustomer ? 'Change' : 'Select',
+                  style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
               ),
             ],
