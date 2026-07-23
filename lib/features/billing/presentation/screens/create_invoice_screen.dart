@@ -10,7 +10,7 @@ import 'package:storemate/features/billing/presentation/widgets/invoice_summary_
 import 'package:storemate/features/billing/presentation/widgets/payment_card.dart';
 import 'package:storemate/features/billing/presentation/controllers/create_invoice_controller.dart';
 import 'package:storemate/features/billing/presentation/widgets/customer_selector_bottom_sheet.dart';
-import 'package:storemate/features/billing/presentation/widgets/product_selector_bottom_sheet.dart';
+import 'package:storemate/features/billing/presentation/widgets/payment_method_bottom_sheet.dart';
 
 class CreateInvoiceScreen extends StatefulWidget {
   const CreateInvoiceScreen({super.key});
@@ -21,12 +21,15 @@ class CreateInvoiceScreen extends StatefulWidget {
 
 class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
   late final CreateInvoiceController _controller;
+  late String _paymentMethod;
 
   @override
   void initState() {
     super.initState();
 
     _controller = CreateInvoiceController();
+
+    _paymentMethod = 'Cash';
 
     _controller.initialize();
   }
@@ -126,10 +129,16 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                           const AppSectionHeader(title: 'Payment'),
 
                           const SizedBox(height: 12),
-                          const PaymentCard(
-                            paymentMethod: 'Cash',
+                          PaymentCard(
+                            paymentMethod: _paymentMethod,
                             paidAmount: 150000,
                             dueAmount: 29880,
+
+                            onPaymentMethodTap: _selectPaymentMethod,
+
+                            onPaidAmountChanged: (value) {
+                              // We'll connect the calculation logic later.
+                            },
                           ),
 
                           const SizedBox(height: 28),
@@ -197,6 +206,19 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
     if (customer == null) return;
 
     _controller.selectCustomer(customer);
+  }
+
+  Future<void> _selectPaymentMethod() async {
+    final method = await PaymentMethodBottomSheet.show(
+      context,
+      selectedMethod: _paymentMethod,
+    );
+
+    if (method == null) return;
+
+    setState(() {
+      _paymentMethod = method;
+    });
   }
 
   Widget _buildCustomerPlaceholder(BuildContext context) {
