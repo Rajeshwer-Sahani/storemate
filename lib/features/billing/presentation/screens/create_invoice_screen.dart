@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:storemate/core/widgets/app_empty_state.dart';
 
 import 'package:storemate/core/widgets/app_page_scaffold.dart';
 import 'package:storemate/core/widgets/app_section_header.dart';
 import 'package:storemate/features/billing/presentation/widgets/invoice_bottom_bar.dart';
 import 'package:storemate/features/billing/presentation/widgets/invoice_customer_card.dart';
+import 'package:storemate/features/billing/presentation/widgets/invoice_empty_products.dart';
 import 'package:storemate/features/billing/presentation/widgets/invoice_item_tile.dart';
 import 'package:storemate/features/billing/presentation/widgets/invoice_notes_card.dart';
 import 'package:storemate/features/billing/presentation/widgets/invoice_summary_card.dart';
@@ -11,6 +13,7 @@ import 'package:storemate/features/billing/presentation/widgets/payment_card.dar
 import 'package:storemate/features/billing/presentation/controllers/create_invoice_controller.dart';
 import 'package:storemate/features/billing/presentation/widgets/customer_selector_bottom_sheet.dart';
 import 'package:storemate/features/billing/presentation/widgets/payment_method_bottom_sheet.dart';
+import 'package:storemate/features/billing/presentation/widgets/product_selector_bottom_sheet.dart';
 
 class CreateInvoiceScreen extends StatefulWidget {
   const CreateInvoiceScreen({super.key});
@@ -21,15 +24,12 @@ class CreateInvoiceScreen extends StatefulWidget {
 
 class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
   late final CreateInvoiceController _controller;
-  late String _paymentMethod;
 
   @override
   void initState() {
     super.initState();
 
     _controller = CreateInvoiceController();
-
-    _paymentMethod = 'Cash';
 
     _controller.initialize();
   }
@@ -80,48 +80,76 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                           AppSectionHeader(
                             title: 'Products',
                             trailing: FilledButton.icon(
-                              onPressed: () {},
+                              onPressed: _selectProduct,
                               icon: const Icon(Icons.add),
                               label: const Text('Add'),
                             ),
                           ),
 
                           const SizedBox(height: 12),
-                          Column(
-                            children: [
-                              InvoiceItemTile(
-                                productName: 'iPhone 15 Pro Max',
-                                subtitle: '256 GB • Natural Titanium',
-                                quantity: 1,
-                                unitPrice: 149900,
-                                totalPrice: 149900,
-                                onTap: () {},
-                                onDelete: () {},
-                              ),
+                          if (_controller.invoiceItems.isEmpty)
+                            InvoiceEmptyProducts(onAddProduct: _selectProduct)
+                          else
+                            Column(
+                              children: List.generate(
+                                _controller.invoiceItems.length,
+                                (index) {
+                                  final item = _controller.invoiceItems[index];
+                                  final product = _controller.getProduct(
+                                    item.productId,
+                                  );
 
-                              const SizedBox(height: 12),
+                                  if (product == null) {
+                                    return const SizedBox.shrink();
+                                  }
 
-                              InvoiceItemTile(
-                                productName: 'Apple 20W Adapter',
-                                quantity: 2,
-                                unitPrice: 1990,
-                                totalPrice: 3980,
-                                onTap: () {},
-                                onDelete: () {},
+                                  return Padding(
+                                    padding: EdgeInsets.only(
+                                      bottom:
+                                          index ==
+                                              _controller.invoiceItems.length -
+                                                  1
+                                          ? 0
+                                          : 12,
+                                    ),
+                                    child: InvoiceItemTile(
+                                      productName: product.name,
+
+                                      subtitle: [
+                                        if (product.brand != null &&
+                                            product.brand!.isNotEmpty)
+                                          product.brand!,
+                                        if (product.categoryName != null &&
+                                            product.categoryName!.isNotEmpty)
+                                          product.categoryName!,
+                                      ].join(' • '),
+                                      quantity: item.quantity,
+                                      unitPrice: product.sellingPrice,
+                                      totalPrice: _controller.getItemTotal(
+                                        item,
+                                      ),
+
+                                      onTap: () {},
+
+                                      onDelete: () {
+                                        _controller.removeProduct(product.id);
+                                      },
+                                    ),
+                                  );
+                                },
                               ),
-                            ],
-                          ),
+                            ),
 
                           const SizedBox(height: 28),
 
                           const AppSectionHeader(title: 'Summary'),
 
                           const SizedBox(height: 12),
-                          const InvoiceSummaryCard(
-                            subtotal: 153880,
-                            discount: 1000,
-                            tax: 27000,
-                            grandTotal: 179880,
+                          InvoiceSummaryCard(
+                            subtotal: _controller.subtotal,
+                            discount: _controller.discount,
+                            tax: _controller.tax,
+                            grandTotal: _controller.grandTotal,
                           ),
 
                           const SizedBox(height: 28),
@@ -130,14 +158,15 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
 
                           const SizedBox(height: 12),
                           PaymentCard(
-                            paymentMethod: _paymentMethod,
-                            paidAmount: 150000,
-                            dueAmount: 29880,
+                            paymentMethod: _controller.paymentMethod,
+                            paidAmount: _controller.paidAmount,
+                            dueAmount: _controller.dueAmount,
 
                             onPaymentMethodTap: _selectPaymentMethod,
 
                             onPaidAmountChanged: (value) {
-                              // We'll connect the calculation logic later.
+                              final amount = double.tryParse(value) ?? 0;
+                              _controller.updatePaidAmount(amount);
                             },
                           ),
 
@@ -156,7 +185,12 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                 ),
               ),
 
-              InvoiceBottomBar(grandTotal: 179880, onCreateInvoice: () {}),
+              InvoiceBottomBar(
+                grandTotal: _controller.grandTotal,
+                onCreateInvoice: () async {
+                  await _controller.createInvoice();
+                },
+              ),
             ],
           ),
         );
@@ -211,235 +245,25 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
   Future<void> _selectPaymentMethod() async {
     final method = await PaymentMethodBottomSheet.show(
       context,
-      selectedMethod: _paymentMethod,
+      selectedMethod: _controller.paymentMethod,
     );
 
     if (method == null) return;
 
-    setState(() {
-      _paymentMethod = method;
-    });
+    _controller.updatePaymentMethod(method);
   }
 
-  Widget _buildCustomerPlaceholder(BuildContext context) {
-    final theme = Theme.of(context);
-    return Card(
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: () {},
-        child: Padding(
-          padding: const EdgeInsets.all(18),
-          child: Row(
-            children: [
-              CircleAvatar(
-                radius: 24,
-                backgroundColor: theme.colorScheme.primaryContainer,
-                child: Icon(
-                  Icons.person_outline,
-                  color: theme.colorScheme.primary,
-                ),
-              ),
-              const SizedBox(width: 16),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Select Customer',
-                      style: TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                    SizedBox(height: 4),
-                    Text('Choose a customer for this invoice'),
-                  ],
-                ),
-              ),
-              const Icon(Icons.chevron_right),
-            ],
-          ),
-        ),
-      ),
+  Future<void> _selectProduct() async {
+    final product = await ProductSelectorBottomSheet.show(
+      context,
+      products: _controller.availableProducts,
+      selectedProductIds: _controller.invoiceItems
+          .map((item) => item.productId)
+          .toList(),
     );
-  }
 
-  Widget _buildProductsPlaceholder(BuildContext context) {
-    final theme = Theme.of(context);
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          children: [
-            _placeholderTile(context),
-            const Divider(height: 28),
-            _placeholderTile(context),
-          ],
-        ),
-      ),
-    );
-  }
+    if (product == null) return;
 
-  Widget _placeholderTile(BuildContext context) {
-    final theme = Theme.of(context);
-    return Row(
-      children: [
-        Container(
-          width: 52,
-          height: 52,
-          decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: const Icon(Icons.inventory_2_outlined),
-        ),
-        const SizedBox(width: 16),
-        const Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Product Name',
-                style: TextStyle(fontWeight: FontWeight.w600),
-              ),
-              SizedBox(height: 4),
-              Text('Quantity • Price'),
-            ],
-          ),
-        ),
-        const Icon(Icons.chevron_right),
-      ],
-    );
-  }
-
-  Widget _buildSummaryPlaceholder(BuildContext context) {
-    final theme = Theme.of(context);
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          children: [
-            _summaryRow(context, label: 'Subtotal', value: '₹0.00'),
-            const SizedBox(height: 14),
-            _summaryRow(context, label: 'Discount', value: '₹0.00'),
-            const SizedBox(height: 14),
-            _summaryRow(context, label: 'Tax', value: '₹0.00'),
-            const Divider(height: 28),
-            _summaryRow(
-              context,
-              label: 'Grand Total',
-              value: '₹0.00',
-              isTotal: true,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPaymentPlaceholder(BuildContext context) {
-    final theme = Theme.of(context);
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: Column(
-          children: [
-            TextFormField(
-              enabled: false,
-              decoration: const InputDecoration(
-                labelText: 'Payment Method',
-                hintText: 'Cash',
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              enabled: false,
-              decoration: const InputDecoration(
-                labelText: 'Paid Amount',
-                hintText: '₹0.00',
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNotesPlaceholder(BuildContext context) {
-    final theme = Theme.of(context);
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(18),
-        child: TextFormField(
-          enabled: false,
-          minLines: 4,
-          maxLines: 6,
-          decoration: const InputDecoration(
-            hintText: 'Add invoice notes...',
-            border: OutlineInputBorder(),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBottomBar(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return SafeArea(
-      top: false,
-      child: Material(
-        elevation: 12,
-        color: theme.colorScheme.surface,
-        child: Container(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
-          decoration: BoxDecoration(
-            border: Border(top: BorderSide(color: theme.dividerColor)),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text('Grand Total', style: theme.textTheme.labelMedium),
-                    const SizedBox(height: 4),
-                    Text(
-                      '₹0.00',
-                      style: theme.textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              FilledButton.icon(
-                onPressed: () {},
-                icon: const Icon(Icons.receipt_long),
-                label: const Text('Create Invoice'),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _summaryRow(
-    BuildContext context, {
-    required String label,
-    required String value,
-    bool isTotal = false,
-  }) {
-    final theme = Theme.of(context);
-
-    final style = isTotal
-        ? theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)
-        : theme.textTheme.bodyLarge;
-
-    return Row(
-      children: [
-        Expanded(child: Text(label, style: style)),
-        Text(value, style: style),
-      ],
-    );
+    _controller.addProduct(product);
   }
 }

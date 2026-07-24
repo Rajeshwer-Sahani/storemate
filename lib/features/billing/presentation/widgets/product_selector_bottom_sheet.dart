@@ -187,7 +187,7 @@ class _ProductSelectorBottomSheetState
                           elevation: 0,
                           clipBehavior: Clip.antiAlias,
                           child: InkWell(
-                            onTap: outOfStock
+                            onTap: outOfStock || alreadyAdded
                                 ? null
                                 : () {
                                     Navigator.pop(context, product);
