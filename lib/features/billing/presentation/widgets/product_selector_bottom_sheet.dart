@@ -43,8 +43,6 @@ class _ProductSelectorBottomSheetState
     extends State<ProductSelectorBottomSheet> {
   final TextEditingController _searchController = TextEditingController();
 
-  final FocusNode _searchFocusNode = FocusNode();
-
   late List<ProductModel> _filteredProducts;
 
   @override
@@ -61,7 +59,6 @@ class _ProductSelectorBottomSheetState
     _searchController.removeListener(_filterProducts);
 
     _searchController.dispose();
-    _searchFocusNode.dispose();
 
     super.dispose();
   }
@@ -86,51 +83,165 @@ class _ProductSelectorBottomSheetState
     });
   }
 
+  Widget _buildStatusPill({
+    required IconData icon,
+    required String label,
+    required Color color,
+    Color? backgroundColor,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      decoration: BoxDecoration(
+        color: backgroundColor ?? color.withValues(alpha: .08),
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(color: color.withValues(alpha: .18)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 15, color: color),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.w600,
+              fontSize: 11,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProductAvatar(ThemeData theme) {
+    return Container(
+      width: 50,
+      height: 50,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primaryContainer,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Icon(
+        Icons.inventory_2_rounded,
+        color: theme.colorScheme.onPrimaryContainer,
+        size: 24,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
     return SafeArea(
       child: SizedBox(
-        height: MediaQuery.of(context).size.height * .85,
+        height: MediaQuery.of(context).size.height * .80,
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     'Select Product',
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
+                    style: theme.textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.6,
                     ),
                   ),
 
                   const SizedBox(height: 6),
 
                   Text(
-                    'Choose a product to add to the invoice.',
-                    style: theme.textTheme.bodyMedium,
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  TextField(
-                    controller: _searchController,
-                    focusNode: _searchFocusNode,
-                    textInputAction: TextInputAction.search,
-                    decoration: const InputDecoration(
-                      hintText: 'Search product, SKU, brand...',
-                      prefixIcon: Icon(Icons.search_rounded),
+                    'Choose products from your inventory.',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
 
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 18),
+
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.surfaceContainerHighest
+                          .withValues(alpha: 0.35),
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 40,
+                          height: 40,
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.onPrimaryContainer,
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(
+                              color: theme.colorScheme.primary.withValues(
+                                alpha: 0.10,
+                              ),
+                              width: 1,
+                            ),
+                          ),
+                          child: Icon(
+                            Icons.inventory_2_rounded,
+                            size: 22,
+                            color: theme.colorScheme.primary,
+                          ),
+                        ),
+
+                        const SizedBox(width: 14),
+
+                        Text(
+                          '${_filteredProducts.length} Products Available',
+                          style: theme.textTheme.bodyLarge?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 18),
+
+                  TextField(
+                    controller: _searchController,
+
+                    textInputAction: TextInputAction.search,
+                    decoration: InputDecoration(
+                      hintText: 'Search product, SKU, brand...',
+                      prefixIcon: const Icon(Icons.search_rounded),
+
+                      filled: true,
+
+                      fillColor: theme.colorScheme.surface,
+
+                      contentPadding: const EdgeInsets.symmetric(vertical: 18),
+
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(18),
+                        borderSide: BorderSide(
+                          color: theme.colorScheme.outlineVariant,
+                        ),
+                      ),
+
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(18),
+                        borderSide: BorderSide(
+                          color: theme.colorScheme.primary,
+                          width: 1.4,
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
-
             const Divider(height: 1),
 
             Expanded(
@@ -141,33 +252,44 @@ class _ProductSelectorBottomSheetState
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(
-                              Icons.inventory_2_outlined,
-                              size: 64,
-                              color: theme.colorScheme.outline,
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'No Products Found',
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w600,
+                            Container(
+                              width: 60,
+                              height: 60,
+                              decoration: BoxDecoration(
+                                color: theme.colorScheme.primaryContainer,
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.search_off_rounded,
+                                size: 30,
+                                color: theme.colorScheme.onPrimaryContainer,
                               ),
                             ),
-                            const SizedBox(height: 8),
+
+                            const SizedBox(height: 20),
+
                             Text(
-                              'Try searching by product name, SKU, brand or category.',
+                              'No Products Found',
+                              style: theme.textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+
+                            const SizedBox(height: 8),
+
+                            Text(
+                              'Try searching using another keyword.',
                               textAlign: TextAlign.center,
-                              style: theme.textTheme.bodyMedium,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: theme.colorScheme.onSurfaceVariant,
+                              ),
                             ),
                           ],
                         ),
                       ),
                     )
                   : ListView.separated(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 16,
-                      ),
+                      padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
                       itemCount: _filteredProducts.length,
                       separatorBuilder: (_, __) => const SizedBox(height: 12),
                       itemBuilder: (context, index) {
@@ -183,143 +305,182 @@ class _ProductSelectorBottomSheetState
                             !outOfStock &&
                             product.stockQuantity <= product.lowStockThreshold;
 
-                        return Card(
-                          elevation: 0,
-                          clipBehavior: Clip.antiAlias,
-                          child: InkWell(
-                            onTap: outOfStock || alreadyAdded
-                                ? null
-                                : () {
-                                    Navigator.pop(context, product);
-                                  },
-                            child: Opacity(
-                              opacity: outOfStock ? 0.55 : 1,
-                              child: Padding(
-                                padding: const EdgeInsets.all(16),
-                                child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    CircleAvatar(
-                                      radius: 24,
-                                      backgroundColor:
-                                          theme.colorScheme.primaryContainer,
-                                      child: Icon(
-                                        Icons.inventory_2_rounded,
-                                        color: theme.colorScheme.primary,
-                                      ),
-                                    ),
+                        return TweenAnimationBuilder<double>(
+                          duration: Duration(milliseconds: 180 + (index * 35)),
+                          curve: Curves.easeOutCubic,
+                          tween: Tween(begin: 0, end: 1),
+                          builder: (context, value, child) {
+                            return Transform.translate(
+                              offset: Offset(0, 16 * (1 - value)),
+                              child: Opacity(opacity: value, child: child),
+                            );
+                          },
+                          child: Card(
+                            elevation: 0,
+                            margin: EdgeInsets.zero,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(22),
+                              side: BorderSide(
+                                color: theme.colorScheme.outlineVariant,
+                              ),
+                            ),
+                            clipBehavior: Clip.antiAlias,
+                            child: InkWell(
+                              splashFactory: InkSparkle.splashFactory,
+                              highlightColor: Colors.transparent,
+                              overlayColor: WidgetStateProperty.resolveWith((
+                                states,
+                              ) {
+                                if (states.contains(WidgetState.pressed)) {
+                                  return theme.colorScheme.primary.withValues(
+                                    alpha: .08,
+                                  );
+                                }
+                                return null;
+                              }),
+                              onTap: outOfStock || alreadyAdded
+                                  ? null
+                                  : () => Navigator.pop(context, product),
+                              child: Opacity(
+                                opacity: outOfStock ? .55 : 1,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(18),
+                                  child: Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      _buildProductAvatar(theme),
 
-                                    const SizedBox(width: 16),
+                                      const SizedBox(width: 16),
 
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            product.name,
-                                            maxLines: 2,
-                                            overflow: TextOverflow.ellipsis,
-                                            style: theme.textTheme.titleMedium
-                                                ?.copyWith(
-                                                  fontWeight: FontWeight.w600,
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                Expanded(
+                                                  child: Text(
+                                                    product.name,
+                                                    maxLines: 2,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                    style: theme
+                                                        .textTheme
+                                                        .titleMedium
+                                                        ?.copyWith(
+                                                          fontWeight:
+                                                              FontWeight.w700,
+                                                        ),
+                                                  ),
                                                 ),
-                                          ),
 
-                                          if ((product.brand ?? '')
-                                              .isNotEmpty) ...[
-                                            const SizedBox(height: 4),
+                                                const SizedBox(width: 10),
+                                                AnimatedContainer(
+                                                  duration: const Duration(
+                                                    milliseconds: 220,
+                                                  ),
+                                                  curve: Curves.easeOut,
+
+                                                  width: 40,
+                                                  height: 40,
+
+                                                  decoration: BoxDecoration(
+                                                    shape: BoxShape.circle,
+
+                                                    color: alreadyAdded
+                                                        ? Colors.green
+                                                        : outOfStock
+                                                        ? theme
+                                                              .colorScheme
+                                                              .surfaceContainerHighest
+                                                        : theme
+                                                              .colorScheme
+                                                              .primary,
+                                                  ),
+
+                                                  child: Icon(
+                                                    alreadyAdded
+                                                        ? Icons.check_rounded
+                                                        : outOfStock
+                                                        ? Icons.block_rounded
+                                                        : Icons.add_rounded,
+
+                                                    color:
+                                                        alreadyAdded ||
+                                                            !outOfStock
+                                                        ? Colors.white
+                                                        : theme
+                                                              .colorScheme
+                                                              .outline,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+
+                                            const SizedBox(height: 6),
+
                                             Text(
-                                              product.brand!,
-                                              style: theme.textTheme.bodySmall,
+                                              [
+                                                if ((product.brand ?? '')
+                                                    .isNotEmpty)
+                                                  product.brand!,
+                                                if ((product.categoryName ?? '')
+                                                    .isNotEmpty)
+                                                  product.categoryName!,
+                                              ].join(' • '),
+                                              style: theme.textTheme.bodyMedium
+                                                  ?.copyWith(
+                                                    color: theme
+                                                        .colorScheme
+                                                        .onSurfaceVariant,
+                                                  ),
+                                            ),
+
+                                            const SizedBox(height: 16),
+
+                                            Wrap(
+                                              spacing: 8,
+                                              runSpacing: 8,
+                                              children: [
+                                                _buildStatusPill(
+                                                  icon: Icons.currency_rupee,
+                                                  label:
+                                                      '₹${product.sellingPrice.toStringAsFixed(0)}',
+                                                  color:
+                                                      theme.colorScheme.primary,
+                                                ),
+
+                                                if (outOfStock)
+                                                  _buildStatusPill(
+                                                    icon: Icons.block,
+                                                    label: 'Out of Stock',
+                                                    color: Colors.red,
+                                                  )
+                                                else if (lowStock)
+                                                  _buildStatusPill(
+                                                    icon: Icons
+                                                        .warning_amber_rounded,
+                                                    label:
+                                                        '${product.stockQuantity} Left',
+                                                    color: Colors.orange,
+                                                  )
+                                                else
+                                                  _buildStatusPill(
+                                                    icon: Icons
+                                                        .inventory_2_rounded,
+                                                    label:
+                                                        '${product.stockQuantity} In Stock',
+                                                    color: Colors.green,
+                                                  ),
+                                              ],
                                             ),
                                           ],
-
-                                          if ((product.categoryName ?? '')
-                                              .isNotEmpty) ...[
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              product.categoryName!,
-                                              style: theme.textTheme.bodySmall,
-                                            ),
-                                          ],
-
-                                          if ((product.sku ?? '')
-                                              .isNotEmpty) ...[
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              'SKU : ${product.sku}',
-                                              style: theme.textTheme.bodySmall,
-                                            ),
-                                          ],
-
-                                          const SizedBox(height: 12),
-
-                                          Wrap(
-                                            spacing: 8,
-                                            runSpacing: 8,
-                                            children: [
-                                              Chip(
-                                                avatar: const Icon(
-                                                  Icons.currency_rupee,
-                                                  size: 16,
-                                                ),
-                                                label: Text(
-                                                  product.sellingPrice
-                                                      .toStringAsFixed(2),
-                                                ),
-                                              ),
-
-                                              Chip(
-                                                avatar: const Icon(
-                                                  Icons.inventory,
-                                                  size: 16,
-                                                ),
-                                                label: Text(
-                                                  '${product.stockQuantity} in stock',
-                                                ),
-                                              ),
-
-                                              if (lowStock)
-                                                Chip(
-                                                  avatar: const Icon(
-                                                    Icons.warning_amber,
-                                                    size: 16,
-                                                  ),
-                                                  label: const Text(
-                                                    'Low Stock',
-                                                  ),
-                                                ),
-
-                                              if (outOfStock)
-                                                Chip(
-                                                  avatar: const Icon(
-                                                    Icons.block,
-                                                    size: 16,
-                                                  ),
-                                                  label: const Text(
-                                                    'Out of Stock',
-                                                  ),
-                                                ),
-                                            ],
-                                          ),
-                                        ],
+                                        ),
                                       ),
-                                    ),
-
-                                    const SizedBox(width: 12),
-
-                                    if (alreadyAdded)
-                                      Icon(
-                                        Icons.check_circle,
-                                        color: theme.colorScheme.primary,
-                                      )
-                                    else if (!outOfStock)
-                                      Icon(
-                                        Icons.add_circle_outline,
-                                        color: theme.colorScheme.primary,
-                                      ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
                               ),
                             ),
