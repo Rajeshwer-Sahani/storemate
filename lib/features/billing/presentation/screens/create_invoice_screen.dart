@@ -129,7 +129,17 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                                         item,
                                       ),
 
-                                      onTap: () {},
+                                      onIncrease: () {
+                                        _controller.increaseQuantity(
+                                          product.id,
+                                        );
+                                      },
+
+                                      onDecrease: () {
+                                        _controller.decreaseQuantity(
+                                          product.id,
+                                        );
+                                      },
 
                                       onDelete: () {
                                         _controller.removeProduct(product.id);
