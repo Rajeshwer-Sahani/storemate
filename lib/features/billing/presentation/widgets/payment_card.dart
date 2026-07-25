@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 
-class PaymentCard extends StatelessWidget {
+class PaymentCard extends StatefulWidget {
   const PaymentCard({
     super.key,
     required this.paymentMethod,
     required this.paidAmount,
+    required this.grandTotal,
     required this.dueAmount,
     this.onPaymentMethodTap,
     this.onPaidAmountChanged,
@@ -13,12 +14,48 @@ class PaymentCard extends StatelessWidget {
   final String paymentMethod;
   final double paidAmount;
   final double dueAmount;
+  final double grandTotal;
 
   final VoidCallback? onPaymentMethodTap;
   final ValueChanged<String>? onPaidAmountChanged;
 
+  @override
+  State<PaymentCard> createState() => _PaymentCardState();
+}
+
+class _PaymentCardState extends State<PaymentCard> {
+  late final TextEditingController _paidController;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _paidController = TextEditingController(
+      text: widget.paidAmount == 0 ? '' : widget.paidAmount.toStringAsFixed(0),
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant PaymentCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    final text = widget.paidAmount == 0
+        ? ''
+        : widget.paidAmount.toStringAsFixed(0);
+
+    if (_paidController.text != text) {
+      _paidController.text = text;
+    }
+  }
+
+  @override
+  void dispose() {
+    _paidController.dispose();
+    super.dispose();
+  }
+
   IconData _paymentIcon() {
-    switch (paymentMethod) {
+    switch (widget.paymentMethod) {
       case 'Cash':
         return Icons.payments_rounded;
 
@@ -40,7 +77,7 @@ class PaymentCard extends StatelessWidget {
   }
 
   String _paymentSubtitle() {
-    switch (paymentMethod) {
+    switch (widget.paymentMethod) {
       case 'Cash':
         return 'Physical cash payment';
 
@@ -66,6 +103,16 @@ class PaymentCard extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
+    final dueAmount = widget.dueAmount;
+
+    final bool hasChange = widget.paidAmount > widget.grandTotal;
+
+    final bool isPaid = widget.paidAmount == widget.grandTotal;
+
+    final double changeAmount = hasChange
+        ? widget.paidAmount - widget.grandTotal
+        : 0;
+
     return Card(
       margin: EdgeInsets.zero,
       child: Padding(
@@ -75,7 +122,7 @@ class PaymentCard extends StatelessWidget {
             Material(
               color: Colors.transparent,
               child: InkWell(
-                onTap: onPaymentMethodTap,
+                onTap: widget.onPaymentMethodTap,
                 borderRadius: BorderRadius.circular(16),
                 child: Container(
                   padding: const EdgeInsets.all(16),
@@ -96,22 +143,22 @@ class PaymentCard extends StatelessWidget {
                         ),
                         child: Icon(_paymentIcon(), color: colorScheme.primary),
                       ),
-              
+
                       const SizedBox(width: 16),
-              
+
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              paymentMethod,
+                              widget.paymentMethod,
                               style: theme.textTheme.titleMedium?.copyWith(
                                 fontWeight: FontWeight.w700,
                               ),
                             ),
-              
+
                             const SizedBox(height: 2),
-              
+
                             Text(
                               _paymentSubtitle(),
                               style: theme.textTheme.bodySmall?.copyWith(
@@ -121,7 +168,7 @@ class PaymentCard extends StatelessWidget {
                           ],
                         ),
                       ),
-              
+
                       Container(
                         width: 36,
                         height: 36,
@@ -140,11 +187,12 @@ class PaymentCard extends StatelessWidget {
             const SizedBox(height: 18),
 
             TextFormField(
-              initialValue: paidAmount.toStringAsFixed(0),
+              controller: _paidController,
               keyboardType: const TextInputType.numberWithOptions(
                 decimal: true,
               ),
-              onChanged: onPaidAmountChanged,
+              textInputAction: TextInputAction.done,
+              onChanged: widget.onPaidAmountChanged,
               decoration: InputDecoration(
                 labelText: 'Paid Amount',
                 prefixText: '₹ ',
@@ -161,45 +209,69 @@ class PaymentCard extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(18),
               decoration: BoxDecoration(
-                color: dueAmount <= 0
+                color: hasChange
+                    ? colorScheme.primary.withValues(alpha: .08)
+                    : isPaid
                     ? Colors.green.withValues(alpha: .08)
                     : colorScheme.errorContainer.withValues(alpha: .18),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: dueAmount <= 0
-                      ? Colors.green.withValues(alpha: .25)
+                  color: hasChange
+                      ? Colors.blue.withValues(alpha: .35)
+                      : isPaid
+                      ? Colors.green.withValues(alpha: .35)
                       : colorScheme.error.withValues(alpha: .20),
                 ),
               ),
               child: Column(
                 children: [
                   Icon(
-                    dueAmount <= 0
+                    hasChange
+                        ? Icons.currency_exchange_rounded
+                        : isPaid
                         ? Icons.check_circle_rounded
                         : Icons.warning_amber_rounded,
                     size: 34,
-                    color: dueAmount <= 0 ? Colors.green : colorScheme.error,
+                    color: hasChange
+                        ? colorScheme.primary
+                        : isPaid
+                        ? Colors.green
+                        : colorScheme.error,
                   ),
 
                   const SizedBox(height: 12),
 
                   Text(
-                    dueAmount <= 0 ? 'Payment Completed' : 'Remaining Due',
+                    hasChange
+                        ? 'Change to Return'
+                        : isPaid
+                        ? 'Payment Completed'
+                        : 'Remaining Due',
                     textAlign: TextAlign.center,
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.w700,
-                      color: dueAmount <= 0 ? Colors.green : colorScheme.error,
+                      color: hasChange
+                          ? colorScheme.primary
+                          : isPaid
+                          ? Colors.green
+                          : colorScheme.error,
                     ),
                   ),
 
                   const SizedBox(height: 6),
 
                   Text(
-                    '₹${dueAmount.toStringAsFixed(2)}',
+                    hasChange
+                        ? '₹${changeAmount.toStringAsFixed(2)}'
+                        : '₹${dueAmount.toStringAsFixed(2)}',
                     textAlign: TextAlign.center,
                     style: theme.textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: dueAmount <= 0 ? Colors.green : colorScheme.error,
+                      color: hasChange
+                          ? colorScheme.primary
+                          : isPaid
+                          ? Colors.green
+                          : colorScheme.error,
                     ),
                   ),
                 ],

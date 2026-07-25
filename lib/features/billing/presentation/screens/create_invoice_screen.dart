@@ -170,6 +170,7 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                           PaymentCard(
                             paymentMethod: _controller.paymentMethod,
                             paidAmount: _controller.paidAmount,
+                            grandTotal: _controller.grandTotal,
                             dueAmount: _controller.dueAmount,
 
                             onPaymentMethodTap: _selectPaymentMethod,
