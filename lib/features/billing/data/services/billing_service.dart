@@ -91,8 +91,8 @@ class BillingService {
           .from(_productsTable)
           .select()
           .eq('store_id', storeId)
-          .eq('is_archived', false)
-          .order('product_name');
+          .eq('is_active', true)
+          .order('name');
 
       return response
           .map<ProductModel>((json) => ProductModel.fromJson(json))
