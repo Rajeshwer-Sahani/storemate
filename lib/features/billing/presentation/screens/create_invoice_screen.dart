@@ -3,6 +3,7 @@ import 'package:storemate/core/widgets/app_empty_state.dart';
 
 import 'package:storemate/core/widgets/app_page_scaffold.dart';
 import 'package:storemate/core/widgets/app_section_header.dart';
+import 'package:storemate/features/billing/data/services/billing_service.dart';
 import 'package:storemate/features/billing/presentation/widgets/invoice_bottom_bar.dart';
 import 'package:storemate/features/billing/presentation/widgets/invoice_customer_card.dart';
 import 'package:storemate/features/billing/presentation/widgets/invoice_empty_products.dart';
@@ -38,6 +39,28 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
   void dispose() {
     _controller.dispose();
     super.dispose();
+  }
+
+  Future<void> _createInvoice() async {
+    try {
+      final invoice = await _controller.createInvoice();
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Invoice ${invoice.invoiceNumber} created successfully.',
+          ),
+        ),
+      );
+    } on BillingException catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.message)));
+    }
   }
 
   @override
@@ -198,9 +221,8 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
 
               InvoiceBottomBar(
                 grandTotal: _controller.grandTotal,
-                onCreateInvoice: () async {
-                  await _controller.createInvoice();
-                },
+                isLoading: _controller.isCreatingInvoice,
+                onCreateInvoice: _createInvoice,
               ),
             ],
           ),

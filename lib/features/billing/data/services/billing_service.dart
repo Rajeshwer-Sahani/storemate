@@ -105,31 +105,14 @@ class BillingService {
   }
 
   //--------------------------
-  // Invoice
-  //--------------------------
-
-  Future<InvoiceModel> _insertInvoice({required InvoiceModel invoice}) async {
-    try {
-      final response = await _supabase
-          .from(_invoiceTable)
-          .insert(invoice.toJson())
-          .select()
-          .single();
-
-      return InvoiceModel.fromJson(response);
-    } on PostgrestException catch (e) {
-      throw BillingException(e.message);
-    } catch (e) {
-      throw BillingException('Failed to create invoice: $e');
-    }
-  }
-
-  //--------------------------
   // Create Invoice
   //--------------------------
   Future<InvoiceModel> createInvoice(CreateInvoiceRequest request) async {
     try {
       final storeId = await _getCurrentStoreId();
+
+      print('==============================');
+      print('STORE ID: $storeId');
 
       final invoiceId = await _supabase.rpc(
         'create_complete_invoice',
@@ -138,7 +121,7 @@ class BillingService {
           'p_customer_id': request.customerId,
           'p_customer_name': request.customerName,
           'p_customer_phone': request.customerPhone,
-          'p_items': request.items.map((item) => item.toJson()).toList(),
+          'p_items': request.items.map((e) => e.toJson()).toList(),
           'p_discount': request.discount,
           'p_tax': request.tax,
           'p_paid_amount': request.paidAmount,
@@ -147,37 +130,33 @@ class BillingService {
         },
       );
 
+      print('RPC returned: $invoiceId');
+
+      print('Invoice ID: $invoiceId');
+
       final response = await _supabase
-          .from(_invoiceTable)
+          .from('invoices')
           .select()
           .eq('id', invoiceId)
           .single();
 
+      print('================ INVOICE JSON ================');
+
+      response.forEach((key, value) {
+        print('$key : $value (${value.runtimeType})');
+      });
+
+      print('==============================================');
+
       return InvoiceModel.fromJson(response);
-    } on PostgrestException catch (e) {
-      throw BillingException(e.message);
-    } catch (e) {
-      throw BillingException('Failed to create invoice: $e');
-    }
-  }
-
-  //--------------------------
-  // Invoice Items
-  //--------------------------
-  Future<void> _insertInvoiceItems({
-    required String invoiceId,
-    required List<InvoiceItemModel> items,
-  }) async {
-    try {
-      final invoiceItems = items.map((item) {
-        return item.copyWith(id: '', invoiceId: invoiceId).toJson();
-      }).toList();
-
-      await _supabase.from(_invoiceItemsTable).insert(invoiceItems);
-    } on PostgrestException catch (e) {
-      throw BillingException(e.message);
-    } catch (e) {
-      throw BillingException('Failed to save invoice items: $e');
+    } on PostgrestException catch (e, stack) {
+      print('========== POSTGREST ==========');
+      print('message: ${e.message}');
+      print('code: ${e.code}');
+      print('details: ${e.details}');
+      print('hint: ${e.hint}');
+      print(stack);
+      rethrow;
     }
   }
 

@@ -25,25 +25,15 @@ class InvoiceBottomBar extends StatelessWidget {
         elevation: 8,
         color: colorScheme.surface,
         child: Container(
-          padding: const EdgeInsets.fromLTRB(
-            20,
-            16,
-            20,
-            20,
-          ),
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
           decoration: BoxDecoration(
-            border: Border(
-              top: BorderSide(
-                color: colorScheme.outlineVariant,
-              ),
-            ),
+            border: Border(top: BorderSide(color: colorScheme.outlineVariant)),
           ),
           child: Row(
             children: [
               Expanded(
                 child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
@@ -59,7 +49,7 @@ class InvoiceBottomBar extends StatelessWidget {
                       '₹${grandTotal.toStringAsFixed(2)}',
                       style: theme.textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: colorScheme.primary,
+                        color: Colors.green.shade700,
                       ),
                     ),
                   ],
@@ -69,22 +59,20 @@ class InvoiceBottomBar extends StatelessWidget {
               SizedBox(
                 height: 50,
                 child: FilledButton.icon(
-                  onPressed: isLoading
-                      ? null
-                      : onCreateInvoice,
+                  onPressed: isLoading ? null : onCreateInvoice,
                   icon: isLoading
-                      ? const SizedBox(
+                      ? SizedBox(
                           width: 18,
                           height: 18,
-                          child:
-                              CircularProgressIndicator(
+                          child: CircularProgressIndicator(
                             strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              colorScheme.onPrimary,
+                            ),
                           ),
                         )
-                      : const Icon(
-                          Icons.receipt_long_outlined,
-                        ),
-                  label: Text(buttonText),
+                      : const Icon(Icons.receipt_long_outlined),
+                  label: Text(isLoading ? 'Creating Invoice...' : buttonText),
                 ),
               ),
             ],
