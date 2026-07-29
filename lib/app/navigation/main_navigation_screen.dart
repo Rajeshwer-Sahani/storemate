@@ -40,13 +40,13 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       body: IndexedStack(index: _selectedIndex, children: _screens),
 
       floatingActionButton: _QuickBillButton(
-        isSelected: _selectedIndex == 2,
         onPressed: () {
-          _onDestinationSelected(2);
+          // TODO:
+          // Open QuickBillScreen
         },
       ),
 
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
 
       bottomNavigationBar: _StoreMateBottomNavigationBar(
         selectedIndex: _selectedIndex,
@@ -120,8 +120,17 @@ class _StoreMateBottomNavigationBar extends StatelessWidget {
                 ),
               ),
 
-              // Extra width is reserved for the center Quick Bill button.
-              const SizedBox(width: 82),
+              Expanded(
+                child: _NavigationItem(
+                  icon: Icons.receipt_long_outlined,
+                  selectedIcon: Icons.receipt_long_rounded,
+                  label: 'Billing',
+                  isSelected: selectedIndex == 2,
+                  onTap: () {
+                    onDestinationSelected(2);
+                  },
+                ),
+              ),
 
               Expanded(
                 child: _NavigationItem(
@@ -236,9 +245,8 @@ class _NavigationItem extends StatelessWidget {
 // -----------------------------------------------------------------------------
 
 class _QuickBillButton extends StatelessWidget {
-  const _QuickBillButton({required this.isSelected, required this.onPressed});
+  const _QuickBillButton({required this.onPressed});
 
-  final bool isSelected;
   final VoidCallback onPressed;
 
   @override
@@ -246,14 +254,12 @@ class _QuickBillButton extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return Transform.translate(
-      offset: const Offset(0, 12),
-      child: Column(
+    return  Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 68,
-            height: 68,
+            width: 64,
+            height: 64,
             padding: const EdgeInsets.all(5),
             decoration: BoxDecoration(
               color: colorScheme.surface,
@@ -272,29 +278,22 @@ class _QuickBillButton extends StatelessWidget {
               child: InkWell(
                 onTap: onPressed,
                 customBorder: const CircleBorder(),
-                child: Icon(
-                  isSelected ? Icons.receipt_long_rounded : Icons.add_rounded,
-                  size: 34,
-                  color: colorScheme.onPrimary,
-                ),
+                child: Icon(Icons.add_rounded),
               ),
             ),
           ),
 
-          const SizedBox(height: 3),
+          //const SizedBox(height: 3),
 
-          Text(
-            'Quick Bill',
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: isSelected
-                  ? colorScheme.primary
-                  : colorScheme.onSurfaceVariant,
-              fontSize: 10.5,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
+          // Text(
+          //   'Quick Bill',
+          //   style: theme.textTheme.labelSmall?.copyWith(
+          //     color: colorScheme.onSurfaceVariant,
+          //     fontSize: 10.5,
+          //     fontWeight: FontWeight.w700,
+          //   ),
+          // ),
         ],
-      ),
-    );
+      );
   }
 }
