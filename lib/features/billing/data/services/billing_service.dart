@@ -161,6 +161,64 @@ class BillingService {
   }
 
   //--------------------------
+  // Invoices
+  //--------------------------
+
+  Future<List<InvoiceModel>> getInvoices() async {
+    try {
+      final storeId = await _getCurrentStoreId();
+
+      final response = await _supabase
+          .from(_invoiceTable)
+          .select()
+          .eq('store_id', storeId)
+          .order('invoice_date', ascending: false);
+
+      return response
+          .map<InvoiceModel>((json) => InvoiceModel.fromJson(json))
+          .toList();
+    } on PostgrestException catch (e) {
+      throw BillingException(e.message);
+    } catch (e) {
+      throw BillingException('Failed to load invoices: $e');
+    }
+  }
+
+  Future<InvoiceModel> getInvoiceById(String invoiceId) async {
+    try {
+      final response = await _supabase
+          .from(_invoiceTable)
+          .select()
+          .eq('id', invoiceId)
+          .single();
+
+      return InvoiceModel.fromJson(response);
+    } on PostgrestException catch (e) {
+      throw BillingException(e.message);
+    } catch (e) {
+      throw BillingException('Failed to load invoice: $e');
+    }
+  }
+
+  Future<List<InvoiceItemModel>> getInvoiceItems(String invoiceId) async {
+    try {
+      final response = await _supabase
+          .from(_invoiceItemsTable)
+          .select()
+          .eq('invoice_id', invoiceId)
+          .order('created_at');
+
+      return response
+          .map<InvoiceItemModel>((json) => InvoiceItemModel.fromJson(json))
+          .toList();
+    } on PostgrestException catch (e) {
+      throw BillingException(e.message);
+    } catch (e) {
+      throw BillingException('Failed to load invoice items: $e');
+    }
+  }
+
+  //--------------------------
   // Inventory
   //--------------------------
 
