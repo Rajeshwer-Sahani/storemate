@@ -33,11 +33,27 @@ class InvoiceCard extends StatelessWidget {
 
               const SizedBox(height: 14),
 
+              Divider(
+                height: 1,
+                thickness: .8,
+                color: colorScheme.outlineVariant.withValues(alpha: .55),
+              ),
+
+              const SizedBox(height: 16),
+
               _CustomerSection(invoice: invoice),
 
-              const SizedBox(height: 14),
+              const SizedBox(height: 12),
 
               _InvoiceMeta(invoice: invoice),
+
+              const SizedBox(height: 16),
+
+              Divider(
+                height: 1,
+                thickness: .8,
+                color: colorScheme.outlineVariant.withValues(alpha: .55),
+              ),
 
               const SizedBox(height: 16),
 
@@ -85,9 +101,9 @@ class _InvoiceHeader extends StatelessWidget {
         const SizedBox(width: 8),
 
         Icon(
-          Icons.chevron_right_rounded,
-          size: 22,
-          color: theme.colorScheme.outline,
+          Icons.arrow_forward_ios_rounded,
+          size: 18,
+          color: theme.colorScheme.primary,
         ),
       ],
     );
@@ -113,7 +129,7 @@ class _CustomerSection extends StatelessWidget {
         Text(
           invoice.customerName,
           style: theme.textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w700,
           ),
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
@@ -128,10 +144,10 @@ class _CustomerSection extends StatelessWidget {
               Icon(
                 Icons.call_outlined,
                 size: 16,
-                color: theme.colorScheme.outline,
+                color: theme.colorScheme.primary,
               ),
 
-              const SizedBox(width: 6),
+              const SizedBox(width: 8),
 
               Expanded(
                 child: Text(
@@ -169,7 +185,7 @@ class _InvoiceMeta extends StatelessWidget {
         Icon(
           Icons.schedule_outlined,
           size: 16,
-          color: theme.colorScheme.outline,
+          color: theme.colorScheme.primary,
         ),
 
         const SizedBox(width: 6),
@@ -186,7 +202,7 @@ class _InvoiceMeta extends StatelessWidget {
         Icon(
           _paymentMethodIcon(invoice.paymentMethod),
           size: 16,
-          color: theme.colorScheme.outline,
+          color: theme.colorScheme.primary,
         ),
 
         const SizedBox(width: 6),
@@ -228,7 +244,6 @@ class _InvoiceAmount extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-          
               Text(
                 _formatCurrency(invoice.grandTotal),
                 style: theme.textTheme.headlineSmall?.copyWith(
@@ -236,42 +251,41 @@ class _InvoiceAmount extends StatelessWidget {
                 ),
               ),
 
-                const SizedBox(height: 4),
+              const SizedBox(height: 4),
 
               Text(
                 'Total Amount',
                 style: theme.textTheme.labelMedium?.copyWith(
                   color: theme.colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
-
-         
             ],
           ),
         ),
 
         if (hasDue)
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             decoration: BoxDecoration(
               color: Colors.red.shade50,
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(30),
             ),
             child: Text(
               'Due ${_formatCurrency(invoice.dueAmount)}',
               style: TextStyle(
-                color:AppColors.error,
-                fontWeight: FontWeight.w600,
+                color: AppColors.error,
+                fontWeight: FontWeight.w700,
                 fontSize: 12,
               ),
             ),
           )
         else
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             decoration: BoxDecoration(
               color: Colors.green.shade50,
-              borderRadius: BorderRadius.circular(20),
+              borderRadius: BorderRadius.circular(30),
             ),
             child: Text(
               'Paid',
