@@ -18,9 +18,7 @@ class InvoiceListSection extends StatelessWidget {
   final List<InvoiceModel> invoices;
 
   final Future<void> Function() onRefresh;
-
   final VoidCallback onCreateInvoice;
-
   final ValueChanged<InvoiceModel> onInvoiceTap;
 
   @override
@@ -36,19 +34,20 @@ class InvoiceListSection extends StatelessWidget {
       );
     }
 
-    return RefreshIndicator(
-      onRefresh: onRefresh,
-      child: ListView.separated(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 140),
-        itemCount: invoices.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 12),
-        itemBuilder: (context, index) {
+    return Column(
+      children: List.generate(
+        invoices.length,
+        (index) {
           final invoice = invoices[index];
 
-          return InvoiceCard(
-            invoice: invoice,
-            onTap: () => onInvoiceTap(invoice),
+          return Padding(
+            padding: EdgeInsets.only(
+              bottom: index == invoices.length - 1 ? 0 : 12,
+            ),
+            child: InvoiceCard(
+              invoice: invoice,
+              onTap: () => onInvoiceTap(invoice),
+            ),
           );
         },
       ),

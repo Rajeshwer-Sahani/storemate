@@ -68,34 +68,76 @@ class _BillingScreenState extends State<BillingScreen> {
             ),
           ),
 
-          const SizedBox(height: 16),
-
-          BillingSummary(
-            totalSales: _todaySales,
-            totalInvoices: _todayInvoices,
-            pendingAmount: _pendingDue,
-          ),
-
-          const SizedBox(height: 20),
-
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            child: AppSearchField(
-              controller: _searchController,
-              hintText: 'Search invoice, customer or phone...',
-              onChanged: _onSearchChanged,
-            ),
-          ),
-
-          const SizedBox(height: 20),
-
           Expanded(
-            child: InvoiceListSection(
-              invoices: _filteredInvoices,
-              isLoading: _isLoading,
+            child: RefreshIndicator(
               onRefresh: _loadBillingData,
-              onCreateInvoice: _openCreateInvoice,
-              onInvoiceTap: _openInvoiceDetails,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.only(bottom: 140),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const SizedBox(height: 16),
+
+                    BillingSummary(
+                      totalSales: _todaySales,
+                      totalInvoices: _todayInvoices,
+                      pendingAmount: _pendingDue,
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+                      child: AppSearchField(
+                        controller: _searchController,
+                        hintText: 'Search invoice, customer or phone...',
+                        onChanged: _onSearchChanged,
+                      ),
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    Padding(
+                     padding: const EdgeInsets.fromLTRB(24, 0, 24, 0),
+                      child: Row(
+                        children: [
+                          Text(
+                            'Invoices',
+                            style: Theme.of(context).textTheme.titleLarge
+                                ?.copyWith(fontWeight: FontWeight.w700),
+                          ),
+
+                          const Spacer(),
+
+                          Text(
+                            '${_filteredInvoices.length} invoices',
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(
+                                  color: Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                                ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: InvoiceListSection(
+                        invoices: _filteredInvoices,
+                        isLoading: _isLoading,
+                        onRefresh: _loadBillingData,
+                        onCreateInvoice: _openCreateInvoice,
+                        onInvoiceTap: _openInvoiceDetails,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         ],

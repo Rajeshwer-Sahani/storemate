@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:storemate/features/billing/data/models/create_invoice_request.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -174,9 +175,18 @@ class BillingService {
           .eq('store_id', storeId)
           .order('invoice_date', ascending: false);
 
-      return response
-          .map<InvoiceModel>((json) => InvoiceModel.fromJson(json))
-          .toList();
+      return response.map<InvoiceModel>((json) {
+        try {
+          return InvoiceModel.fromJson(json);
+        } catch (e) {
+          debugPrint('==============================');
+          debugPrint('Failed invoice JSON:');
+          debugPrint(json.toString());
+          debugPrint('Error: $e');
+          debugPrint('==============================');
+          rethrow;
+        }
+      }).toList();
     } on PostgrestException catch (e) {
       throw BillingException(e.message);
     } catch (e) {
