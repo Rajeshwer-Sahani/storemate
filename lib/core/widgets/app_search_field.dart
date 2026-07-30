@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-class AppSearchField extends StatelessWidget {
+class AppSearchField extends StatefulWidget {
   const AppSearchField({
     super.key,
     this.controller,
@@ -33,35 +33,121 @@ class AppSearchField extends StatelessWidget {
   final TextInputAction textInputAction;
 
   @override
+  State<AppSearchField> createState() => _AppSearchFieldState();
+}
+
+class _AppSearchFieldState extends State<AppSearchField> {
+  @override
+  void initState() {
+    super.initState();
+    widget.controller?.addListener(_onTextChanged);
+  }
+
+  @override
+  void dispose() {
+    widget.controller?.removeListener(_onTextChanged);
+    super.dispose();
+  }
+
+  void _onTextChanged() {
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  Widget? _buildSuffixIcon(ThemeData theme) {
+    final hasText = widget.controller?.text.isNotEmpty ?? false;
+
+    if (!hasText && widget.suffixIcon == null) {
+      return null;
+    }
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (hasText)
+          IconButton(
+            tooltip: 'Clear',
+            splashRadius: 20,
+            icon: Icon(
+              Icons.close_rounded,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            onPressed: () {
+              widget.controller?.clear();
+              widget.onChanged?.call('');
+              setState(() {});
+            },
+          ),
+
+        if (widget.suffixIcon != null) widget.suffixIcon!,
+      ],
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return TextField(
-      controller: controller,
-      onChanged: onChanged,
-      onSubmitted: onSubmitted,
-      onTap: onTap,
-      readOnly: readOnly,
-      autofocus: autofocus,
-      textInputAction: textInputAction,
+    return SizedBox(
+      height: 56,
+      child: TextField(
+        controller: widget.controller,
+        onChanged: widget.onChanged,
+        onSubmitted: widget.onSubmitted,
+        onTap: widget.onTap,
+        readOnly: widget.readOnly,
+        autofocus: widget.autofocus,
+        textInputAction: widget.textInputAction,
 
-      decoration: InputDecoration(
-        hintText: hintText,
+        decoration: InputDecoration(
+          hintStyle: theme.textTheme.bodyLarge?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
 
-        prefixIcon: const Icon(
-          Icons.search_rounded,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 18,
+            vertical: 16,
+          ),
+
+          hintText: widget.hintText,
+
+          prefixIcon: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Icon(
+              Icons.search_rounded,
+              size: 26,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          prefixIconConstraints: const BoxConstraints(minWidth: 58),
+
+          suffixIcon: _buildSuffixIcon(theme),
+
+          fillColor: theme.colorScheme.surface,
+          filled: true,
+
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(18),
+            borderSide: BorderSide.none,
+          ),
+
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(18),
+            borderSide: BorderSide(color: theme.colorScheme.outlineVariant),
+          ),
+
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(18),
+            borderSide: BorderSide(
+              color: theme.colorScheme.primary,
+              width: 1.5,
+            ),
+          ),
         ),
 
-        suffixIcon: suffixIcon,
-
-        filled: true,
-
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
-        ),
+        style: theme.textTheme.bodyLarge,
       ),
-
-      style: theme.textTheme.bodyLarge,
     );
   }
 }

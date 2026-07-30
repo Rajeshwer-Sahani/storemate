@@ -50,28 +50,41 @@ class _BillingScreenState extends State<BillingScreen> {
         children: [
           AppModuleHeader(
             title: 'Billing',
-            subtitle: 'Manage invoices and customer payments',
+            subtitle: 'Manage invoices & payments',
             actionButton: FilledButton.icon(
               onPressed: _openCreateInvoice,
-              icon: const Icon(Icons.add_rounded),
-              label: const Text('Create Invoice'),
+              icon: const Icon(Icons.add_rounded, size: 18),
+              label: const Text('Create'),
+              style: FilledButton.styleFrom(
+                minimumSize: const Size(0, 42),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 0,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(14),
+                ),
+              ),
             ),
           ),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
 
           BillingSummary(
-            totalSales: '₹${_todaySales.toStringAsFixed(2)}',
-            totalInvoices: _todayInvoices.toString(),
-            pendingAmount: '₹${_pendingDue.toStringAsFixed(2)}',
+            totalSales: _todaySales,
+            totalInvoices: _todayInvoices,
+            pendingAmount: _pendingDue,
           ),
 
           const SizedBox(height: 20),
 
-          AppSearchField(
-            controller: _searchController,
-            hintText: 'Search invoice, customer or phone...',
-            onChanged: _onSearchChanged,
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: AppSearchField(
+              controller: _searchController,
+              hintText: 'Search invoice, customer or phone...',
+              onChanged: _onSearchChanged,
+            ),
           ),
 
           const SizedBox(height: 20),
