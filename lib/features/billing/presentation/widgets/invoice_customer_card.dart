@@ -6,11 +6,18 @@ class InvoiceCustomerCard extends StatelessWidget {
     this.customerName,
     this.customerPhone,
     this.onTap,
+    this.showActionButton = true,
   });
 
   final String? customerName;
   final String? customerPhone;
   final VoidCallback? onTap;
+
+  /// Whether to show the Select/Change button.
+  ///
+  /// Create Invoice  -> true
+  /// Invoice Details -> false
+  final bool showActionButton;
 
   bool get _hasCustomer =>
       customerName != null && customerName!.trim().isNotEmpty;
@@ -23,7 +30,7 @@ class InvoiceCustomerCard extends StatelessWidget {
     return Card(
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: onTap,
+        onTap: showActionButton ? onTap : null,
         child: Padding(
           padding: const EdgeInsets.all(18),
           child: Row(
@@ -80,31 +87,33 @@ class InvoiceCustomerCard extends StatelessWidget {
                 ),
               ),
 
-              const SizedBox(width: 12),
+              if (showActionButton) ...[
+                const SizedBox(width: 12),
 
-              FilledButton.icon(
-                onPressed: onTap,
-                style: FilledButton.styleFrom(
-                  minimumSize: const Size(90, 44),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
+                FilledButton.icon(
+                  onPressed: onTap,
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size(90, 44),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
                   ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14),
+                  icon: Icon(
+                    _hasCustomer
+                        ? Icons.swap_horiz_rounded
+                        : Icons.person_search_rounded,
+                    size: 18,
+                  ),
+                  label: Text(
+                    _hasCustomer ? 'Change' : 'Select',
+                    style: const TextStyle(fontWeight: FontWeight.w600),
                   ),
                 ),
-                icon: Icon(
-                  _hasCustomer
-                      ? Icons.swap_horiz_rounded
-                      : Icons.person_search_rounded,
-                  size: 18,
-                ),
-                label: Text(
-                  _hasCustomer ? 'Change' : 'Select',
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                ),
-              ),
+              ],
             ],
           ),
         ),

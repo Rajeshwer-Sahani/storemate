@@ -7,6 +7,7 @@ import 'package:storemate/core/widgets/app_search_field.dart';
 import 'package:storemate/features/billing/data/models/invoice_model.dart';
 import 'package:storemate/features/billing/data/services/billing_service.dart';
 import 'package:storemate/features/billing/presentation/screens/create_invoice_screen.dart';
+import 'package:storemate/features/billing/presentation/screens/invoice_details_screen.dart';
 import 'package:storemate/features/billing/presentation/widgets/billing_summary.dart';
 import 'package:storemate/features/billing/presentation/widgets/invoice_list_section.dart';
 
@@ -99,7 +100,7 @@ class _BillingScreenState extends State<BillingScreen> {
                     const SizedBox(height: 24),
 
                     Padding(
-                     padding: const EdgeInsets.fromLTRB(24, 0, 24, 0),
+                      padding: const EdgeInsets.fromLTRB(24, 0, 24, 0),
                       child: Row(
                         children: [
                           Text(
@@ -232,9 +233,9 @@ class _BillingScreenState extends State<BillingScreen> {
   }
 
   void _openInvoiceDetails(InvoiceModel invoice) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Invoice ${invoice.invoiceNumber} details coming soon.'),
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => InvoiceDetailsScreen(invoiceId: invoice.id),
       ),
     );
   }

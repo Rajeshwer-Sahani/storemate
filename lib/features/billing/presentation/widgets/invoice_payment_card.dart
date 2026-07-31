@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-class PaymentCard extends StatefulWidget {
-  const PaymentCard({
+class InvoicePaymentCard extends StatefulWidget {
+  const InvoicePaymentCard({
     super.key,
     required this.paymentMethod,
     required this.paidAmount,
@@ -9,6 +9,7 @@ class PaymentCard extends StatefulWidget {
     required this.dueAmount,
     this.onPaymentMethodTap,
     this.onPaidAmountChanged,
+    this.readOnly = false,
   });
 
   final String paymentMethod;
@@ -19,11 +20,15 @@ class PaymentCard extends StatefulWidget {
   final VoidCallback? onPaymentMethodTap;
   final ValueChanged<String>? onPaidAmountChanged;
 
+  /// false -> Create Invoice
+  /// true  -> Invoice Details
+  final bool readOnly;
+
   @override
-  State<PaymentCard> createState() => _PaymentCardState();
+  State<InvoicePaymentCard> createState() => _PaymentCardState();
 }
 
-class _PaymentCardState extends State<PaymentCard> {
+class _PaymentCardState extends State<InvoicePaymentCard> {
   late final TextEditingController _paidController;
 
   @override
@@ -36,7 +41,7 @@ class _PaymentCardState extends State<PaymentCard> {
   }
 
   @override
-  void didUpdateWidget(covariant PaymentCard oldWidget) {
+  void didUpdateWidget(covariant InvoicePaymentCard oldWidget) {
     super.didUpdateWidget(oldWidget);
 
     final text = widget.paidAmount == 0
@@ -122,7 +127,7 @@ class _PaymentCardState extends State<PaymentCard> {
             Material(
               color: Colors.transparent,
               child: InkWell(
-                onTap: widget.onPaymentMethodTap,
+                onTap: widget.readOnly ? null : widget.onPaymentMethodTap,
                 borderRadius: BorderRadius.circular(16),
                 child: Container(
                   padding: const EdgeInsets.all(16),
@@ -169,15 +174,16 @@ class _PaymentCardState extends State<PaymentCard> {
                         ),
                       ),
 
-                      Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: colorScheme.surfaceContainerHighest,
-                          shape: BoxShape.circle,
+                      if (!widget.readOnly)
+                        Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: colorScheme.surfaceContainerHighest,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.expand_more_rounded),
                         ),
-                        child: const Icon(Icons.expand_more_rounded),
-                      ),
                     ],
                   ),
                 ),
@@ -186,23 +192,55 @@ class _PaymentCardState extends State<PaymentCard> {
 
             const SizedBox(height: 18),
 
-            TextFormField(
-              controller: _paidController,
-              keyboardType: const TextInputType.numberWithOptions(
-                decimal: true,
-              ),
-              textInputAction: TextInputAction.done,
-              onChanged: widget.onPaidAmountChanged,
-              decoration: InputDecoration(
-                labelText: 'Paid Amount',
-                prefixText: '₹ ',
-                hintText: 'Enter received amount',
-                prefixIcon: Icon(
-                  Icons.currency_rupee_rounded,
-                  color: colorScheme.primary,
-                ),
-              ),
-            ),
+            widget.readOnly
+                ? Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: colorScheme.outlineVariant.withValues(alpha: .6),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.currency_rupee_rounded,
+                          color: colorScheme.primary,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Paid Amount',
+                            style: theme.textTheme.bodyMedium,
+                          ),
+                        ),
+                        Text(
+                          '₹${widget.paidAmount.toStringAsFixed(2)}',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                : TextFormField(
+                    controller: _paidController,
+                    keyboardType: const TextInputType.numberWithOptions(
+                      decimal: true,
+                    ),
+                    textInputAction: TextInputAction.done,
+                    onChanged: widget.onPaidAmountChanged,
+                    decoration: InputDecoration(
+                      labelText: 'Paid Amount',
+                      prefixText: '₹ ',
+                      hintText: 'Enter received amount',
+                      prefixIcon: Icon(
+                        Icons.currency_rupee_rounded,
+                        color: colorScheme.primary,
+                      ),
+                    ),
+                  ),
             const SizedBox(height: 18),
 
             Container(

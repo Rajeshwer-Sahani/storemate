@@ -4,15 +4,24 @@ class InvoiceBottomBar extends StatelessWidget {
   const InvoiceBottomBar({
     super.key,
     required this.grandTotal,
-    required this.onCreateInvoice,
+    required this.onPressed,
     this.isLoading = false,
     this.buttonText = 'Create Invoice',
+    this.buttonIcon = Icons.receipt_long_outlined,
   });
 
   final double grandTotal;
-  final VoidCallback? onCreateInvoice;
+
+  /// Callback for the action button.
+  final VoidCallback? onPressed;
+
   final bool isLoading;
+
+  /// Button title.
   final String buttonText;
+
+  /// Button icon.
+  final IconData buttonIcon;
 
   @override
   Widget build(BuildContext context) {
@@ -27,14 +36,18 @@ class InvoiceBottomBar extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
           decoration: BoxDecoration(
-            border: Border(top: BorderSide(color: colorScheme.outlineVariant)),
+            border: Border(
+              top: BorderSide(
+                color: colorScheme.outlineVariant,
+              ),
+            ),
           ),
           child: Row(
             children: [
               Expanded(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       'Grand Total',
@@ -59,7 +72,7 @@ class InvoiceBottomBar extends StatelessWidget {
               SizedBox(
                 height: 50,
                 child: FilledButton.icon(
-                  onPressed: isLoading ? null : onCreateInvoice,
+                  onPressed: isLoading ? null : onPressed,
                   icon: isLoading
                       ? SizedBox(
                           width: 18,
@@ -67,12 +80,14 @@ class InvoiceBottomBar extends StatelessWidget {
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
                             valueColor: AlwaysStoppedAnimation<Color>(
-                              colorScheme.onPrimary,
+                               colorScheme.onPrimary,
                             ),
                           ),
                         )
-                      : const Icon(Icons.receipt_long_outlined),
-                  label: Text(isLoading ? 'Creating Invoice...' : buttonText),
+                      : Icon(buttonIcon),
+                  label: Text(
+                    isLoading ? 'Please wait...' : buttonText,
+                  ),
                 ),
               ),
             ],

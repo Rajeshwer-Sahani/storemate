@@ -10,7 +10,7 @@ import 'package:storemate/features/billing/presentation/widgets/invoice_empty_pr
 import 'package:storemate/features/billing/presentation/widgets/invoice_item_tile.dart';
 import 'package:storemate/features/billing/presentation/widgets/invoice_notes_card.dart';
 import 'package:storemate/features/billing/presentation/widgets/invoice_summary_card.dart';
-import 'package:storemate/features/billing/presentation/widgets/payment_card.dart';
+import 'package:storemate/features/billing/presentation/widgets/invoice_payment_card.dart';
 import 'package:storemate/features/billing/presentation/controllers/create_invoice_controller.dart';
 import 'package:storemate/features/billing/presentation/widgets/customer_selector_bottom_sheet.dart';
 import 'package:storemate/features/billing/presentation/widgets/payment_method_bottom_sheet.dart';
@@ -190,7 +190,7 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                           const AppSectionHeader(title: 'Payment'),
 
                           const SizedBox(height: 12),
-                          PaymentCard(
+                          InvoicePaymentCard(
                             paymentMethod: _controller.paymentMethod,
                             paidAmount: _controller.paidAmount,
                             grandTotal: _controller.grandTotal,
@@ -222,7 +222,7 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
               InvoiceBottomBar(
                 grandTotal: _controller.grandTotal,
                 isLoading: _controller.isCreatingInvoice,
-                onCreateInvoice: _createInvoice,
+                onPressed: _createInvoice,
               ),
             ],
           ),

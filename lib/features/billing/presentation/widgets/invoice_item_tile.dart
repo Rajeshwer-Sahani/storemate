@@ -13,6 +13,7 @@ class InvoiceItemTile extends StatelessWidget {
     this.leading,
     this.onIncrease,
     this.onDecrease,
+    this.editable = true,
   });
 
   final String productName;
@@ -29,6 +30,12 @@ class InvoiceItemTile extends StatelessWidget {
 
   final VoidCallback? onIncrease;
   final VoidCallback? onDecrease;
+
+  /// Whether the item can be edited.
+  ///
+  /// true  -> Create Invoice
+  /// false -> Invoice Details
+  final bool editable;
 
   @override
   Widget build(BuildContext context) {
@@ -138,11 +145,19 @@ class InvoiceItemTile extends StatelessWidget {
 
                               const SizedBox(height: 10),
 
-                              _QuantityStepper(
-                                quantity: quantity,
-                                onDecrease: onDecrease,
-                                onIncrease: onIncrease,
-                              ),
+                              editable
+                                  ? _QuantityStepper(
+                                      quantity: quantity,
+                                      onDecrease: onDecrease,
+                                      onIncrease: onIncrease,
+                                    )
+                                  : Text(
+                                      '$quantity',
+                                      style: theme.textTheme.titleLarge
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                    ),
                             ],
                           ),
                         ),
@@ -197,45 +212,44 @@ class InvoiceItemTile extends StatelessWidget {
                     ),
                   ),
 
-                  InkWell(
-                    onTap: onDelete,
-                    splashColor: colorScheme.primary.withValues(alpha: .08),
-                    highlightColor: Colors.transparent,
-                    borderRadius: BorderRadius.circular(14),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 18,
-                        vertical: 10,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.transparent,
-                        borderRadius: BorderRadius.circular(14),
-
-                        border: Border.all(
-                          color: colorScheme.error.withValues(alpha: .30),
-                          width: 1.2,
+                  if (editable)
+                    InkWell(
+                      onTap: onDelete,
+                      splashColor: colorScheme.primary.withValues(alpha: .08),
+                      highlightColor: Colors.transparent,
+                      borderRadius: BorderRadius.circular(14),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 18,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: colorScheme.error.withValues(alpha: .30),
+                            width: 1.2,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.delete_outline_rounded,
+                              size: 18,
+                              color: colorScheme.error,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Delete',
+                              style: TextStyle(
+                                color: colorScheme.error,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            Icons.delete_outline_rounded,
-                            size: 18,
-                            color: colorScheme.error,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Delete',
-                            style: TextStyle(
-                              color: colorScheme.error,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
                     ),
-                  ),
                 ],
               ),
             ],
@@ -299,9 +313,6 @@ class _InfoTile extends StatelessWidget {
   }
 }
 
-
-
-
 class _QuantityStepper extends StatelessWidget {
   const _QuantityStepper({
     required this.quantity,
@@ -338,11 +349,7 @@ class _QuantityStepper extends StatelessWidget {
             child: SizedBox(
               width: 34,
               height: 38,
-              child: Icon(
-                Icons.remove,
-                size: 18,
-                color: colorScheme.primary,
-              ),
+              child: Icon(Icons.remove, size: 18, color: colorScheme.primary),
             ),
           ),
 
@@ -378,11 +385,7 @@ class _QuantityStepper extends StatelessWidget {
             child: SizedBox(
               width: 34,
               height: 38,
-              child: Icon(
-                Icons.add,
-                size: 18,
-                color: colorScheme.primary,
-              ),
+              child: Icon(Icons.add, size: 18, color: colorScheme.primary),
             ),
           ),
         ],
