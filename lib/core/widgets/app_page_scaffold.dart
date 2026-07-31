@@ -38,10 +38,14 @@ class AppPageScaffold extends StatelessWidget {
     }
 
     return Scaffold(
-      backgroundColor: backgroundColor,
-      resizeToAvoidBottomInset: resizeToAvoidBottomInset,
-      floatingActionButton: floatingActionButton,
-      body: body,
-    );
+  backgroundColor: backgroundColor,
+  resizeToAvoidBottomInset: resizeToAvoidBottomInset,
+  floatingActionButton: floatingActionButton,
+  body: GestureDetector(
+    behavior: HitTestBehavior.translucent,
+    onTap: () => FocusScope.of(context).unfocus(),
+    child: child,
+  ),
+);
   }
 }

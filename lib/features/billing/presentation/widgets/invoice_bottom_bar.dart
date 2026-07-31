@@ -31,16 +31,15 @@ class InvoiceBottomBar extends StatelessWidget {
     return SafeArea(
       top: false,
       child: Material(
-        elevation: 8,
+        elevation: 16,
+        shadowColor: Colors.black.withValues(alpha: 0.08),
         color: colorScheme.surface,
         child: Container(
-          padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+          padding: const EdgeInsets.fromLTRB(24, 18, 24, 24),
           decoration: BoxDecoration(
-            border: Border(
-              top: BorderSide(
-                color: colorScheme.outlineVariant,
-              ),
-            ),
+            color: colorScheme.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            border: Border(top: BorderSide(color: colorScheme.outlineVariant)),
           ),
           child: Row(
             children: [
@@ -56,22 +55,28 @@ class InvoiceBottomBar extends StatelessWidget {
                       ),
                     ),
 
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 6),
 
                     Text(
                       '₹${grandTotal.toStringAsFixed(2)}',
-                      style: theme.textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
+                      style: theme.textTheme.headlineMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
                         color: Colors.green.shade700,
                       ),
                     ),
                   ],
                 ),
               ),
-
+const SizedBox(width: 20),
               SizedBox(
-                height: 50,
+                height: 52,
                 child: FilledButton.icon(
+                  style: FilledButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                  ),
                   onPressed: isLoading ? null : onPressed,
                   icon: isLoading
                       ? SizedBox(
@@ -80,14 +85,12 @@ class InvoiceBottomBar extends StatelessWidget {
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
                             valueColor: AlwaysStoppedAnimation<Color>(
-                               colorScheme.onPrimary,
+                              colorScheme.onPrimary,
                             ),
                           ),
                         )
                       : Icon(buttonIcon),
-                  label: Text(
-                    isLoading ? 'Please wait...' : buttonText,
-                  ),
+                  label: Text(isLoading ? 'Please wait...' : buttonText),
                 ),
               ),
             ],

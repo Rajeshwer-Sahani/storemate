@@ -119,102 +119,105 @@ class _CustomersScreenState extends State<CustomersScreen> {
   Widget build(BuildContext context) {
     return AppPageScaffold(
       onRefresh: _loadCustomers,
-      child: Column(
-        children: [
-          AppModuleHeader(
-            title: 'Customers',
-            subtitle: 'Manage your customer records',
-
-            actionButton: SizedBox(
-              child: FilledButton.icon(
-                onPressed: _openAddCustomer,
-                icon: const Icon(Icons.add),
-                label: const Text('Add'),
+      child: SafeArea(
+        bottom: false,
+        child: Column(
+          children: [
+            AppModuleHeader(
+              title: 'Customers',
+              subtitle: 'Manage your customer records',
+        
+              actionButton: SizedBox(
+                child: FilledButton.icon(
+                  onPressed: _openAddCustomer,
+                  icon: const Icon(Icons.add),
+                  label: const Text('Add'),
+                ),
+              ),
+        
+              menuButton: PopupMenuButton<String>(
+                tooltip: 'More',
+        
+                icon: const Icon(Icons.more_vert_rounded, size: 28),
+        
+                splashRadius: 22,
+        
+                onSelected: (value) {
+                  switch (value) {
+                    case 'archived':
+                      _openArchivedCustomers();
+                      break;
+                  }
+                },
+        
+                itemBuilder: (context) => const [
+                  PopupMenuItem(
+                    value: 'archived',
+                    child: Row(
+                      children: const [
+                        Icon(Icons.archive_outlined),
+                        SizedBox(width: 12),
+                        Text('Archived Customers'),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
-
-            menuButton: PopupMenuButton<String>(
-              tooltip: 'More',
-
-              icon: const Icon(Icons.more_vert_rounded, size: 28),
-
-              splashRadius: 22,
-
-              onSelected: (value) {
-                switch (value) {
-                  case 'archived':
-                    _openArchivedCustomers();
-                    break;
-                }
-              },
-
-              itemBuilder: (context) => const [
-                PopupMenuItem(
-                  value: 'archived',
-                  child: Row(
-                    children: const [
-                      Icon(Icons.archive_outlined),
-                      SizedBox(width: 12),
-                      Text('Archived Customers'),
-                    ],
+        
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: AppSearchField(
+                hintText: 'Search by name or phone',
+                onChanged: _searchCustomers,
+              ),
+            ),
+        
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: AppSectionHeader(
+                title: 'All Customers',
+                trailing: Text(
+                  '${_customers.length} customer${_customers.length == 1 ? '' : 's'}',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
-              ],
-            ),
-          ),
-
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-            child: AppSearchField(
-              hintText: 'Search by name or phone',
-              onChanged: _searchCustomers,
-            ),
-          ),
-
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: AppSectionHeader(
-              title: 'All Customers',
-              trailing: Text(
-                '${_customers.length} customer${_customers.length == 1 ? '' : 's'}',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  fontWeight: FontWeight.w500,
-                ),
               ),
             ),
-          ),
-
-          Expanded(
-            child: Builder(
-              builder: (_) {
-                if (_isLoading) {
-                  return const CustomerLoadingWidget();
-                }
-
-                if (_customers.isEmpty) {
-                  return AppRefreshableEmptyState(
-                    child: CustomerEmptyState(onAddCustomer: _openAddCustomer),
-                  );
-                }
-                return ListView.separated(
-                  physics: const AlwaysScrollableScrollPhysics(),
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
-                  itemCount: _customers.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 12),
-                  itemBuilder: (_, index) {
-                    final customer = _customers[index];
-
-                    return CustomerCard(
-                      customer: customer,
-                      onTap: () => _openCustomer(customer),
+        
+            Expanded(
+              child: Builder(
+                builder: (_) {
+                  if (_isLoading) {
+                    return const CustomerLoadingWidget();
+                  }
+        
+                  if (_customers.isEmpty) {
+                    return AppRefreshableEmptyState(
+                      child: CustomerEmptyState(onAddCustomer: _openAddCustomer),
                     );
-                  },
-                );
-              },
+                  }
+                  return ListView.separated(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
+                    itemCount: _customers.length,
+                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    itemBuilder: (_, index) {
+                      final customer = _customers[index];
+        
+                      return CustomerCard(
+                        customer: customer,
+                        onTap: () => _openCustomer(customer),
+                      );
+                    },
+                  );
+                },
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

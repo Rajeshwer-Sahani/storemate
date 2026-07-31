@@ -128,6 +128,92 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
   }
 
   //---------------------------------------------------------------------------
+  // App Bar
+  //---------------------------------------------------------------------------
+
+  //--------------------------------------------------------------------------
+  // App Bar
+  //--------------------------------------------------------------------------
+
+  Widget _buildAppBar() {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Material(
+      color: colorScheme.surface,
+      elevation: 2,
+      shadowColor: Colors.black.withValues(alpha: 0.04),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(16, 8, 12, 10),
+        decoration: BoxDecoration(
+          border: Border(
+            bottom: BorderSide(
+              color: colorScheme.outlineVariant.withValues(alpha: .45),
+            ),
+          ),
+        ),
+        child: SafeArea(
+          bottom: false,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              IconButton(
+                onPressed: () => Navigator.pop(context),
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(),
+                visualDensity: VisualDensity.compact,
+                icon: const Icon(Icons.arrow_back_rounded, size: 28),
+              ),
+
+              const SizedBox(width: 12),
+
+              const SizedBox(width: 4),
+
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Invoice Details',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+
+                    if (_invoice != null)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 1),
+                        child: Text(
+                          _invoice!.invoiceNumber,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+
+              PopupMenuButton<String>(
+                tooltip: 'More',
+                onSelected: _onMenuSelected,
+                itemBuilder: (context) => const [
+                  PopupMenuItem(value: 'print', child: Text('Print Invoice')),
+                  PopupMenuItem(value: 'share', child: Text('Share Invoice')),
+                  PopupMenuItem(value: 'download', child: Text('Download PDF')),
+                  PopupMenuDivider(),
+                  PopupMenuItem(value: 'edit', child: Text('Edit Invoice')),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+  //---------------------------------------------------------------------------
   // Build
   //---------------------------------------------------------------------------
 
@@ -135,25 +221,12 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
   Widget build(BuildContext context) {
     return AppPageScaffold(
       onRefresh: _loadInvoice,
-      child: Scaffold(
-        appBar: AppBar(
-          title: const Text('Invoice Details'),
-          centerTitle: false,
-          actions: [
-            PopupMenuButton<String>(
-              onSelected: _onMenuSelected,
-              itemBuilder: (context) => const [
-                PopupMenuItem(value: 'print', child: Text('Print Invoice')),
-                PopupMenuItem(value: 'share', child: Text('Share Invoice')),
-                PopupMenuItem(value: 'download', child: Text('Download PDF')),
-                PopupMenuDivider(),
-                PopupMenuItem(value: 'edit', child: Text('Edit Invoice')),
-              ],
-            ),
-          ],
-        ),
+      child: Column(
+        children: [
+          _buildAppBar(),
 
-        body: _buildBody(),
+          Expanded(child: _buildBody()),
+        ],
       ),
     );
   }
@@ -164,207 +237,273 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
 
   Widget _buildBody() {
     if (_isLoading) {
-      return const InvoiceLoading(itemCount: 5);
+      return _buildLoadingState();
     }
 
     if (_errorMessage != null) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const Icon(Icons.error_outline_rounded, size: 72),
-
-              const SizedBox(height: 20),
-
-              Text(
-                'Unable to load invoice',
-                style: Theme.of(context).textTheme.titleLarge,
-              ),
-
-              const SizedBox(height: 10),
-
-              Text(_errorMessage!, textAlign: TextAlign.center),
-
-              const SizedBox(height: 24),
-
-              FilledButton.icon(
-                onPressed: _loadInvoice,
-                icon: const Icon(Icons.refresh_rounded),
-                label: const Text('Retry'),
-              ),
-            ],
-          ),
-        ),
-      );
+      return _buildErrorState();
     }
 
     if (_invoice == null) {
-      return const Center(child: Text('Invoice not found'));
+      return _buildNotFoundState();
     }
 
     //==========================
     // PART 2 STARTS HERE
     //==========================
 
-    return Scaffold(
-      bottomNavigationBar: InvoiceBottomBar(
-        grandTotal: _invoice!.grandTotal,
-        buttonText: 'Print Invoice',
-        buttonIcon: Icons.print_rounded,
-        onPressed: _printInvoice,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 140),
+    return Column(
+      children: [
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 24),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildInvoiceHeader(),
+
+                const SizedBox(height: 28),
+
+                _buildCustomerSection(),
+
+                _buildProductsSection(),
+
+                _buildSummarySection(),
+
+                _buildPaymentSection(),
+
+                _buildNotesSection(),
+              ],
+            ),
+          ),
+        ),
+        InvoiceBottomBar(
+          grandTotal: _invoice!.grandTotal,
+          buttonText: 'Print Invoice',
+          buttonIcon: Icons.print_rounded,
+          onPressed: _printInvoice,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLoadingState() {
+    return const InvoiceLoading(itemCount: 5);
+  }
+
+  Widget _buildErrorState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            //---------------------------------------------------------------------
-            // Invoice Header
-            //---------------------------------------------------------------------
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.primaryContainer,
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    _invoice!.invoiceNumber,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+            const Icon(Icons.error_outline_rounded, size: 72),
 
-                  const SizedBox(height: 8),
+            const SizedBox(height: 20),
 
-                  Text(
-                    'Invoice Date',
-                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: Theme.of(
-                        context,
-                      ).colorScheme.onPrimaryContainer.withValues(alpha: .7),
-                    ),
-                  ),
-
-                  const SizedBox(height: 2),
-
-                  Text(
-                    '${_invoice!.invoiceDate.day}/${_invoice!.invoiceDate.month}/${_invoice!.invoiceDate.year}',
-                    style: Theme.of(context).textTheme.titleMedium,
-                  ),
-                ],
-              ),
+            Text(
+              'Unable to load invoice',
+              style: Theme.of(context).textTheme.titleLarge,
             ),
 
-            const SizedBox(height: 28),
+            const SizedBox(height: 10),
 
-            //---------------------------------------------------------------------
-            // Customer
-            //---------------------------------------------------------------------
-            const AppSectionHeader(title: 'Customer'),
+            Text(_errorMessage!, textAlign: TextAlign.center),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: 24),
 
-            InvoiceCustomerCard(
-              customerName: _invoice!.customerName,
-              customerPhone: _invoice!.customerPhone,
-              showActionButton: false,
+            FilledButton.icon(
+              onPressed: _loadInvoice,
+              icon: const Icon(Icons.refresh_rounded),
+              label: const Text('Retry'),
             ),
-
-            const SizedBox(height: 28),
-
-            //---------------------------------------------------------------------
-            // Products
-            //---------------------------------------------------------------------
-            AppSectionHeader(
-              title: 'Products',
-              trailing: Text(
-                '${_items.length} item${_items.length == 1 ? '' : 's'}',
-                style: Theme.of(context).textTheme.labelLarge,
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: _items.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 14),
-              itemBuilder: (context, index) {
-                final item = _items[index];
-
-                final subtitle = [
-                  if (item.productSku != null &&
-                      item.productSku!.trim().isNotEmpty)
-                    item.productSku,
-                  if (item.productCategory != null &&
-                      item.productCategory!.trim().isNotEmpty)
-                    item.productCategory,
-                ].whereType<String>().join(' • ');
-
-                return InvoiceItemTile(
-                  editable: false,
-                  productName: item.productName,
-                  subtitle: subtitle.isEmpty ? null : subtitle,
-                  quantity: item.quantity,
-                  unitPrice: item.sellingPrice,
-                  totalPrice: item.lineTotal,
-                );
-              },
-            ),
-
-            const SizedBox(height: 28),
-
-            //---------------------------------------------------------------------
-            // Summary
-            //---------------------------------------------------------------------
-            const AppSectionHeader(title: 'Summary'),
-
-            const SizedBox(height: 12),
-
-            InvoiceSummaryCard(
-              subtotal: _invoice!.subtotal,
-              discount: _invoice!.discount,
-              tax: _invoice!.tax,
-              grandTotal: _invoice!.grandTotal,
-            ),
-
-            const SizedBox(height: 28),
-
-            //---------------------------------------------------------------------
-            // Payment
-            //---------------------------------------------------------------------
-            const AppSectionHeader(title: 'Payment'),
-
-            const SizedBox(height: 12),
-
-            InvoicePaymentCard(
-              readOnly: true,
-              paymentMethod: _invoice!.paymentMethod,
-              paidAmount: _invoice!.paidAmount,
-              grandTotal: _invoice!.grandTotal,
-              dueAmount: _invoice!.dueAmount,
-            ),
-
-            const SizedBox(height: 28),
-
-            //---------------------------------------------------------------------
-            // Notes
-            //---------------------------------------------------------------------
-            const AppSectionHeader(title: 'Notes'),
-
-            const SizedBox(height: 12),
-
-            InvoiceNotesCard(readOnly: true, initialValue: _invoice!.notes),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildNotFoundState() {
+    return const Center(child: Text('Invoice not found'));
+  }
+
+  //---------------------------------------------------------------------
+  // Invoice Header
+  //---------------------------------------------------------------------
+
+  Widget _buildInvoiceHeader() {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: colorScheme.primaryContainer,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            _invoice!.invoiceNumber,
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+
+          const SizedBox(height: 8),
+
+          Text(
+            'Invoice Date',
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: colorScheme.onPrimaryContainer.withValues(alpha: .7),
+            ),
+          ),
+
+          const SizedBox(height: 2),
+
+          Text(
+            '${_invoice!.invoiceDate.day}/${_invoice!.invoiceDate.month}/${_invoice!.invoiceDate.year}',
+            style: theme.textTheme.titleMedium,
+          ),
+        ],
+      ),
+    );
+  }
+
+  //---------------------------------------------------------------------
+  // Customer
+  //---------------------------------------------------------------------
+  Widget _buildCustomerSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const AppSectionHeader(title: 'Customer'),
+
+        const SizedBox(height: 12),
+
+        InvoiceCustomerCard(
+          customerName: _invoice!.customerName,
+          customerPhone: _invoice!.customerPhone,
+          showActionButton: false,
+        ),
+
+        const SizedBox(height: 28),
+      ],
+    );
+  }
+
+  //---------------------------------------------------------------------
+  // Products
+  //---------------------------------------------------------------------
+  Widget _buildProductsSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        AppSectionHeader(
+          title: 'Products',
+          trailing: Text(
+            '${_items.length} item${_items.length == 1 ? '' : 's'}',
+            style: Theme.of(context).textTheme.labelLarge,
+          ),
+        ),
+
+        const SizedBox(height: 12),
+
+        ListView.separated(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: _items.length,
+          separatorBuilder: (_, __) => const SizedBox(height: 14),
+          itemBuilder: (context, index) {
+            final item = _items[index];
+
+            final subtitle = [
+              if (item.productSku != null && item.productSku!.trim().isNotEmpty)
+                item.productSku,
+              if (item.productCategory != null &&
+                  item.productCategory!.trim().isNotEmpty)
+                item.productCategory,
+            ].whereType<String>().join(' • ');
+
+            return InvoiceItemTile(
+              editable: false,
+              productName: item.productName,
+              subtitle: subtitle.isEmpty ? null : subtitle,
+              quantity: item.quantity,
+              unitPrice: item.sellingPrice,
+              totalPrice: item.lineTotal,
+            );
+          },
+        ),
+
+        const SizedBox(height: 28),
+      ],
+    );
+  }
+
+  //---------------------------------------------------------------------
+  // Summary
+  //---------------------------------------------------------------------
+  Widget _buildSummarySection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const AppSectionHeader(title: 'Summary'),
+
+        const SizedBox(height: 12),
+
+        InvoiceSummaryCard(
+          subtotal: _invoice!.subtotal,
+          discount: _invoice!.discount,
+          tax: _invoice!.tax,
+          grandTotal: _invoice!.grandTotal,
+        ),
+
+        const SizedBox(height: 28),
+      ],
+    );
+  }
+
+  //---------------------------------------------------------------------
+  // Payment
+  //---------------------------------------------------------------------
+  Widget _buildPaymentSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const AppSectionHeader(title: 'Payment'),
+
+        const SizedBox(height: 12),
+
+        InvoicePaymentCard(
+          readOnly: true,
+          paymentMethod: _invoice!.paymentMethod,
+          paidAmount: _invoice!.paidAmount,
+          grandTotal: _invoice!.grandTotal,
+          dueAmount: _invoice!.dueAmount,
+        ),
+
+        const SizedBox(height: 28),
+      ],
+    );
+  }
+
+  //---------------------------------------------------------------------
+  // Notes
+  //---------------------------------------------------------------------
+  Widget _buildNotesSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const AppSectionHeader(title: 'Notes'),
+
+        const SizedBox(height: 12),
+
+        InvoiceNotesCard(readOnly: true, initialValue: _invoice!.notes),
+      ],
     );
   }
 }
