@@ -8,7 +8,7 @@ import 'package:storemate/features/billing/data/models/invoice_model.dart';
 import 'package:storemate/features/billing/data/services/billing_service.dart';
 import 'package:storemate/features/billing/presentation/screens/create_invoice_screen.dart';
 import 'package:storemate/features/billing/presentation/screens/invoice_details_screen.dart';
-import 'package:storemate/features/billing/presentation/widgets/billing_summary.dart';
+import 'package:storemate/features/billing/presentation/widgets/billing_summary_carousel.dart';
 import 'package:storemate/features/billing/presentation/widgets/invoice_list_section.dart';
 
 class BillingScreen extends StatefulWidget {
@@ -82,7 +82,7 @@ class _BillingScreenState extends State<BillingScreen> {
                     children: [
                       const SizedBox(height: 16),
         
-                      BillingSummary(
+                      BillingSummaryCarousel(
                         totalSales: _todaySales,
                         totalInvoices: _todayInvoices,
                         pendingAmount: _pendingDue,
