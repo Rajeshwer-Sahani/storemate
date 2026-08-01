@@ -52,6 +52,9 @@ class _BillingScreenState extends State<BillingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return AppPageScaffold(
       child: SafeArea(
         bottom: false,
@@ -127,38 +130,45 @@ class _BillingScreenState extends State<BillingScreen> {
                                     onPressed: _openFilters,
                                     style: OutlinedButton.styleFrom(
                                       padding: EdgeInsets.zero,
+
+                                      backgroundColor: _hasActiveFilters
+                                          ? colorScheme.primaryContainer.withValues(alpha: .12)
+                                          : colorScheme.surface,
+
                                       side: BorderSide(
-                                        color: Theme.of(
-                                          context,
-                                        ).colorScheme.outlineVariant,
+                                        color: _hasActiveFilters
+                                            ? colorScheme.primary
+                                            : colorScheme.outlineVariant,
+                                        width: 1.4,
                                       ),
+
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(16),
                                       ),
                                     ),
-                                    child: const Icon(Icons.tune_rounded),
+
+                                    child: Icon(
+                                      Icons.tune_rounded,
+                                      color: _hasActiveFilters
+                                          ? colorScheme.primary
+                                          : colorScheme.onSurfaceVariant,
+                                      size: 22,
+                                    ),
                                   ),
                                 ),
 
-                                //------------------------------------------------------------------
-                                // Active Filter Indicator
-                                //------------------------------------------------------------------
                                 if (_hasActiveFilters)
                                   Positioned(
-                                    top: 10,
-                                    right: 10,
+                                    top: -2,
+                                    right: -2,
                                     child: Container(
                                       width: 10,
                                       height: 10,
                                       decoration: BoxDecoration(
-                                        color: Theme.of(
-                                          context,
-                                        ).colorScheme.primary,
+                                        color: colorScheme.primary,
                                         shape: BoxShape.circle,
                                         border: Border.all(
-                                          color: Theme.of(
-                                            context,
-                                          ).colorScheme.surface,
+                                          color: colorScheme.surface,
                                           width: 2,
                                         ),
                                       ),
@@ -372,7 +382,7 @@ class _BillingScreenState extends State<BillingScreen> {
 
       case PaymentMethodFilter.bankTransfer:
         filtered = filtered.where((invoice) {
-          return invoice.paymentMethod.toLowerCase() == 'bank';
+          return invoice.paymentMethod.toLowerCase() == 'bank transfer';
         }).toList();
         break;
 

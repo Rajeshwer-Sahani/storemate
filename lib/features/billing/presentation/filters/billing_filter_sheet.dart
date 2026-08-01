@@ -121,7 +121,7 @@ class _BillingFilterSheetState extends State<BillingFilterSheet> {
                     width: 42,
                     height: 42,
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primaryContainer,
+                      color: Theme.of(context).colorScheme.primary.withValues(alpha: .12),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(
