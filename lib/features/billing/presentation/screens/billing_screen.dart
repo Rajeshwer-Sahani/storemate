@@ -6,6 +6,8 @@ import 'package:storemate/core/widgets/app_search_field.dart';
 
 import 'package:storemate/features/billing/data/models/invoice_model.dart';
 import 'package:storemate/features/billing/data/services/billing_service.dart';
+import 'package:storemate/features/billing/presentation/filters/billing_filter_models.dart';
+import 'package:storemate/features/billing/presentation/filters/billing_filter_sheet.dart';
 import 'package:storemate/features/billing/presentation/screens/create_invoice_screen.dart';
 import 'package:storemate/features/billing/presentation/screens/invoice_details_screen.dart';
 import 'package:storemate/features/billing/presentation/widgets/billing_summary_carousel.dart';
@@ -28,9 +30,13 @@ class _BillingScreenState extends State<BillingScreen> {
 
   bool _isLoading = true;
 
+  BillingFilter _filter = const BillingFilter();
+
   double _todaySales = 0;
   int _todayInvoices = 0;
   double _pendingDue = 0;
+
+  bool get _hasActiveFilters => _filter.hasActiveFilters;
 
   @override
   void initState() {
@@ -48,7 +54,7 @@ class _BillingScreenState extends State<BillingScreen> {
   Widget build(BuildContext context) {
     return AppPageScaffold(
       child: SafeArea(
-         bottom: false,
+        bottom: false,
         child: Column(
           children: [
             AppModuleHeader(
@@ -70,7 +76,7 @@ class _BillingScreenState extends State<BillingScreen> {
                 ),
               ),
             ),
-        
+
             Expanded(
               child: RefreshIndicator(
                 onRefresh: _loadBillingData,
@@ -81,26 +87,91 @@ class _BillingScreenState extends State<BillingScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const SizedBox(height: 16),
-        
+
                       BillingSummaryCarousel(
                         totalSales: _todaySales,
                         totalInvoices: _todayInvoices,
                         pendingAmount: _pendingDue,
                       ),
-        
+
                       const SizedBox(height: 20),
-        
+
                       Padding(
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-                        child: AppSearchField(
-                          controller: _searchController,
-                          hintText: 'Search invoice, customer or phone...',
-                          onChanged: _onSearchChanged,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Row(
+                          children: [
+                            //----------------------------------------------------------------------
+                            // Search
+                            //----------------------------------------------------------------------
+                            Expanded(
+                              child: AppSearchField(
+                                controller: _searchController,
+                                hintText:
+                                    'Search invoice, customer or phone...',
+                                onChanged: _onSearchChanged,
+                              ),
+                            ),
+
+                            const SizedBox(width: 12),
+
+                            //----------------------------------------------------------------------
+                            // Filter Button
+                            //----------------------------------------------------------------------
+                            Stack(
+                              clipBehavior: Clip.none,
+                              children: [
+                                SizedBox(
+                                  width: 52,
+                                  height: 52,
+                                  child: OutlinedButton(
+                                    onPressed: _openFilters,
+                                    style: OutlinedButton.styleFrom(
+                                      padding: EdgeInsets.zero,
+                                      side: BorderSide(
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.outlineVariant,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(16),
+                                      ),
+                                    ),
+                                    child: const Icon(Icons.tune_rounded),
+                                  ),
+                                ),
+
+                                //------------------------------------------------------------------
+                                // Active Filter Indicator
+                                //------------------------------------------------------------------
+                                if (_hasActiveFilters)
+                                  Positioned(
+                                    top: 10,
+                                    right: 10,
+                                    child: Container(
+                                      width: 10,
+                                      height: 10,
+                                      decoration: BoxDecoration(
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.primary,
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.surface,
+                                          width: 2,
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                          ],
                         ),
                       ),
-        
+
                       const SizedBox(height: 24),
-        
+
                       Padding(
                         padding: const EdgeInsets.fromLTRB(24, 0, 24, 0),
                         child: Row(
@@ -110,9 +181,9 @@ class _BillingScreenState extends State<BillingScreen> {
                               style: Theme.of(context).textTheme.titleLarge
                                   ?.copyWith(fontWeight: FontWeight.w700),
                             ),
-        
+
                             const Spacer(),
-        
+
                             Text(
                               '${_filteredInvoices.length} invoices',
                               style: Theme.of(context).textTheme.bodyMedium
@@ -125,9 +196,9 @@ class _BillingScreenState extends State<BillingScreen> {
                           ],
                         ),
                       ),
-        
+
                       const SizedBox(height: 16),
-        
+
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 20),
                         child: InvoiceListSection(
@@ -202,10 +273,153 @@ class _BillingScreenState extends State<BillingScreen> {
         _isLoading = false;
       });
 
+      _applyFilters();
+
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(e.toString())));
     }
+  }
+
+  // ===========================================================================
+  // Filters
+  // ===========================================================================
+
+  Future<void> _openFilters() async {
+    final result = await BillingFilterSheet.show(
+      context: context,
+      currentFilter: _filter,
+    );
+
+    if (result == null) return;
+
+    setState(() {
+      _filter = result;
+    });
+
+    _applyFilters();
+  }
+
+  void _applyFilters() {
+    List<InvoiceModel> filtered = List.from(_invoices);
+
+    //---------------------------------------------------------------------------
+    // Search
+    //---------------------------------------------------------------------------
+
+    final query = _searchController.text.trim().toLowerCase();
+
+    if (query.isNotEmpty) {
+      filtered = filtered.where((invoice) {
+        return invoice.invoiceNumber.toLowerCase().contains(query) ||
+            invoice.customerName.toLowerCase().contains(query) ||
+            (invoice.customerPhone?.toLowerCase().contains(query) ?? false);
+      }).toList();
+    }
+
+    //---------------------------------------------------------------------------
+    // Invoice Status
+    //---------------------------------------------------------------------------
+
+    switch (_filter.invoiceStatus) {
+      case InvoiceStatusFilter.all:
+        break;
+
+      case InvoiceStatusFilter.paid:
+        filtered = filtered.where((invoice) {
+          return invoice.dueAmount <= 0;
+        }).toList();
+        break;
+
+      case InvoiceStatusFilter.partial:
+        filtered = filtered.where((invoice) {
+          return invoice.paidAmount > 0 && invoice.dueAmount > 0;
+        }).toList();
+        break;
+
+      case InvoiceStatusFilter.due:
+        filtered = filtered.where((invoice) {
+          return invoice.dueAmount > 0;
+        }).toList();
+        break;
+    }
+
+    //---------------------------------------------------------------------------
+    // Payment Method
+    //---------------------------------------------------------------------------
+
+    switch (_filter.paymentMethod) {
+      case PaymentMethodFilter.all:
+        break;
+
+      case PaymentMethodFilter.cash:
+        filtered = filtered.where((invoice) {
+          return invoice.paymentMethod.toLowerCase() == 'cash';
+        }).toList();
+        break;
+
+      case PaymentMethodFilter.upi:
+        filtered = filtered.where((invoice) {
+          return invoice.paymentMethod.toLowerCase() == 'upi';
+        }).toList();
+        break;
+
+      case PaymentMethodFilter.card:
+        filtered = filtered.where((invoice) {
+          return invoice.paymentMethod.toLowerCase() == 'card';
+        }).toList();
+        break;
+
+      case PaymentMethodFilter.bankTransfer:
+        filtered = filtered.where((invoice) {
+          return invoice.paymentMethod.toLowerCase() == 'bank';
+        }).toList();
+        break;
+
+      case PaymentMethodFilter.cheque:
+        filtered = filtered.where((invoice) {
+          return invoice.paymentMethod.toLowerCase() == 'cheque';
+        }).toList();
+        break;
+    }
+
+    //---------------------------------------------------------------------------
+    // Sorting
+    //---------------------------------------------------------------------------
+
+    switch (_filter.sortOption) {
+      case InvoiceSortOption.newest:
+        filtered.sort((a, b) => b.invoiceDate.compareTo(a.invoiceDate));
+        break;
+
+      case InvoiceSortOption.oldest:
+        filtered.sort((a, b) => a.invoiceDate.compareTo(b.invoiceDate));
+        break;
+
+      case InvoiceSortOption.highestAmount:
+        filtered.sort((a, b) => b.grandTotal.compareTo(a.grandTotal));
+        break;
+
+      case InvoiceSortOption.lowestAmount:
+        filtered.sort((a, b) => a.grandTotal.compareTo(b.grandTotal));
+        break;
+
+      case InvoiceSortOption.customerAZ:
+        filtered.sort((a, b) => a.customerName.compareTo(b.customerName));
+        break;
+
+      case InvoiceSortOption.customerZA:
+        filtered.sort((a, b) => b.customerName.compareTo(a.customerName));
+        break;
+    }
+
+    //---------------------------------------------------------------------------
+    // Update UI
+    //---------------------------------------------------------------------------
+
+    setState(() {
+      _filteredInvoices = filtered;
+    });
   }
 
   void _onSearchChanged(String value) {
