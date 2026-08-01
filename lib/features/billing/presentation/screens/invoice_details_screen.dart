@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import 'package:storemate/core/widgets/app_page_scaffold.dart';
 import 'package:storemate/core/widgets/app_section_header.dart';
@@ -334,42 +335,191 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
 
   Widget _buildInvoiceHeader() {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(20),
+      padding: EdgeInsets.symmetric(horizontal: 24, vertical: 22),
       decoration: BoxDecoration(
-        color: colorScheme.primaryContainer,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: const [Color(0xFF2563EB), Color(0xFF1D4ED8)],
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF2563EB).withValues(alpha: .18),
+            blurRadius: 18,
+            spreadRadius: -2,
+            offset: Offset(0, 8),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            _invoice!.invoiceNumber,
-            style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+          //-------------------------------------------------------------
+          // Top Row
+          //-------------------------------------------------------------
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  _invoice!.invoiceNumber,
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
+
+              // Container(
+              //   padding: const EdgeInsets.symmetric(
+              //     horizontal: 12,
+              //     vertical: 6,
+              //   ),
+              //   decoration: BoxDecoration(
+              //     color: Colors.white.withValues(alpha: .18),
+              //     borderRadius: BorderRadius.circular(30),
+              //   ),
+              //   child: Text(
+              //     _formatPaymentMethod(_invoice!.invoiceStatus),
+              //     style: theme.textTheme.labelMedium?.copyWith(
+              //       color: Colors.white,
+              //       fontWeight: FontWeight.w700,
+              //     ),
+              //   ),
+              // ),
+            ],
           ),
 
-          const SizedBox(height: 8),
+          const SizedBox(height: 18),
 
-          Text(
-            'Invoice Date',
-            style: theme.textTheme.labelMedium?.copyWith(
-              color: colorScheme.onPrimaryContainer.withValues(alpha: .7),
-            ),
+          //-------------------------------------------------------------
+          // Information Row
+          //-------------------------------------------------------------
+          Row(
+            children: [
+              Expanded(
+                child: _buildHeaderItem(
+                  title: 'Invoice Date',
+                  value: DateFormat(
+                    'dd MMM yyyy',
+                  ).format(_invoice!.invoiceDate),
+                ),
+              ),
+
+              Expanded(
+                child: _buildHeaderItem(
+                  title: 'Payment',
+                  value: _invoice!.paymentMethod,
+                ),
+              ),
+            ],
           ),
 
-          const SizedBox(height: 2),
+          const SizedBox(height: 18),
 
-          Text(
-            '${_invoice!.invoiceDate.day}/${_invoice!.invoiceDate.month}/${_invoice!.invoiceDate.year}',
-            style: theme.textTheme.titleMedium,
+          //-------------------------------------------------------------
+          // Payment Status
+          //-------------------------------------------------------------
+          Builder(
+            builder: (_) {
+              final bool hasDue = _invoice!.dueAmount > 0;
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Payment Status',
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: Colors.white70,
+                    ),
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: hasDue
+                          ? Colors.orange.withValues(alpha: .22)
+                          : Colors.green.withValues(alpha: .22),
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: hasDue
+                            ? Colors.orange.withValues(alpha: .45)
+                            : Colors.green.withValues(alpha: .45),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          hasDue
+                              ? Icons.warning_amber_rounded
+                              : Icons.check_circle_rounded,
+                          size: 18,
+                          color: Colors.white,
+                        ),
+
+                        const SizedBox(width: 8),
+
+                        Text(
+                          hasDue
+                              ? formatCurrency(_invoice!.dueAmount)
+                              : 'No Due Amount',
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
         ],
       ),
+    );
+  }
+
+  String _formatPaymentMethod(String value) {
+    return value
+        .replaceAll('_', ' ')
+        .split(' ')
+        .map(
+          (word) => word.isEmpty
+              ? ''
+              : '${word[0].toUpperCase()}${word.substring(1)}',
+        )
+        .join(' ');
+  }
+
+  Widget _buildHeaderItem({required String title, required String value}) {
+    final theme = Theme.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: theme.textTheme.labelMedium?.copyWith(color: Colors.white70),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: theme.textTheme.titleMedium?.copyWith(
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ],
     );
   }
 
@@ -409,7 +559,6 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
             style: Theme.of(context).textTheme.labelLarge,
           ),
         ),
-
 
         ListView.separated(
           shrinkWrap: true,
@@ -488,6 +637,16 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
         const SizedBox(height: 18),
       ],
     );
+  }
+
+  final _currencyFormatter = NumberFormat.currency(
+    locale: 'en_IN',
+    symbol: '₹',
+    decimalDigits: 2,
+  );
+
+  String formatCurrency(num value) {
+    return _currencyFormatter.format(value);
   }
 
   //---------------------------------------------------------------------
