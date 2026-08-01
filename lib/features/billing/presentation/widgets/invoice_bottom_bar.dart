@@ -28,18 +28,22 @@ class InvoiceBottomBar extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return SafeArea(
-      top: false,
-      child: Material(
-        elevation: 16,
-        shadowColor: Colors.black.withValues(alpha: 0.08),
-        color: colorScheme.surface,
+    return Material(
+      color: colorScheme.surface,
+      elevation: 12,
+      shadowColor: Colors.black.withValues(alpha: .05),
+      child: SafeArea(
+        top: false,
         child: Container(
-          padding: const EdgeInsets.fromLTRB(24, 18, 24, 24),
+          width: double.infinity,
+          padding: const EdgeInsets.fromLTRB(20, 16, 20, 18),
           decoration: BoxDecoration(
-            color: colorScheme.surface,
+            border: Border(
+              top: BorderSide(
+                color: colorScheme.outlineVariant.withValues(alpha: .45),
+              ),
+            ),
             borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-            border: Border(top: BorderSide(color: colorScheme.outlineVariant)),
           ),
           child: Row(
             children: [
@@ -55,11 +59,11 @@ class InvoiceBottomBar extends StatelessWidget {
                       ),
                     ),
 
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 4),
 
                     Text(
                       '₹${grandTotal.toStringAsFixed(2)}',
-                      style: theme.textTheme.headlineMedium?.copyWith(
+                      style: theme.textTheme.headlineSmall?.copyWith(
                         fontWeight: FontWeight.w800,
                         color: Colors.green.shade700,
                       ),
@@ -67,12 +71,14 @@ class InvoiceBottomBar extends StatelessWidget {
                   ],
                 ),
               ),
-const SizedBox(width: 20),
+
+              const SizedBox(width: 18),
+
               SizedBox(
-                height: 52,
+                height: 50,
                 child: FilledButton.icon(
                   style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    padding: const EdgeInsets.symmetric(horizontal: 22),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(16),
                     ),
@@ -84,7 +90,7 @@ const SizedBox(width: 20),
                           height: 18,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
+                            valueColor: AlwaysStoppedAnimation(
                               colorScheme.onPrimary,
                             ),
                           ),

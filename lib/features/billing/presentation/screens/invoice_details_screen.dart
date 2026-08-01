@@ -262,7 +262,7 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
               children: [
                 _buildInvoiceHeader(),
 
-                const SizedBox(height: 28),
+                const SizedBox(height: 18),
 
                 _buildCustomerSection(),
 
@@ -382,7 +382,7 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
       children: [
         const AppSectionHeader(title: 'Customer'),
 
-        const SizedBox(height: 12),
+        const SizedBox(height: 10),
 
         InvoiceCustomerCard(
           customerName: _invoice!.customerName,
@@ -390,7 +390,7 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
           showActionButton: false,
         ),
 
-        const SizedBox(height: 28),
+        const SizedBox(height: 18),
       ],
     );
   }
@@ -410,7 +410,6 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
           ),
         ),
 
-        const SizedBox(height: 12),
 
         ListView.separated(
           shrinkWrap: true,
@@ -439,7 +438,7 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
           },
         ),
 
-        const SizedBox(height: 28),
+        const SizedBox(height: 18),
       ],
     );
   }
@@ -462,7 +461,7 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
           grandTotal: _invoice!.grandTotal,
         ),
 
-        const SizedBox(height: 28),
+        const SizedBox(height: 18),
       ],
     );
   }
@@ -486,7 +485,7 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
           dueAmount: _invoice!.dueAmount,
         ),
 
-        const SizedBox(height: 28),
+        const SizedBox(height: 18),
       ],
     );
   }
