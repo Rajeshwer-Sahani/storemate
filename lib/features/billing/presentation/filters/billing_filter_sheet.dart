@@ -54,7 +54,11 @@ class _BillingFilterSheetState extends State<BillingFilterSheet> {
           subtitle: 'Refine how your invoices are displayed.',
           icon: Icons.receipt_long_rounded,
 
-          onReset: _controller.reset,
+          onReset: () {
+            _controller.reset();
+
+            Navigator.of(context).pop(_controller.filter);
+          },
 
           onApply: () {
             Navigator.of(context).pop(_controller.filter);
@@ -121,7 +125,9 @@ class _BillingFilterSheetState extends State<BillingFilterSheet> {
                     width: 42,
                     height: 42,
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primary.withValues(alpha: .12),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.primary.withValues(alpha: .12),
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Icon(

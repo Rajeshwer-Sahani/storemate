@@ -50,11 +50,18 @@ class AppFilterActions extends StatelessWidget {
             //------------------------------------------------------------------
             // Reset Button
             //------------------------------------------------------------------
-
             Expanded(
-              child: OutlinedButton(
-                onPressed: isLoading ? null : onReset,
-                child: Text(resetText),
+              child: SizedBox(
+                height: 56,
+                child: OutlinedButton(
+                  onPressed: isLoading ? null : onReset,
+                  style: OutlinedButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                  ),
+                  child: Text(resetText),
+                ),
               ),
             ),
 
@@ -63,27 +70,30 @@ class AppFilterActions extends StatelessWidget {
             //------------------------------------------------------------------
             // Apply Button
             //------------------------------------------------------------------
-
             Expanded(
               flex: 2,
-              child: FilledButton.icon(
-                onPressed: isLoading || !isApplyEnabled
-                    ? null
-                    : onApply,
-                icon: isLoading
-                    ? SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            colorScheme.onPrimary,
+              child: SizedBox(
+                height: 56,
+                child: FilledButton.icon(
+                  onPressed: isLoading || !isApplyEnabled ? null : onApply,
+                  style: FilledButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                  ),
+                  icon: isLoading
+                      ? SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              colorScheme.onPrimary,
+                            ),
                           ),
-                        ),
-                      )
-                    : const Icon(Icons.check_rounded),
-                label: Text(
-                  isLoading ? 'Applying...' : applyText,
+                        )
+                      : const Icon(Icons.check_rounded),
+                  label: Text(isLoading ? 'Applying...' : applyText),
                 ),
               ),
             ),
