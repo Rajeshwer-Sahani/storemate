@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:storemate/features/billing/data/models/create_invoice_request.dart';
+import 'package:storemate/features/billing/data/models/update_invoice_request.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../customers/data/models/customer_model.dart';
@@ -228,9 +229,44 @@ class BillingService {
     }
   }
 
-  //--------------------------
-  // Inventory
-  //--------------------------
+  
+
+// ============================================================================
+// Update Invoice
+// ============================================================================
+
+Future<String> updateInvoice(
+  UpdateInvoiceRequest request,
+) async {
+  try {
+    final response = await _supabase.rpc(
+      'update_complete_invoice',
+      params: request.toRpc(),
+    );
+
+    if (response == null) {
+      throw const BillingException(
+        'Invoice update failed.',
+      );
+    }
+
+    if (response is! String) {
+      throw const BillingException(
+        'Unexpected response received while updating invoice.',
+      );
+    }
+
+    return response;
+  } on PostgrestException catch (e) {
+    throw BillingException(e.message);
+  } catch (e) {
+    throw BillingException(
+      'Failed to update invoice: $e',
+    );
+  }
+}
+
+
 
   //--------------------------
   // Search

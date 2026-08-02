@@ -7,6 +7,7 @@ import 'package:storemate/core/widgets/app_section_header.dart';
 import 'package:storemate/features/billing/data/models/invoice_item_model.dart';
 import 'package:storemate/features/billing/data/models/invoice_model.dart';
 import 'package:storemate/features/billing/data/services/billing_service.dart';
+import 'package:storemate/features/billing/presentation/screens/edit_invoice_screen.dart';
 import 'package:storemate/features/billing/presentation/widgets/invoice_action_menu.dart';
 
 import 'package:storemate/features/billing/presentation/widgets/invoice_bottom_bar.dart';
@@ -126,9 +127,23 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
     );
   }
 
-  void _editInvoice() {
-    // TODO:
-    // Navigate to EditInvoiceScreen when it is implemented.
+  Future<void> _editInvoice() async {
+    if (_invoice == null) return;
+
+    final updated = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => EditInvoiceScreen(invoice: _invoice!)),
+    );
+
+    if (!mounted) return;
+
+    if (updated == true) {
+      await _loadInvoice();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Invoice updated successfully.')),
+      );
+    }
   }
 
   Future<void> _receivePayment() async {
