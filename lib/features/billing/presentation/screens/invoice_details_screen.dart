@@ -7,6 +7,7 @@ import 'package:storemate/core/widgets/app_section_header.dart';
 import 'package:storemate/features/billing/data/models/invoice_item_model.dart';
 import 'package:storemate/features/billing/data/models/invoice_model.dart';
 import 'package:storemate/features/billing/data/services/billing_service.dart';
+import 'package:storemate/features/billing/presentation/widgets/invoice_action_menu.dart';
 
 import 'package:storemate/features/billing/presentation/widgets/invoice_bottom_bar.dart';
 import 'package:storemate/features/billing/presentation/widgets/invoice_customer_card.dart';
@@ -85,22 +86,30 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
   // Actions
   //---------------------------------------------------------------------------
 
-  void _onMenuSelected(String value) {
-    switch (value) {
-      case 'print':
+  void _onMenuSelected(InvoiceAction action) {
+    switch (action) {
+      case InvoiceAction.print:
         _printInvoice();
         break;
 
-      case 'share':
-        _shareInvoice();
-        break;
-
-      case 'download':
+      case InvoiceAction.downloadPdf:
         _downloadPdf();
         break;
 
-      case 'edit':
+      case InvoiceAction.edit:
         _editInvoice();
+        break;
+
+      case InvoiceAction.receivePayment:
+        _receivePayment();
+        break;
+
+      case InvoiceAction.returnInvoice:
+        _returnInvoice();
+        break;
+
+      case InvoiceAction.delete:
+        _deleteInvoice();
         break;
     }
   }
@@ -108,12 +117,6 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
   Future<void> _printInvoice() async {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Print Invoice will be available soon.')),
-    );
-  }
-
-  Future<void> _shareInvoice() async {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Share Invoice will be available soon.')),
     );
   }
 
@@ -128,9 +131,23 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
     // Navigate to EditInvoiceScreen when it is implemented.
   }
 
-  //---------------------------------------------------------------------------
-  // App Bar
-  //---------------------------------------------------------------------------
+  Future<void> _receivePayment() async {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Receive Payment will be available soon.')),
+    );
+  }
+
+  Future<void> _returnInvoice() async {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Return Invoice will be available soon.')),
+    );
+  }
+
+  Future<void> _deleteInvoice() async {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Delete Invoice will be available soon.')),
+    );
+  }
 
   //--------------------------------------------------------------------------
   // App Bar
@@ -169,8 +186,6 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
 
               const SizedBox(width: 12),
 
-              const SizedBox(width: 4),
-
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -197,17 +212,12 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
                 ),
               ),
 
-              PopupMenuButton<String>(
-                tooltip: 'More',
-                onSelected: _onMenuSelected,
-                itemBuilder: (context) => const [
-                  PopupMenuItem(value: 'print', child: Text('Print Invoice')),
-                  PopupMenuItem(value: 'share', child: Text('Share Invoice')),
-                  PopupMenuItem(value: 'download', child: Text('Download PDF')),
-                  PopupMenuDivider(),
-                  PopupMenuItem(value: 'edit', child: Text('Edit Invoice')),
-                ],
-              ),
+              _invoice == null
+                  ? const SizedBox(width: 48)
+                  : InvoiceActionMenu(
+                      invoice: _invoice!,
+                      onSelected: _onMenuSelected,
+                    ),
             ],
           ),
         ),
@@ -487,18 +497,6 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
         ],
       ),
     );
-  }
-
-  String _formatPaymentMethod(String value) {
-    return value
-        .replaceAll('_', ' ')
-        .split(' ')
-        .map(
-          (word) => word.isEmpty
-              ? ''
-              : '${word[0].toUpperCase()}${word.substring(1)}',
-        )
-        .join(' ');
   }
 
   Widget _buildHeaderItem({required String title, required String value}) {
