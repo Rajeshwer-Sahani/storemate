@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:printing/printing.dart';
@@ -122,6 +123,10 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
     }
   }
 
+  //---------------------------------------------------------------------------
+  // Print Invoice  
+  //---------------------------------------------------------------------------
+
   Future<void> _printInvoice() async {
     if (_invoice == null) return;
 
@@ -146,6 +151,10 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
       ).showSnackBar(SnackBar(content: Text('Failed to print invoice.\n$e')));
     }
   }
+
+  //---------------------------------------------------------------------------
+  // Download PDF
+  //---------------------------------------------------------------------------
 
   Future<void> _downloadPdf() async {
     try {
@@ -185,6 +194,42 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
       ).showSnackBar(SnackBar(content: Text('Failed to download PDF.\n$e')));
     }
   }
+
+  //---------------------------------------------------------------------------
+  // Share Invoice
+  //---------------------------------------------------------------------------
+
+  Future<void> _shareInvoice() async {
+    try {
+      if (_invoice == null) return;
+
+      final store = await _billingService.getCurrentStore();
+
+      final pdfBytes = await _pdfService.generateInvoicePdf(
+        store: store,
+        invoice: _invoice!,
+        items: _items,
+      );
+
+      final file = await _downloadService.saveInvoicePdf(
+        pdfBytes: pdfBytes,
+        invoiceNumber: _invoice!.invoiceNumber,
+      );
+
+      await _downloadService.sharePdf(file);
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to share invoice.\n$e')));
+    }
+  }
+
+
+  //---------------------------------------------------------------------------
+  // Edit Invoice
+  //---------------------------------------------------------------------------
 
   Future<void> _editInvoice() async {
     if (_invoice == null) return;
@@ -291,12 +336,18 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
                 ),
               ),
 
-              _invoice == null
-                  ? const SizedBox(width: 48)
-                  : InvoiceActionMenu(
-                      invoice: _invoice!,
-                      onSelected: _onMenuSelected,
-                    ),
+              if (_invoice != null) ...[
+                IconButton(
+                  tooltip: 'Share Invoice',
+                  icon: const Icon(CupertinoIcons.share),
+                  onPressed: _shareInvoice,
+                ),
+
+                InvoiceActionMenu(
+                  invoice: _invoice!,
+                  onSelected: _onMenuSelected,
+                ),
+              ],
             ],
           ),
         ),
