@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:printing/printing.dart';
@@ -7,6 +9,7 @@ import 'package:storemate/core/widgets/app_section_header.dart';
 import 'package:storemate/features/billing/data/models/invoice_item_model.dart';
 import 'package:storemate/features/billing/data/models/invoice_model.dart';
 import 'package:storemate/features/billing/data/services/billing_service.dart';
+import 'package:storemate/features/billing/data/services/invoice_download_service.dart';
 import 'package:storemate/features/billing/data/services/invoice_pdf_service.dart';
 import 'package:storemate/features/billing/presentation/screens/edit_invoice_screen.dart';
 import 'package:storemate/features/billing/presentation/widgets/invoice_action_menu.dart';
@@ -30,7 +33,9 @@ class InvoiceDetailsScreen extends StatefulWidget {
 
 class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
   final BillingService _billingService = BillingService();
-  final InvoicePdfService _pdfService =  InvoicePdfService();
+  final InvoicePdfService _pdfService = InvoicePdfService();
+  final InvoiceDownloadService _downloadService =
+      const InvoiceDownloadService();
 
   InvoiceModel? _invoice;
 
@@ -143,9 +148,42 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
   }
 
   Future<void> _downloadPdf() async {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Download PDF will be available soon.')),
-    );
+    try {
+      if (_invoice == null) return;
+
+      final invoiceItems = await _billingService.getInvoiceItems(_invoice!.id);
+
+      final store = await _billingService.getCurrentStore();
+
+      final pdfBytes = await _pdfService.generateInvoicePdf(
+        invoice: _invoice!,
+        items: invoiceItems,
+        store: store,
+      );
+
+      final File pdfFile = await _downloadService.saveInvoicePdf(
+        pdfBytes: pdfBytes,
+        invoiceNumber: _invoice!.invoiceNumber,
+      );
+
+      await _downloadService.openPdf(pdfFile);
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '${_invoice!.invoiceNumber}.pdf downloaded successfully.',
+          ),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to download PDF.\n$e')));
+    }
   }
 
   Future<void> _editInvoice() async {
