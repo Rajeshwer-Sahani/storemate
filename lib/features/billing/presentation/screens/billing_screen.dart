@@ -132,7 +132,8 @@ class _BillingScreenState extends State<BillingScreen> {
                                       padding: EdgeInsets.zero,
 
                                       backgroundColor: _hasActiveFilters
-                                          ? colorScheme.primaryContainer.withValues(alpha: .12)
+                                          ? colorScheme.primaryContainer
+                                                .withValues(alpha: .12)
                                           : colorScheme.surface,
 
                                       side: BorderSide(
@@ -459,11 +460,17 @@ class _BillingScreenState extends State<BillingScreen> {
     ).push(MaterialPageRoute(builder: (_) => const CreateInvoiceScreen()));
   }
 
-  void _openInvoiceDetails(InvoiceModel invoice) {
-    Navigator.of(context).push(
+  Future<void> _openInvoiceDetails(InvoiceModel invoice) async {
+    final updated = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
         builder: (_) => InvoiceDetailsScreen(invoiceId: invoice.id),
       ),
     );
+
+    if (!mounted) return;
+
+    if (updated == true) {
+      await _loadBillingData();
+    }
   }
 }

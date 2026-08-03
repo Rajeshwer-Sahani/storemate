@@ -140,9 +140,14 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
     if (updated == true) {
       await _loadInvoice();
 
+      if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Invoice updated successfully.')),
       );
+
+      // Notify BillingScreen that something changed
+      Navigator.pop(context, true);
     }
   }
 
