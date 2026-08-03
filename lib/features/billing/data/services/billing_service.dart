@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:storemate/features/billing/data/models/create_invoice_request.dart';
 import 'package:storemate/features/billing/data/models/update_invoice_request.dart';
+import 'package:storemate/features/store/data/module/store_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../customers/data/models/customer_model.dart';
@@ -266,7 +267,25 @@ Future<String> updateInvoice(
   }
 }
 
+// ============================================================================
+// Get Current Store
+// ============================================================================
 
+Future<StoreModel> getCurrentStore() async {
+  final userId = _supabase.auth.currentUser?.id;
+
+  if (userId == null) {
+    throw Exception('User not authenticated');
+  }
+
+  final response = await _supabase
+      .from('stores')
+      .select()
+      .eq('owner_id', userId)
+      .single();
+
+  return StoreModel.fromJson(response);
+}
 
   //--------------------------
   // Search

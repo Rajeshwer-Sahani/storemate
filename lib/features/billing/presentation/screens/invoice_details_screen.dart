@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-
+import 'package:printing/printing.dart';
 import 'package:storemate/core/widgets/app_page_scaffold.dart';
 import 'package:storemate/core/widgets/app_section_header.dart';
 
 import 'package:storemate/features/billing/data/models/invoice_item_model.dart';
 import 'package:storemate/features/billing/data/models/invoice_model.dart';
 import 'package:storemate/features/billing/data/services/billing_service.dart';
+import 'package:storemate/features/billing/data/services/invoice_pdf_service.dart';
 import 'package:storemate/features/billing/presentation/screens/edit_invoice_screen.dart';
 import 'package:storemate/features/billing/presentation/widgets/invoice_action_menu.dart';
 
@@ -29,6 +30,7 @@ class InvoiceDetailsScreen extends StatefulWidget {
 
 class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
   final BillingService _billingService = BillingService();
+  final InvoicePdfService _pdfService =  InvoicePdfService();
 
   InvoiceModel? _invoice;
 
@@ -116,9 +118,28 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
   }
 
   Future<void> _printInvoice() async {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Print Invoice will be available soon.')),
-    );
+    if (_invoice == null) return;
+
+    try {
+      final store = await _billingService.getCurrentStore();
+
+      final pdfBytes = await _pdfService.generateInvoicePdf(
+        store: store,
+        invoice: _invoice!,
+        items: _items,
+      );
+
+      await Printing.layoutPdf(
+        onLayout: (_) async => pdfBytes,
+        name: _invoice!.invoiceNumber,
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to print invoice.\n$e')));
+    }
   }
 
   Future<void> _downloadPdf() async {
