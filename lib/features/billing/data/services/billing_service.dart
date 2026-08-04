@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:storemate/features/billing/data/models/create_invoice_request.dart';
+import 'package:storemate/features/billing/data/models/payment_history_model.dart';
 import 'package:storemate/features/billing/data/models/receive_payment_request.dart';
 import 'package:storemate/features/billing/data/models/update_invoice_request.dart';
 import 'package:storemate/features/store/data/module/store_model.dart';
@@ -306,6 +307,31 @@ class BillingService {
       throw BillingException(e.message);
     } catch (e) {
       throw BillingException('Failed to receive payment: $e');
+    }
+  }
+
+  // ============================================================================
+  // Get Invoice Payment History
+  // ============================================================================
+
+  Future<List<PaymentHistoryModel>> getInvoicePayments(String invoiceId) async {
+    try {
+      final response = await _supabase
+          .from('invoice_payments')
+          .select()
+          .eq('invoice_id', invoiceId)
+          .order('created_at', ascending: false);
+
+      return (response as List)
+          .map(
+            (json) =>
+                PaymentHistoryModel.fromJson(json as Map<String, dynamic>),
+          )
+          .toList();
+    } on PostgrestException catch (e) {
+      throw BillingException(e.message);
+    } catch (e) {
+      throw BillingException('Failed to load payment history: $e');
     }
   }
 

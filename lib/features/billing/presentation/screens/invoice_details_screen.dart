@@ -9,10 +9,10 @@ import 'package:storemate/core/widgets/app_section_header.dart';
 
 import 'package:storemate/features/billing/data/models/invoice_item_model.dart';
 import 'package:storemate/features/billing/data/models/invoice_model.dart';
+import 'package:storemate/features/billing/data/models/payment_history_model.dart';
 import 'package:storemate/features/billing/data/services/billing_service.dart';
 import 'package:storemate/features/billing/data/services/invoice_download_service.dart';
 import 'package:storemate/features/billing/data/services/invoice_pdf_service.dart';
-import 'package:storemate/features/billing/presentation/controllers/receive_payment_controller.dart';
 import 'package:storemate/features/billing/presentation/screens/edit_invoice_screen.dart';
 import 'package:storemate/features/billing/presentation/widgets/invoice_action_menu.dart';
 
@@ -22,6 +22,7 @@ import 'package:storemate/features/billing/presentation/widgets/invoice_item_til
 import 'package:storemate/features/billing/presentation/widgets/invoice_loading.dart';
 import 'package:storemate/features/billing/presentation/widgets/invoice_notes_card.dart';
 import 'package:storemate/features/billing/presentation/widgets/invoice_payment_card.dart';
+import 'package:storemate/features/billing/presentation/widgets/invoice_payment_history_card.dart';
 import 'package:storemate/features/billing/presentation/widgets/invoice_summary_card.dart';
 import 'package:storemate/features/billing/presentation/widgets/receive_payment_bottom_sheet.dart';
 
@@ -43,6 +44,12 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
   InvoiceModel? _invoice;
 
   List<InvoiceItemModel> _items = [];
+
+  // ============================================================================
+  // Payment History
+  // ============================================================================
+
+  List<PaymentHistoryModel> _paymentHistory = [];
 
   bool _isLoading = true;
 
@@ -69,11 +76,14 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
 
       final items = await _billingService.getInvoiceItems(widget.invoiceId);
 
+      _invoice = invoice;
+      _items = items;
+
+      await _loadPaymentHistory();
+
       if (!mounted) return;
 
       setState(() {
-        _invoice = invoice;
-        _items = items;
         _isLoading = false;
       });
     } on BillingException catch (e) {
@@ -449,6 +459,8 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
 
                 _buildPaymentSection(),
 
+                _buildPaymentHistorySection(),
+
                 _buildNotesSection(),
               ],
             ),
@@ -813,6 +825,65 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
     return _currencyFormatter.format(value);
   }
 
+  //---------------------------------------------------------------------------
+  // Payment History
+  //---------------------------------------------------------------------------
+
+  Widget _buildPaymentHistorySection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const AppSectionHeader(title: 'Payment History'),
+
+        const SizedBox(height: 12),
+
+        if (_paymentHistory.isEmpty)
+          Card(
+            margin: EdgeInsets.zero,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.receipt_long_rounded,
+                    size: 42,
+                    color: Colors.grey.shade500,
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  Text(
+                    'No payment history available.',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+
+                  const SizedBox(height: 6),
+
+                  Text(
+                    'Payments received for this invoice will appear here.',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ],
+              ),
+            ),
+          )
+        else
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: _paymentHistory.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 12),
+            itemBuilder: (context, index) {
+              return InvoicePaymentHistoryCard(payment: _paymentHistory[index]);
+            },
+          ),
+
+        const SizedBox(height: 18),
+      ],
+    );
+  }
+
   //---------------------------------------------------------------------
   // Notes
   //---------------------------------------------------------------------
@@ -827,5 +898,21 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
         InvoiceNotesCard(readOnly: true, initialValue: _invoice!.notes),
       ],
     );
+  }
+
+  // ============================================================================
+  // Load Payment History
+  // ============================================================================
+
+  Future<void> _loadPaymentHistory() async {
+    if (_invoice == null) {
+      return;
+    }
+
+    try {
+      _paymentHistory = await _billingService.getInvoicePayments(_invoice!.id);
+    } catch (_) {
+      _paymentHistory = [];
+    }
   }
 }
