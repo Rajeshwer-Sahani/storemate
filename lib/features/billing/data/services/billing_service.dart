@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:storemate/features/billing/data/models/create_invoice_request.dart';
+import 'package:storemate/features/billing/data/models/receive_payment_request.dart';
 import 'package:storemate/features/billing/data/models/update_invoice_request.dart';
 import 'package:storemate/features/store/data/module/store_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -230,62 +231,83 @@ class BillingService {
     }
   }
 
-  
+  // ============================================================================
+  // Update Invoice
+  // ============================================================================
 
-// ============================================================================
-// Update Invoice
-// ============================================================================
-
-Future<String> updateInvoice(
-  UpdateInvoiceRequest request,
-) async {
-  try {
-    final response = await _supabase.rpc(
-      'update_complete_invoice',
-      params: request.toRpc(),
-    );
-
-    if (response == null) {
-      throw const BillingException(
-        'Invoice update failed.',
+  Future<String> updateInvoice(UpdateInvoiceRequest request) async {
+    try {
+      final response = await _supabase.rpc(
+        'update_complete_invoice',
+        params: request.toRpc(),
       );
+
+      if (response == null) {
+        throw const BillingException('Invoice update failed.');
+      }
+
+      if (response is! String) {
+        throw const BillingException(
+          'Unexpected response received while updating invoice.',
+        );
+      }
+
+      return response;
+    } on PostgrestException catch (e) {
+      throw BillingException(e.message);
+    } catch (e) {
+      throw BillingException('Failed to update invoice: $e');
     }
-
-    if (response is! String) {
-      throw const BillingException(
-        'Unexpected response received while updating invoice.',
-      );
-    }
-
-    return response;
-  } on PostgrestException catch (e) {
-    throw BillingException(e.message);
-  } catch (e) {
-    throw BillingException(
-      'Failed to update invoice: $e',
-    );
-  }
-}
-
-// ============================================================================
-// Get Current Store
-// ============================================================================
-
-Future<StoreModel> getCurrentStore() async {
-  final userId = _supabase.auth.currentUser?.id;
-
-  if (userId == null) {
-    throw Exception('User not authenticated');
   }
 
-  final response = await _supabase
-      .from('stores')
-      .select()
-      .eq('owner_id', userId)
-      .single();
+  // ============================================================================
+  // Get Current Store
+  // ============================================================================
 
-  return StoreModel.fromJson(response);
-}
+  Future<StoreModel> getCurrentStore() async {
+    final userId = _supabase.auth.currentUser?.id;
+
+    if (userId == null) {
+      throw Exception('User not authenticated');
+    }
+
+    final response = await _supabase
+        .from('stores')
+        .select()
+        .eq('owner_id', userId)
+        .single();
+
+    return StoreModel.fromJson(response);
+  }
+
+  // ============================================================================
+  // Receive Payment
+  // ============================================================================
+
+  Future<String> receivePayment(ReceivePaymentRequest request) async {
+    try {
+      final response = await _supabase.rpc(
+        'receive_invoice_payment',
+        params: request.toRpc(),
+      );
+
+      if (response == null) {
+        throw const BillingException('Payment could not be processed.');
+      }
+
+      if (response is! String) {
+        throw const BillingException(
+          'Unexpected response received while processing payment.',
+        );
+      }
+
+      return response;
+    } on PostgrestException catch (e) {
+      throw BillingException(e.message);
+    } catch (e) {
+      throw BillingException('Failed to receive payment: $e');
+    }
+  }
 
   //--------------------------
   // Search

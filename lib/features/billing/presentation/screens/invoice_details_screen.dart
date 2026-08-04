@@ -12,6 +12,7 @@ import 'package:storemate/features/billing/data/models/invoice_model.dart';
 import 'package:storemate/features/billing/data/services/billing_service.dart';
 import 'package:storemate/features/billing/data/services/invoice_download_service.dart';
 import 'package:storemate/features/billing/data/services/invoice_pdf_service.dart';
+import 'package:storemate/features/billing/presentation/controllers/receive_payment_controller.dart';
 import 'package:storemate/features/billing/presentation/screens/edit_invoice_screen.dart';
 import 'package:storemate/features/billing/presentation/widgets/invoice_action_menu.dart';
 
@@ -22,6 +23,7 @@ import 'package:storemate/features/billing/presentation/widgets/invoice_loading.
 import 'package:storemate/features/billing/presentation/widgets/invoice_notes_card.dart';
 import 'package:storemate/features/billing/presentation/widgets/invoice_payment_card.dart';
 import 'package:storemate/features/billing/presentation/widgets/invoice_summary_card.dart';
+import 'package:storemate/features/billing/presentation/widgets/receive_payment_bottom_sheet.dart';
 
 class InvoiceDetailsScreen extends StatefulWidget {
   const InvoiceDetailsScreen({super.key, required this.invoiceId});
@@ -124,7 +126,7 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
   }
 
   //---------------------------------------------------------------------------
-  // Print Invoice  
+  // Print Invoice
   //---------------------------------------------------------------------------
 
   Future<void> _printInvoice() async {
@@ -226,7 +228,6 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
     }
   }
 
-
   //---------------------------------------------------------------------------
   // Edit Invoice
   //---------------------------------------------------------------------------
@@ -255,10 +256,45 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
     }
   }
 
+  //---------------------------------------------------------------------------
+  // Receive Payment
+  //---------------------------------------------------------------------------
+
   Future<void> _receivePayment() async {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Receive Payment will be available soon.')),
+    if (_invoice == null) return;
+
+    // Don't allow payment if already fully paid.
+    if (_invoice!.paymentStatus.toLowerCase() == 'paid') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('This invoice has already been fully paid.'),
+        ),
+      );
+      return;
+    }
+
+    final received = await ReceivePaymentBottomSheet.show(
+      context,
+      billingService: _billingService,
+      invoice: _invoice!,
     );
+
+    if (!mounted || received != true) {
+      return;
+    }
+
+    await _loadInvoice();
+
+    if (!mounted) {
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Payment received successfully.')),
+    );
+
+    // Notify BillingScreen so its invoice list refreshes.
+    Navigator.pop(context, true);
   }
 
   Future<void> _returnInvoice() async {
