@@ -340,10 +340,11 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Payment received successfully.')),
     );
-
     // Notify BillingScreen so its invoice list refreshes.
     Navigator.pop(context, true);
   }
+
+
 
   Future<void> _returnInvoice() async {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -499,7 +500,7 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
 
                 _buildPaymentHistorySection(),
 
-                _buildTimelineSection(),
+                //_buildTimelineSection(),
 
                 _buildNotesSection(),
               ],
@@ -928,20 +929,20 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
   // Invoice Timeline
   //---------------------------------------------------------------------
 
-  Widget _buildTimelineSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const AppSectionHeader(title: 'Invoice Timeline'),
+  // Widget _buildTimelineSection() {
+  //   return Column(
+  //     crossAxisAlignment: CrossAxisAlignment.start,
+  //     children: [
+  //       const AppSectionHeader(title: 'Invoice Timeline'),
 
-        const SizedBox(height: 12),
+  //       const SizedBox(height: 12),
 
-        InvoiceTimelineCard(timeline: _timeline),
+  //       InvoiceTimelineCard(timeline: _timeline),
 
-        const SizedBox(height: 18),
-      ],
-    );
-  }
+  //       const SizedBox(height: 18),
+  //     ],
+  //   );
+  // }
 
   //---------------------------------------------------------------------
   // Notes
