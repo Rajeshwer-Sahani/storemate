@@ -9,6 +9,7 @@ import 'package:storemate/core/widgets/app_section_header.dart';
 
 import 'package:storemate/features/billing/data/models/invoice_item_model.dart';
 import 'package:storemate/features/billing/data/models/invoice_model.dart';
+import 'package:storemate/features/billing/data/models/invoice_timeline_model.dart';
 import 'package:storemate/features/billing/data/models/payment_history_model.dart';
 import 'package:storemate/features/billing/data/services/billing_service.dart';
 import 'package:storemate/features/billing/data/services/invoice_download_service.dart';
@@ -24,6 +25,7 @@ import 'package:storemate/features/billing/presentation/widgets/invoice_notes_ca
 import 'package:storemate/features/billing/presentation/widgets/invoice_payment_card.dart';
 import 'package:storemate/features/billing/presentation/widgets/invoice_payment_history_card.dart';
 import 'package:storemate/features/billing/presentation/widgets/invoice_summary_card.dart';
+import 'package:storemate/features/billing/presentation/widgets/invoice_timeline_card.dart';
 import 'package:storemate/features/billing/presentation/widgets/receive_payment_bottom_sheet.dart';
 
 class InvoiceDetailsScreen extends StatefulWidget {
@@ -44,6 +46,8 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
   InvoiceModel? _invoice;
 
   List<InvoiceItemModel> _items = [];
+
+  List<InvoiceTimelineModel> _timeline = [];
 
   // ============================================================================
   // Payment History
@@ -79,7 +83,7 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
       _invoice = invoice;
       _items = items;
 
-      await _loadPaymentHistory();
+      await Future.wait([_loadPaymentHistory(), _loadTimeline()]);
 
       if (!mounted) return;
 
@@ -100,6 +104,20 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
         _errorMessage = 'Something went wrong.\nPlease try again.';
         _isLoading = false;
       });
+    }
+  }
+
+
+  //---------------------------------------------------------------------------
+  // Load Invoice Timeline
+  //---------------------------------------------------------------------------
+  Future<void> _loadTimeline() async {
+    try {
+      _timeline = await _billingService.getInvoiceTimeline(widget.invoiceId);
+    } on BillingException {
+      _timeline = [];
+    } catch (_) {
+      _timeline = [];
     }
   }
 
@@ -460,6 +478,8 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
                 _buildPaymentSection(),
 
                 _buildPaymentHistorySection(),
+
+                _buildTimelineSection(),
 
                 _buildNotesSection(),
               ],
@@ -878,6 +898,25 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
               return InvoicePaymentHistoryCard(payment: _paymentHistory[index]);
             },
           ),
+
+        const SizedBox(height: 18),
+      ],
+    );
+  }
+
+  //---------------------------------------------------------------------
+  // Invoice Timeline
+  //---------------------------------------------------------------------
+
+  Widget _buildTimelineSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const AppSectionHeader(title: 'Invoice Timeline'),
+
+        const SizedBox(height: 12),
+
+        InvoiceTimelineCard(timeline: _timeline),
 
         const SizedBox(height: 18),
       ],
