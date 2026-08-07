@@ -9,6 +9,7 @@ import 'package:storemate/features/billing/data/models/invoice_model.dart';
 enum InvoiceAction {
   print,
   downloadPdf,
+  timeline,
   edit,
   receivePayment,
   returnInvoice,
@@ -62,9 +63,17 @@ class InvoiceActionMenu extends StatelessWidget {
           title: 'Download PDF',
         ),
 
-        const PopupMenuDivider(
-          height: 1,
+        //---------------------------------------------------------------------------
+        // Invoice Timeline
+        //---------------------------------------------------------------------------
+        _buildMenuItem(
+          context: context,
+          value: InvoiceAction.timeline,
+          icon: Icons.timeline_rounded,
+          title: 'Invoice Timeline',
         ),
+
+        const PopupMenuDivider(height: 1),
 
         //---------------------------------------------------------------------------
         // Edit Invoice
@@ -101,9 +110,7 @@ class InvoiceActionMenu extends StatelessWidget {
             icon: Icons.assignment_return_outlined,
             title: 'Return Invoice',
           ),
-        const PopupMenuDivider(
-          height: 1,
-        ),
+        const PopupMenuDivider(height: 1),
 
         //////////////////////////////////////////////////////////////////////////////
         // Delete Invoice
@@ -144,7 +151,7 @@ class InvoiceActionMenu extends StatelessWidget {
               title,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: color,
-                fontWeight:  FontWeight.w500,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ),

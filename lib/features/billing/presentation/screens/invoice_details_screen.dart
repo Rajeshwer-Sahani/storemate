@@ -15,6 +15,7 @@ import 'package:storemate/features/billing/data/services/billing_service.dart';
 import 'package:storemate/features/billing/data/services/invoice_download_service.dart';
 import 'package:storemate/features/billing/data/services/invoice_pdf_service.dart';
 import 'package:storemate/features/billing/presentation/screens/edit_invoice_screen.dart';
+import 'package:storemate/features/billing/presentation/screens/invoice_timeline_screen.dart';
 import 'package:storemate/features/billing/presentation/widgets/invoice_action_menu.dart';
 
 import 'package:storemate/features/billing/presentation/widgets/invoice_bottom_bar.dart';
@@ -107,7 +108,6 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
     }
   }
 
-
   //---------------------------------------------------------------------------
   // Load Invoice Timeline
   //---------------------------------------------------------------------------
@@ -133,6 +133,10 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
 
       case InvoiceAction.downloadPdf:
         _downloadPdf();
+        break;
+
+      case InvoiceAction.timeline:
+        _openTimeline();
         break;
 
       case InvoiceAction.edit:
@@ -225,6 +229,22 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
     }
   }
 
+  //---------------------------------------------------------------------------
+  // Open Timeline
+  //---------------------------------------------------------------------------
+
+  void _openTimeline() {
+    if (_invoice == null) return;
+
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => InvoiceTimelineScreen(
+          invoiceNumber: _invoice!.invoiceNumber,
+          timeline: _timeline,
+        ),
+      ),
+    );
+  }
   //---------------------------------------------------------------------------
   // Share Invoice
   //---------------------------------------------------------------------------

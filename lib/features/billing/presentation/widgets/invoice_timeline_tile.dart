@@ -28,35 +28,27 @@ class InvoiceTimelineTile extends StatelessWidget {
           //------------------------------------------------------------------
           // Timeline Indicator
           //------------------------------------------------------------------
-
           SizedBox(
             width: 28,
             child: Column(
               children: [
                 Container(
-                  width: 14,
-                  height: 14,
+                  width: 32,
+                  height: 32,
                   decoration: BoxDecoration(
-                    color: iconColor,
+                    color: iconColor.withValues(alpha: .12),
                     shape: BoxShape.circle,
-                    border: Border.all(
-                      color: colorScheme.surface,
-                      width: 2,
-                    ),
+                    border: Border.all(color: colorScheme.surface, width: 2),
                   ),
-                  child: Icon(
-                    iconData,
-                    size: 8,
-                    color: Colors.white,
-                  ),
+                  child: Icon(iconData, size: 12, color: iconColor),
                 ),
 
                 if (!isLast)
                   Expanded(
                     child: Container(
-                      width: 2,
+                      width: 3,
                       margin: const EdgeInsets.symmetric(vertical: 4),
-                      color: colorScheme.outlineVariant,
+                      color: colorScheme.outlineVariant.withValues(alpha: .45),
                     ),
                   ),
               ],
@@ -68,14 +60,13 @@ class InvoiceTimelineTile extends StatelessWidget {
           //------------------------------------------------------------------
           // Content
           //------------------------------------------------------------------
-
           Expanded(
             child: Container(
               margin: const EdgeInsets.only(bottom: 18),
-              padding: const EdgeInsets.all(18),
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: colorScheme.surfaceContainerLowest,
-                borderRadius: BorderRadius.circular(18),
+                borderRadius: BorderRadius.circular(24),
                 border: Border.all(
                   color: colorScheme.outlineVariant.withValues(alpha: .45),
                 ),
@@ -86,17 +77,27 @@ class InvoiceTimelineTile extends StatelessWidget {
                   //----------------------------------------------------------
                   // Header
                   //----------------------------------------------------------
-
-                  Row(
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: Text(
-                          timeline.eventTitle,
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
+                      Text(
+                        timeline.eventTitle,
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
+
+                      const SizedBox(height: 4),
+
+                      Text(
+                        _subtitleForEvent(timeline.eventType),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+
+                      const SizedBox(height: 10),
 
                       Text(
                         DateFormat(
@@ -105,7 +106,6 @@ class InvoiceTimelineTile extends StatelessWidget {
                         style: theme.textTheme.labelMedium?.copyWith(
                           color: colorScheme.onSurfaceVariant,
                         ),
-                        textAlign: TextAlign.end,
                       ),
                     ],
                   ),
@@ -115,18 +115,14 @@ class InvoiceTimelineTile extends StatelessWidget {
                   //----------------------------------------------------------
                   // Description
                   //----------------------------------------------------------
-
                   Text(
                     timeline.eventDescription,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      height: 1.45,
-                    ),
+                    style: theme.textTheme.bodyMedium?.copyWith(height: 1.6),
                   ),
 
                   //----------------------------------------------------------
                   // Amount
                   //----------------------------------------------------------
-
                   if (timeline.amount != null) ...[
                     const SizedBox(height: 14),
 
@@ -152,7 +148,6 @@ class InvoiceTimelineTile extends StatelessWidget {
                   //----------------------------------------------------------
                   // Payment Method
                   //----------------------------------------------------------
-
                   if (timeline.paymentMethod != null &&
                       timeline.paymentMethod!.isNotEmpty) ...[
                     const SizedBox(height: 12),
@@ -234,6 +229,28 @@ class InvoiceTimelineTile extends StatelessWidget {
 
       default:
         return colors.secondary;
+    }
+  }
+
+  String _subtitleForEvent(String type) {
+    switch (type.toLowerCase()) {
+      case 'invoice_created':
+        return 'Created Successfully';
+
+      case 'payment_received':
+        return 'Payment Received';
+
+      case 'payment_updated':
+        return 'Payment Updated';
+
+      case 'invoice_returned':
+        return 'Invoice Returned';
+
+      case 'invoice_cancelled':
+        return 'Invoice Cancelled';
+
+      default:
+        return 'Timeline Event';
     }
   }
 }
