@@ -344,8 +344,6 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
     Navigator.pop(context, true);
   }
 
-
-
   Future<void> _returnInvoice() async {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Return Invoice will be available soon.')),
@@ -501,7 +499,6 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
                 _buildPaymentHistorySection(),
 
                 //_buildTimelineSection(),
-
                 _buildNotesSection(),
               ],
             ),
@@ -916,7 +913,16 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
             itemCount: _paymentHistory.length,
             separatorBuilder: (_, __) => const SizedBox(height: 12),
             itemBuilder: (context, index) {
-              return InvoicePaymentHistoryCard(payment: _paymentHistory[index]);
+              final payment = _paymentHistory[index];
+
+              final isInitialPayment = index == _paymentHistory.length - 1;
+              final paymentNumber = _paymentHistory.length - index;
+
+              return InvoicePaymentHistoryCard(
+                payment: payment,
+                paymentNumber: paymentNumber,
+                isInitialPayment: isInitialPayment,
+              );
             },
           ),
 

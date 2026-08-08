@@ -4,9 +4,16 @@ import 'package:intl/intl.dart';
 import 'package:storemate/features/billing/data/models/payment_history_model.dart';
 
 class InvoicePaymentHistoryCard extends StatelessWidget {
-  const InvoicePaymentHistoryCard({super.key, required this.payment});
+  const InvoicePaymentHistoryCard({
+    super.key,
+    required this.payment,
+    required this.paymentNumber,
+    required this.isInitialPayment,
+  });
 
   final PaymentHistoryModel payment;
+  final int paymentNumber;
+  final bool isInitialPayment;
 
   @override
   Widget build(BuildContext context) {
@@ -41,6 +48,21 @@ class InvoicePaymentHistoryCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  //------------------------------------------------------
+                  // Payment Label
+                  //------------------------------------------------------
+                  Text(
+                    isInitialPayment
+                        ? 'Initial Payment'
+                        : 'Payment #$paymentNumber',
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+
+                  const SizedBox(height: 8),
+
                   //------------------------------------------------------
                   // Amount
                   //------------------------------------------------------
