@@ -102,7 +102,7 @@ class InvoiceTimelineTile extends StatelessWidget {
                       Text(
                         DateFormat(
                           'dd MMM yyyy • hh:mm a',
-                        ).format(timeline.createdAt),
+                        ).format(timeline.createdAt.toLocal()),
                         style: theme.textTheme.labelMedium?.copyWith(
                           color: colorScheme.onSurfaceVariant,
                         ),

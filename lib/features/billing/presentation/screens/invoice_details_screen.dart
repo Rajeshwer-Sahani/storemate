@@ -696,7 +696,7 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
 
                         Text(
                           hasDue
-                              ? formatCurrency(_invoice!.dueAmount)
+                              ? '${formatCurrency(_invoice!.dueAmount)} Due'
                               : 'No Due Amount',
                           style: theme.textTheme.titleSmall?.copyWith(
                             color: Colors.white,
