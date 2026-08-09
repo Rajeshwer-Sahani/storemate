@@ -471,6 +471,12 @@ class _BillingScreenState extends State<BillingScreen> {
 
     if (updated == true) {
       await _loadBillingData();
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Invoice deleted successfully.')),
+      );
     }
   }
 }

@@ -363,6 +363,23 @@ class BillingService {
     }
   }
 
+  // ============================================================================
+  // Delete Invoice
+  // ============================================================================
+
+  Future<void> deleteInvoice(String invoiceId) async {
+    try {
+      await _supabase.rpc(
+        'delete_invoice',
+        params: {'p_invoice_id': invoiceId},
+      );
+    } on PostgrestException catch (e) {
+      throw BillingException(e.message);
+    } catch (e) {
+      throw BillingException('Failed to delete invoice. Please try again.');
+    }
+  }
+
   //--------------------------
   // Search
   //--------------------------

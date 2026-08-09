@@ -16,6 +16,7 @@ import 'package:storemate/features/billing/data/services/invoice_download_servic
 import 'package:storemate/features/billing/data/services/invoice_pdf_service.dart';
 import 'package:storemate/features/billing/presentation/screens/edit_invoice_screen.dart';
 import 'package:storemate/features/billing/presentation/screens/invoice_timeline_screen.dart';
+import 'package:storemate/features/billing/presentation/widgets/delete_invoice_dialog.dart';
 import 'package:storemate/features/billing/presentation/widgets/invoice_action_menu.dart';
 
 import 'package:storemate/features/billing/presentation/widgets/invoice_bottom_bar.dart';
@@ -350,10 +351,62 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
     );
   }
 
+  //---------------------------------------------------------------------------
+  // Delete Invoice
+  //---------------------------------------------------------------------------
   Future<void> _deleteInvoice() async {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Delete Invoice will be available soon.')),
+    if (_invoice == null) return;
+
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => DeleteInvoiceDialog(
+        invoiceNumber: _invoice!.invoiceNumber,
+        onDelete: () => Navigator.pop(context, true),
+      ),
     );
+
+    if (shouldDelete != true) return;
+
+    try {
+      if (!mounted) return;
+
+      setState(() {
+        _isLoading = true;
+      });
+
+      await _billingService.deleteInvoice(_invoice!.id);
+
+      if (!mounted) return;
+
+      Navigator.pop(context, true);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Invoice deleted successfully.')),
+      );
+    } on BillingException catch (e) {
+      if (!mounted) return;
+
+      setState(() {
+        _isLoading = false;
+      });
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.message)));
+    } catch (_) {
+      if (!mounted) return;
+
+      setState(() {
+        _isLoading = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Failed to delete invoice. Please try again.'),
+        ),
+      );
+    }
   }
 
   //--------------------------------------------------------------------------
@@ -696,8 +749,8 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
 
                         Text(
                           hasDue
-                              ? '${formatCurrency(_invoice!.dueAmount)} Due'
-                              : 'No Due Amount',
+                              ? 'Due: ${formatCurrency(_invoice!.dueAmount)}'
+                              : 'Fully Paid',
                           style: theme.textTheme.titleSmall?.copyWith(
                             color: Colors.white,
                             fontWeight: FontWeight.w700,
