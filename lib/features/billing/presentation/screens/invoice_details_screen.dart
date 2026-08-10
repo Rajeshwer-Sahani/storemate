@@ -15,6 +15,7 @@ import 'package:storemate/features/billing/data/services/billing_service.dart';
 import 'package:storemate/features/billing/data/services/invoice_download_service.dart';
 import 'package:storemate/features/billing/data/services/invoice_pdf_service.dart';
 import 'package:storemate/features/billing/presentation/screens/edit_invoice_screen.dart';
+import 'package:storemate/features/billing/presentation/screens/invoice_return_screen.dart';
 import 'package:storemate/features/billing/presentation/screens/invoice_timeline_screen.dart';
 import 'package:storemate/features/billing/presentation/widgets/delete_invoice_dialog.dart';
 import 'package:storemate/features/billing/presentation/widgets/invoice_action_menu.dart';
@@ -345,10 +346,33 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
     Navigator.pop(context, true);
   }
 
+
+  //--------------------------------------------------------------------------- 
+  // Return Invoice
+  //---------------------------------------------------------------------------
   Future<void> _returnInvoice() async {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Return Invoice will be available soon.')),
+    if (_invoice == null) return;
+
+    final result = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => InvoiceReturnScreen(invoice: _invoice!),
+      ),
     );
+
+    if (!mounted) return;
+
+    if (result == true) {
+      await _loadInvoice();
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Invoice returned successfully.')),
+      );
+
+      Navigator.pop(context, true);
+    }
   }
 
   //---------------------------------------------------------------------------
