@@ -64,7 +64,18 @@ class InvoiceReturnService {
   Future<String> processInvoiceReturn(
     ProcessInvoiceReturnRequest request,
   ) async {
-    return '';
+    try {
+      final response = await _supabase.rpc(
+        _processInvoiceReturnRpc,
+        params: request.toJson(),
+      );
+
+      return response as String;
+    } on PostgrestException catch (e) {
+      throw InvoiceReturnException(e.message);
+    } catch (e) {
+      throw InvoiceReturnException('Failed to process invoice return: $e');
+    }
   }
 
   /// Validate whether a quantity can be returned.

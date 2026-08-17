@@ -89,35 +89,35 @@ ReturnReason? get returnReason => _returnReason;
 
   /// Processes an invoice return.
   Future<String> processInvoiceReturn({
-    required String invoiceId,
-    required String storeId,
-    required String returnReason,
-    String? notes,
-    required List<ProcessReturnItemRequest> returnItems,
-  }) async {
-    final request = ProcessInvoiceReturnRequest(
-      invoiceId: invoiceId,
-      storeId: storeId,
-      returnReason: returnReason,
-      notes: notes,
-      returnItems: returnItems,
-    );
+  required String invoiceId,
+  required String storeId,
+  required ReturnReason returnReason,
+  String? notes,
+  required List<ProcessReturnItemRequest> returnItems,
+}) async {
+  final request = ProcessInvoiceReturnRequest(
+    invoiceId: invoiceId,
+    storeId: storeId,
+    returnReason: returnReason.dbValue,
+    notes: notes,
+    returnItems: returnItems,
+  );
 
-    _setLoading(true);
+  _setLoading(true);
 
-    try {
-      final result = await _repository.processInvoiceReturn(request);
+  try {
+    final result = await _repository.processInvoiceReturn(request);
 
-      _setError(null);
+    _setError(null);
 
-      return result;
-    } catch (e) {
-      _setError(e.toString());
-      rethrow;
-    } finally {
-      _setLoading(false);
-    }
+    return result;
+  } catch (e) {
+    _setError(e.toString());
+    rethrow;
+  } finally {
+    _setLoading(false);
   }
+}
 
   /// Validates whether the requested quantity can be returned.
   Future<bool> validateReturnQuantity({

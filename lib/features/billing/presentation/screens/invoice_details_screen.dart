@@ -14,6 +14,7 @@ import 'package:storemate/features/billing/data/models/payment_history_model.dar
 import 'package:storemate/features/billing/data/services/billing_service.dart';
 import 'package:storemate/features/billing/data/services/invoice_download_service.dart';
 import 'package:storemate/features/billing/data/services/invoice_pdf_service.dart';
+import 'package:storemate/features/billing/data/services/invoice_return_service.dart';
 import 'package:storemate/features/billing/presentation/screens/edit_invoice_screen.dart';
 import 'package:storemate/features/billing/presentation/screens/invoice_return_screen.dart';
 import 'package:storemate/features/billing/presentation/screens/invoice_timeline_screen.dart';
@@ -42,6 +43,7 @@ class InvoiceDetailsScreen extends StatefulWidget {
 
 class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
   final BillingService _billingService = BillingService();
+  final InvoiceReturnService _invoiceReturnService = InvoiceReturnService();
   final InvoicePdfService _pdfService = InvoicePdfService();
   final InvoiceDownloadService _downloadService =
       const InvoiceDownloadService();
@@ -346,32 +348,70 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
     Navigator.pop(context, true);
   }
 
-
-  //--------------------------------------------------------------------------- 
+  //---------------------------------------------------------------------------
   // Return Invoice
   //---------------------------------------------------------------------------
   Future<void> _returnInvoice() async {
     if (_invoice == null) return;
 
-    final result = await Navigator.push<bool>(
-      context,
-      MaterialPageRoute(
-        builder: (_) => InvoiceReturnScreen(invoice: _invoice!),
-      ),
-    );
-
-    if (!mounted) return;
-
-    if (result == true) {
-      await _loadInvoice();
+    try {
+      // Check whether any quantity is still available for return.
+      final returnableItems = await _invoiceReturnService.getReturnableItems(
+        _invoice!.id,
+      );
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Invoice returned successfully.')),
+      // All invoice quantities have already been returned.
+      if (returnableItems.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'All items in this invoice have already been returned.',
+            ),
+          ),
+        );
+        return;
+      }
+
+      // At least one item is still returnable.
+      final result = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(
+          builder: (_) => InvoiceReturnScreen(invoice: _invoice!),
+        ),
       );
 
-      Navigator.pop(context, true);
+      if (!mounted) return;
+
+      if (result == true) {
+        await _loadInvoice();
+
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Invoice returned successfully.')),
+        );
+
+        // Notify BillingScreen that the invoice has changed.
+        Navigator.pop(context,);
+      }
+    } on InvoiceReturnException catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.message)));
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Unable to check return availability. Please try again.',
+          ),
+        ),
+      );
     }
   }
 

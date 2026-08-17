@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:storemate/features/billing/data/models/invoice_return_item_model.dart';
 import 'package:storemate/features/billing/presentation/widgets/return_item_card.dart';
 import 'package:storemate/features/billing/presentation/widgets/return_notes_field.dart';
 import 'package:storemate/features/billing/presentation/widgets/return_reason_dropdown.dart';
@@ -38,6 +39,49 @@ class _InvoiceReturnScreenState extends State<InvoiceReturnScreen> {
     super.dispose();
   }
 
+  Widget _buildAlreadyReturnedState(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.assignment_return_rounded,
+              size: 64,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+
+            const SizedBox(height: 20),
+
+            Text(
+              'Already Returned',
+              style: Theme.of(
+                context,
+              ).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700),
+              textAlign: TextAlign.center,
+            ),
+
+            const SizedBox(height: 8),
+
+            Text(
+              'All items from this invoice have already been returned.',
+              style: Theme.of(context).textTheme.bodyMedium,
+              textAlign: TextAlign.center,
+            ),
+
+            const SizedBox(height: 24),
+
+            FilledButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Go Back'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -51,6 +95,10 @@ class _InvoiceReturnScreenState extends State<InvoiceReturnScreen> {
 
           if (_controller.error != null) {
             return Center(child: Text(_controller.error!));
+          }
+
+          if (_controller.returnableItems.isEmpty) {
+            return _buildAlreadyReturnedState(context);
           }
 
           return SingleChildScrollView(
@@ -130,7 +178,7 @@ class _InvoiceReturnScreenState extends State<InvoiceReturnScreen> {
                 // Return Reason
                 //-----------------------------------------
                 ReturnReasonDropdown(
-                  selectedReason: null,
+                  selectedReason: _controller.returnReason,
                   onChanged: (reason) {
                     if (reason != null) {
                       _controller.updateReturnReason(reason);
@@ -191,7 +239,7 @@ class _InvoiceReturnScreenState extends State<InvoiceReturnScreen> {
                       final result = await _controller.processInvoiceReturn(
                         invoiceId: widget.invoice.id,
                         storeId: widget.invoice.storeId,
-                        returnReason: _controller.returnReason!.name,
+                        returnReason: _controller.returnReason!,
                         notes: _controller.notes.isEmpty
                             ? null
                             : _controller.notes,
@@ -199,10 +247,6 @@ class _InvoiceReturnScreenState extends State<InvoiceReturnScreen> {
                       );
 
                       if (!mounted) return;
-
-                      ScaffoldMessenger.of(
-                        context,
-                      ).showSnackBar(SnackBar(content: Text(result),));
 
                       Navigator.pop(context, true);
                     } catch (e) {
