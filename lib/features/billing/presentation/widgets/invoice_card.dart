@@ -96,7 +96,7 @@ class _InvoiceHeader extends StatelessWidget {
 
         const SizedBox(width: 12),
 
-        _PaymentStatusChip(status: invoice.paymentStatus),
+        _PaymentStatusChip(status: invoice.displayStatus),
 
         const SizedBox(width: 8),
 
@@ -235,6 +235,76 @@ class _InvoiceAmount extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
+    final status = invoice.displayStatus;
+
+    final isReturned = status == 'returned';
+    final isPartiallyReturned = status == 'partially_returned';
+
+    if (isReturned) {
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _formatCurrency(invoice.grandTotal),
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Total Amount',
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          _StatusAmountBadge(label: 'Returned', color: AppColors.primary),
+        ],
+      );
+    }
+
+    if (isPartiallyReturned) {
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  _formatCurrency(invoice.grandTotal),
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Total Amount',
+                  style: theme.textTheme.labelMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          _StatusAmountBadge(
+            label: 'Partially Returned',
+            color: AppColors.warning,
+          ),
+        ],
+      );
+    }
+
     final hasDue = invoice.dueAmount > 0;
 
     return Row(
@@ -250,9 +320,7 @@ class _InvoiceAmount extends StatelessWidget {
                   fontWeight: FontWeight.w700,
                 ),
               ),
-
               const SizedBox(height: 4),
-
               Text(
                 'Total Amount',
                 style: theme.textTheme.labelMedium?.copyWith(
@@ -265,38 +333,39 @@ class _InvoiceAmount extends StatelessWidget {
         ),
 
         if (hasDue)
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.red.shade50,
-              borderRadius: BorderRadius.circular(30),
-            ),
-            child: Text(
-              'Due ${_formatCurrency(invoice.dueAmount)}',
-              style: TextStyle(
-                color: AppColors.error,
-                fontWeight: FontWeight.w700,
-                fontSize: 12,
-              ),
-            ),
+          _StatusAmountBadge(
+            label: 'Due ${_formatCurrency(invoice.dueAmount)}',
+            color: AppColors.error,
           )
         else
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-            decoration: BoxDecoration(
-              color: Colors.green.shade50,
-              borderRadius: BorderRadius.circular(30),
-            ),
-            child: Text(
-              'Paid',
-              style: TextStyle(
-                color: AppColors.success,
-                fontWeight: FontWeight.w600,
-                fontSize: 12,
-              ),
-            ),
-          ),
+          _StatusAmountBadge(label: 'Paid', color: AppColors.success),
       ],
+    );
+  }
+}
+
+class _StatusAmountBadge extends StatelessWidget {
+  const _StatusAmountBadge({required this.label, required this.color});
+
+  final String label;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: .10),
+        borderRadius: BorderRadius.circular(30),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+          color: color,
+          fontWeight: FontWeight.w700,
+          fontSize: 12,
+        ),
+      ),
     );
   }
 }
@@ -371,6 +440,12 @@ Color _paymentStatusColor(String status) {
     case 'unpaid':
       return AppColors.error;
 
+    case 'partially_returned':
+      return AppColors.warning;
+
+    case 'returned':
+      return AppColors.primary;
+
     default:
       return Colors.grey.shade700;
   }
@@ -386,6 +461,12 @@ Color _paymentStatusBackgroundColor(String status) {
 
     case 'unpaid':
       return Colors.red.shade50;
+
+    case 'partially_returned':
+      return Colors.orange.shade50;
+
+    case 'returned':
+      return Colors.blue.shade50;
 
     default:
       return Colors.grey.shade200;

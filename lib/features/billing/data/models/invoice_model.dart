@@ -13,6 +13,8 @@ class InvoiceModel {
     required this.grandTotal,
     required this.paidAmount,
     required this.dueAmount,
+    required this.totalItemQuantity,
+    required this.returnedItemQuantity,
     required this.totalProfit,
     required this.paymentStatus,
     required this.invoiceStatus,
@@ -38,6 +40,10 @@ class InvoiceModel {
 
   final double paidAmount;
   final double dueAmount;
+
+  final int totalItemQuantity;
+  final int returnedItemQuantity;
+
   final double totalProfit;
 
   final String paymentStatus;
@@ -48,6 +54,26 @@ class InvoiceModel {
 
   final DateTime createdAt;
   final DateTime updatedAt;
+
+  bool get hasReturn => returnedItemQuantity > 0;
+
+  bool get isFullyReturned =>
+      totalItemQuantity > 0 && returnedItemQuantity >= totalItemQuantity;
+
+  bool get isPartiallyReturned =>
+      returnedItemQuantity > 0 && returnedItemQuantity < totalItemQuantity;
+
+  String get displayStatus {
+    if (isFullyReturned) {
+      return 'returned';
+    }
+
+    if (isPartiallyReturned) {
+      return 'partially_returned';
+    }
+
+    return paymentStatus;
+  }
 
   factory InvoiceModel.fromJson(Map<String, dynamic> json) {
     return InvoiceModel(
@@ -66,6 +92,12 @@ class InvoiceModel {
 
       paidAmount: (json['paid_amount'] as num).toDouble(),
       dueAmount: (json['due_amount'] as num).toDouble(),
+
+      totalItemQuantity: (json['total_item_quantity'] as num?)?.toInt() ?? 0,
+
+      returnedItemQuantity:
+          (json['returned_item_quantity'] as num?)?.toInt() ?? 0,
+
       totalProfit: (json['total_profit'] as num).toDouble(),
 
       paymentStatus: json['payment_status'] as String,
@@ -94,6 +126,8 @@ class InvoiceModel {
       'grand_total': grandTotal,
       'paid_amount': paidAmount,
       'due_amount': dueAmount,
+      'total_item_quantity': totalItemQuantity,
+      'returned_item_quantity': returnedItemQuantity,
       'total_profit': totalProfit,
       'payment_status': paymentStatus,
       'invoice_status': invoiceStatus,
@@ -118,6 +152,8 @@ class InvoiceModel {
     double? grandTotal,
     double? paidAmount,
     double? dueAmount,
+    int? totalItemQuantity,
+    int? returnedItemQuantity,
     double? totalProfit,
     String? paymentStatus,
     String? invoiceStatus,
@@ -140,6 +176,9 @@ class InvoiceModel {
       grandTotal: grandTotal ?? this.grandTotal,
       paidAmount: paidAmount ?? this.paidAmount,
       dueAmount: dueAmount ?? this.dueAmount,
+      totalItemQuantity: totalItemQuantity ?? this.totalItemQuantity,
+
+      returnedItemQuantity: returnedItemQuantity ?? this.returnedItemQuantity,
       totalProfit: totalProfit ?? this.totalProfit,
       paymentStatus: paymentStatus ?? this.paymentStatus,
       invoiceStatus: invoiceStatus ?? this.invoiceStatus,

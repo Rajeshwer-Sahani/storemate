@@ -141,20 +141,54 @@ class BillingService {
       print('Invoice ID: $invoiceId');
 
       final response = await _supabase
-          .from('invoices')
-          .select()
+          .from(_invoiceTable)
+          .select('''
+      *,
+      invoice_items (
+        quantity,
+        invoice_return_items (
+          quantity
+        )
+      )
+    ''')
           .eq('id', invoiceId)
           .single();
 
+      final invoiceJson = Map<String, dynamic>.from(response);
+
+      int totalItemQuantity = 0;
+      int returnedItemQuantity = 0;
+
+      final invoiceItems = (response['invoice_items'] as List?) ?? const [];
+
+      for (final item in invoiceItems) {
+        final itemJson = Map<String, dynamic>.from(item);
+
+        totalItemQuantity += (itemJson['quantity'] as num?)?.toInt() ?? 0;
+
+        final returnItems =
+            (itemJson['invoice_return_items'] as List?) ?? const [];
+
+        for (final returnItem in returnItems) {
+          final returnItemJson = Map<String, dynamic>.from(returnItem);
+
+          returnedItemQuantity +=
+              (returnItemJson['quantity'] as num?)?.toInt() ?? 0;
+        }
+      }
+
+      invoiceJson['total_item_quantity'] = totalItemQuantity;
+      invoiceJson['returned_item_quantity'] = returnedItemQuantity;
+
       print('================ INVOICE JSON ================');
 
-      response.forEach((key, value) {
+      invoiceJson.forEach((key, value) {
         print('$key : $value (${value.runtimeType})');
       });
 
       print('==============================================');
 
-      return InvoiceModel.fromJson(response);
+      return InvoiceModel.fromJson(invoiceJson);
     } on PostgrestException catch (e, stack) {
       print('========== POSTGREST ==========');
       print('message: ${e.message}');
@@ -176,13 +210,47 @@ class BillingService {
 
       final response = await _supabase
           .from(_invoiceTable)
-          .select()
+          .select('''
+          *,
+          invoice_items (
+            quantity,
+            invoice_return_items (
+              quantity
+            )
+          )
+        ''')
           .eq('store_id', storeId)
           .order('invoice_date', ascending: false);
 
-      return response.map<InvoiceModel>((json) {
+      return (response as List).map<InvoiceModel>((json) {
         try {
-          return InvoiceModel.fromJson(json);
+          final invoiceJson = Map<String, dynamic>.from(json);
+
+          int totalItemQuantity = 0;
+          int returnedItemQuantity = 0;
+
+          final invoiceItems = (json['invoice_items'] as List?) ?? const [];
+
+          for (final item in invoiceItems) {
+            final itemJson = Map<String, dynamic>.from(item);
+
+            totalItemQuantity += (itemJson['quantity'] as num?)?.toInt() ?? 0;
+
+            final returnItems =
+                (itemJson['invoice_return_items'] as List?) ?? const [];
+
+            for (final returnItem in returnItems) {
+              final returnItemJson = Map<String, dynamic>.from(returnItem);
+
+              returnedItemQuantity +=
+                  (returnItemJson['quantity'] as num?)?.toInt() ?? 0;
+            }
+          }
+
+          invoiceJson['total_item_quantity'] = totalItemQuantity;
+          invoiceJson['returned_item_quantity'] = returnedItemQuantity;
+
+          return InvoiceModel.fromJson(invoiceJson);
         } catch (e) {
           debugPrint('==============================');
           debugPrint('Failed invoice JSON:');
@@ -203,11 +271,45 @@ class BillingService {
     try {
       final response = await _supabase
           .from(_invoiceTable)
-          .select()
+          .select('''
+          *,
+          invoice_items (
+            quantity,
+            invoice_return_items (
+              quantity
+            )
+          )
+        ''')
           .eq('id', invoiceId)
           .single();
 
-      return InvoiceModel.fromJson(response);
+      final invoiceJson = Map<String, dynamic>.from(response);
+
+      int totalItemQuantity = 0;
+      int returnedItemQuantity = 0;
+
+      final invoiceItems = (response['invoice_items'] as List?) ?? const [];
+
+      for (final item in invoiceItems) {
+        final itemJson = Map<String, dynamic>.from(item);
+
+        totalItemQuantity += (itemJson['quantity'] as num?)?.toInt() ?? 0;
+
+        final returnItems =
+            (itemJson['invoice_return_items'] as List?) ?? const [];
+
+        for (final returnItem in returnItems) {
+          final returnItemJson = Map<String, dynamic>.from(returnItem);
+
+          returnedItemQuantity +=
+              (returnItemJson['quantity'] as num?)?.toInt() ?? 0;
+        }
+      }
+
+      invoiceJson['total_item_quantity'] = totalItemQuantity;
+      invoiceJson['returned_item_quantity'] = returnedItemQuantity;
+
+      return InvoiceModel.fromJson(invoiceJson);
     } on PostgrestException catch (e) {
       throw BillingException(e.message);
     } catch (e) {
