@@ -5,9 +5,8 @@ part 'invoice_return_model.g.dart';
 
 @JsonEnum(fieldRename: FieldRename.snake)
 enum ReturnType {
-  refund,
-  exchange,
-  replacement,
+  full,
+  partial,
 }
 
 @freezed
@@ -32,9 +31,9 @@ abstract class InvoiceReturnModel with _$InvoiceReturnModel {
     @JsonKey(name: 'return_type')
     required ReturnType returnType,
 
-    /// Total Refund Amount
-    @JsonKey(name: 'refund_amount')
-    required double refundAmount,
+    /// Total amount associated with this return
+    @JsonKey(name: 'returned_amount')
+    required double returnedAmount,
 
     /// Optional Notes
     String? notes,

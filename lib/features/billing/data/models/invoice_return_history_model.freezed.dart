@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$InvoiceReturnHistoryModel {
 
-@JsonKey(name: 'return_id') String get returnId;@JsonKey(name: 'return_number') String get returnNumber;@JsonKey(name: 'return_type') ReturnType get returnType;@JsonKey(name: 'refund_amount') double get refundAmount; String? get notes;@JsonKey(name: 'created_at') DateTime get createdAt;
+@JsonKey(name: 'return_id') String get returnId;@JsonKey(name: 'return_number') String get returnNumber;@JsonKey(name: 'return_type') ReturnType get returnType;@JsonKey(name: 'returned_amount') double get returnedAmount; String? get notes;@JsonKey(name: 'created_at') DateTime get createdAt;
 /// Create a copy of InvoiceReturnHistoryModel
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $InvoiceReturnHistoryModelCopyWith<InvoiceReturnHistoryModel> get copyWith => _$
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is InvoiceReturnHistoryModel&&(identical(other.returnId, returnId) || other.returnId == returnId)&&(identical(other.returnNumber, returnNumber) || other.returnNumber == returnNumber)&&(identical(other.returnType, returnType) || other.returnType == returnType)&&(identical(other.refundAmount, refundAmount) || other.refundAmount == refundAmount)&&(identical(other.notes, notes) || other.notes == notes)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is InvoiceReturnHistoryModel&&(identical(other.returnId, returnId) || other.returnId == returnId)&&(identical(other.returnNumber, returnNumber) || other.returnNumber == returnNumber)&&(identical(other.returnType, returnType) || other.returnType == returnType)&&(identical(other.returnedAmount, returnedAmount) || other.returnedAmount == returnedAmount)&&(identical(other.notes, notes) || other.notes == notes)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,returnId,returnNumber,returnType,refundAmount,notes,createdAt);
+int get hashCode => Object.hash(runtimeType,returnId,returnNumber,returnType,returnedAmount,notes,createdAt);
 
 @override
 String toString() {
-  return 'InvoiceReturnHistoryModel(returnId: $returnId, returnNumber: $returnNumber, returnType: $returnType, refundAmount: $refundAmount, notes: $notes, createdAt: $createdAt)';
+  return 'InvoiceReturnHistoryModel(returnId: $returnId, returnNumber: $returnNumber, returnType: $returnType, returnedAmount: $returnedAmount, notes: $notes, createdAt: $createdAt)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $InvoiceReturnHistoryModelCopyWith<$Res>  {
   factory $InvoiceReturnHistoryModelCopyWith(InvoiceReturnHistoryModel value, $Res Function(InvoiceReturnHistoryModel) _then) = _$InvoiceReturnHistoryModelCopyWithImpl;
 @useResult
 $Res call({
-@JsonKey(name: 'return_id') String returnId,@JsonKey(name: 'return_number') String returnNumber,@JsonKey(name: 'return_type') ReturnType returnType,@JsonKey(name: 'refund_amount') double refundAmount, String? notes,@JsonKey(name: 'created_at') DateTime createdAt
+@JsonKey(name: 'return_id') String returnId,@JsonKey(name: 'return_number') String returnNumber,@JsonKey(name: 'return_type') ReturnType returnType,@JsonKey(name: 'returned_amount') double returnedAmount, String? notes,@JsonKey(name: 'created_at') DateTime createdAt
 });
 
 
@@ -65,12 +65,12 @@ class _$InvoiceReturnHistoryModelCopyWithImpl<$Res>
 
 /// Create a copy of InvoiceReturnHistoryModel
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? returnId = null,Object? returnNumber = null,Object? returnType = null,Object? refundAmount = null,Object? notes = freezed,Object? createdAt = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? returnId = null,Object? returnNumber = null,Object? returnType = null,Object? returnedAmount = null,Object? notes = freezed,Object? createdAt = null,}) {
   return _then(_self.copyWith(
 returnId: null == returnId ? _self.returnId : returnId // ignore: cast_nullable_to_non_nullable
 as String,returnNumber: null == returnNumber ? _self.returnNumber : returnNumber // ignore: cast_nullable_to_non_nullable
 as String,returnType: null == returnType ? _self.returnType : returnType // ignore: cast_nullable_to_non_nullable
-as ReturnType,refundAmount: null == refundAmount ? _self.refundAmount : refundAmount // ignore: cast_nullable_to_non_nullable
+as ReturnType,returnedAmount: null == returnedAmount ? _self.returnedAmount : returnedAmount // ignore: cast_nullable_to_non_nullable
 as double,notes: freezed == notes ? _self.notes : notes // ignore: cast_nullable_to_non_nullable
 as String?,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,
@@ -158,10 +158,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@JsonKey(name: 'return_id')  String returnId, @JsonKey(name: 'return_number')  String returnNumber, @JsonKey(name: 'return_type')  ReturnType returnType, @JsonKey(name: 'refund_amount')  double refundAmount,  String? notes, @JsonKey(name: 'created_at')  DateTime createdAt)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@JsonKey(name: 'return_id')  String returnId, @JsonKey(name: 'return_number')  String returnNumber, @JsonKey(name: 'return_type')  ReturnType returnType, @JsonKey(name: 'returned_amount')  double returnedAmount,  String? notes, @JsonKey(name: 'created_at')  DateTime createdAt)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _InvoiceReturnHistoryModel() when $default != null:
-return $default(_that.returnId,_that.returnNumber,_that.returnType,_that.refundAmount,_that.notes,_that.createdAt);case _:
+return $default(_that.returnId,_that.returnNumber,_that.returnType,_that.returnedAmount,_that.notes,_that.createdAt);case _:
   return orElse();
 
 }
@@ -179,10 +179,10 @@ return $default(_that.returnId,_that.returnNumber,_that.returnType,_that.refundA
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@JsonKey(name: 'return_id')  String returnId, @JsonKey(name: 'return_number')  String returnNumber, @JsonKey(name: 'return_type')  ReturnType returnType, @JsonKey(name: 'refund_amount')  double refundAmount,  String? notes, @JsonKey(name: 'created_at')  DateTime createdAt)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@JsonKey(name: 'return_id')  String returnId, @JsonKey(name: 'return_number')  String returnNumber, @JsonKey(name: 'return_type')  ReturnType returnType, @JsonKey(name: 'returned_amount')  double returnedAmount,  String? notes, @JsonKey(name: 'created_at')  DateTime createdAt)  $default,) {final _that = this;
 switch (_that) {
 case _InvoiceReturnHistoryModel():
-return $default(_that.returnId,_that.returnNumber,_that.returnType,_that.refundAmount,_that.notes,_that.createdAt);case _:
+return $default(_that.returnId,_that.returnNumber,_that.returnType,_that.returnedAmount,_that.notes,_that.createdAt);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -199,10 +199,10 @@ return $default(_that.returnId,_that.returnNumber,_that.returnType,_that.refundA
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@JsonKey(name: 'return_id')  String returnId, @JsonKey(name: 'return_number')  String returnNumber, @JsonKey(name: 'return_type')  ReturnType returnType, @JsonKey(name: 'refund_amount')  double refundAmount,  String? notes, @JsonKey(name: 'created_at')  DateTime createdAt)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@JsonKey(name: 'return_id')  String returnId, @JsonKey(name: 'return_number')  String returnNumber, @JsonKey(name: 'return_type')  ReturnType returnType, @JsonKey(name: 'returned_amount')  double returnedAmount,  String? notes, @JsonKey(name: 'created_at')  DateTime createdAt)?  $default,) {final _that = this;
 switch (_that) {
 case _InvoiceReturnHistoryModel() when $default != null:
-return $default(_that.returnId,_that.returnNumber,_that.returnType,_that.refundAmount,_that.notes,_that.createdAt);case _:
+return $default(_that.returnId,_that.returnNumber,_that.returnType,_that.returnedAmount,_that.notes,_that.createdAt);case _:
   return null;
 
 }
@@ -214,13 +214,13 @@ return $default(_that.returnId,_that.returnNumber,_that.returnType,_that.refundA
 @JsonSerializable()
 
 class _InvoiceReturnHistoryModel implements InvoiceReturnHistoryModel {
-  const _InvoiceReturnHistoryModel({@JsonKey(name: 'return_id') required this.returnId, @JsonKey(name: 'return_number') required this.returnNumber, @JsonKey(name: 'return_type') required this.returnType, @JsonKey(name: 'refund_amount') required this.refundAmount, this.notes, @JsonKey(name: 'created_at') required this.createdAt});
+  const _InvoiceReturnHistoryModel({@JsonKey(name: 'return_id') required this.returnId, @JsonKey(name: 'return_number') required this.returnNumber, @JsonKey(name: 'return_type') required this.returnType, @JsonKey(name: 'returned_amount') required this.returnedAmount, this.notes, @JsonKey(name: 'created_at') required this.createdAt});
   factory _InvoiceReturnHistoryModel.fromJson(Map<String, dynamic> json) => _$InvoiceReturnHistoryModelFromJson(json);
 
 @override@JsonKey(name: 'return_id') final  String returnId;
 @override@JsonKey(name: 'return_number') final  String returnNumber;
 @override@JsonKey(name: 'return_type') final  ReturnType returnType;
-@override@JsonKey(name: 'refund_amount') final  double refundAmount;
+@override@JsonKey(name: 'returned_amount') final  double returnedAmount;
 @override final  String? notes;
 @override@JsonKey(name: 'created_at') final  DateTime createdAt;
 
@@ -237,16 +237,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _InvoiceReturnHistoryModel&&(identical(other.returnId, returnId) || other.returnId == returnId)&&(identical(other.returnNumber, returnNumber) || other.returnNumber == returnNumber)&&(identical(other.returnType, returnType) || other.returnType == returnType)&&(identical(other.refundAmount, refundAmount) || other.refundAmount == refundAmount)&&(identical(other.notes, notes) || other.notes == notes)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _InvoiceReturnHistoryModel&&(identical(other.returnId, returnId) || other.returnId == returnId)&&(identical(other.returnNumber, returnNumber) || other.returnNumber == returnNumber)&&(identical(other.returnType, returnType) || other.returnType == returnType)&&(identical(other.returnedAmount, returnedAmount) || other.returnedAmount == returnedAmount)&&(identical(other.notes, notes) || other.notes == notes)&&(identical(other.createdAt, createdAt) || other.createdAt == createdAt));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,returnId,returnNumber,returnType,refundAmount,notes,createdAt);
+int get hashCode => Object.hash(runtimeType,returnId,returnNumber,returnType,returnedAmount,notes,createdAt);
 
 @override
 String toString() {
-  return 'InvoiceReturnHistoryModel(returnId: $returnId, returnNumber: $returnNumber, returnType: $returnType, refundAmount: $refundAmount, notes: $notes, createdAt: $createdAt)';
+  return 'InvoiceReturnHistoryModel(returnId: $returnId, returnNumber: $returnNumber, returnType: $returnType, returnedAmount: $returnedAmount, notes: $notes, createdAt: $createdAt)';
 }
 
 
@@ -257,7 +257,7 @@ abstract mixin class _$InvoiceReturnHistoryModelCopyWith<$Res> implements $Invoi
   factory _$InvoiceReturnHistoryModelCopyWith(_InvoiceReturnHistoryModel value, $Res Function(_InvoiceReturnHistoryModel) _then) = __$InvoiceReturnHistoryModelCopyWithImpl;
 @override @useResult
 $Res call({
-@JsonKey(name: 'return_id') String returnId,@JsonKey(name: 'return_number') String returnNumber,@JsonKey(name: 'return_type') ReturnType returnType,@JsonKey(name: 'refund_amount') double refundAmount, String? notes,@JsonKey(name: 'created_at') DateTime createdAt
+@JsonKey(name: 'return_id') String returnId,@JsonKey(name: 'return_number') String returnNumber,@JsonKey(name: 'return_type') ReturnType returnType,@JsonKey(name: 'returned_amount') double returnedAmount, String? notes,@JsonKey(name: 'created_at') DateTime createdAt
 });
 
 
@@ -274,12 +274,12 @@ class __$InvoiceReturnHistoryModelCopyWithImpl<$Res>
 
 /// Create a copy of InvoiceReturnHistoryModel
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? returnId = null,Object? returnNumber = null,Object? returnType = null,Object? refundAmount = null,Object? notes = freezed,Object? createdAt = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? returnId = null,Object? returnNumber = null,Object? returnType = null,Object? returnedAmount = null,Object? notes = freezed,Object? createdAt = null,}) {
   return _then(_InvoiceReturnHistoryModel(
 returnId: null == returnId ? _self.returnId : returnId // ignore: cast_nullable_to_non_nullable
 as String,returnNumber: null == returnNumber ? _self.returnNumber : returnNumber // ignore: cast_nullable_to_non_nullable
 as String,returnType: null == returnType ? _self.returnType : returnType // ignore: cast_nullable_to_non_nullable
-as ReturnType,refundAmount: null == refundAmount ? _self.refundAmount : refundAmount // ignore: cast_nullable_to_non_nullable
+as ReturnType,returnedAmount: null == returnedAmount ? _self.returnedAmount : returnedAmount // ignore: cast_nullable_to_non_nullable
 as double,notes: freezed == notes ? _self.notes : notes // ignore: cast_nullable_to_non_nullable
 as String?,createdAt: null == createdAt ? _self.createdAt : createdAt // ignore: cast_nullable_to_non_nullable
 as DateTime,

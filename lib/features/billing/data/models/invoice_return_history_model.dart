@@ -17,8 +17,8 @@ abstract class InvoiceReturnHistoryModel with _$InvoiceReturnHistoryModel {
     @JsonKey(name: 'return_type')
     required ReturnType returnType,
 
-    @JsonKey(name: 'refund_amount')
-    required double refundAmount,
+    @JsonKey(name: 'returned_amount')
+    required double returnedAmount,
 
     String? notes,
 
@@ -28,6 +28,5 @@ abstract class InvoiceReturnHistoryModel with _$InvoiceReturnHistoryModel {
 
   factory InvoiceReturnHistoryModel.fromJson(
     Map<String, dynamic> json,
-  ) =>
-      _$InvoiceReturnHistoryModelFromJson(json);
+  ) => _$InvoiceReturnHistoryModelFromJson(json);
 }
