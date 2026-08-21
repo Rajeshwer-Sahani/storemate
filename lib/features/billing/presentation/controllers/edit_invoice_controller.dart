@@ -173,6 +173,7 @@ class EditInvoiceController extends ChangeNotifier {
         sellingPrice: product.sellingPrice,
 
         quantity: 1,
+        returnedQuantity: 0,
 
         discount: 0,
         tax: 0,
@@ -232,6 +233,10 @@ class EditInvoiceController extends ChangeNotifier {
     if (index == -1) return;
 
     final item = _items[index];
+
+    if (item.quantity <= item.returnedQuantity) {
+      return;
+    }
 
     if (item.quantity <= 1) {
       removeProduct(productId);

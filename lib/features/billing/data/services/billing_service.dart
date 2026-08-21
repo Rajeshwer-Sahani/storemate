@@ -321,13 +321,42 @@ class BillingService {
     try {
       final response = await _supabase
           .from(_invoiceItemsTable)
-          .select()
+          .select('''
+          *,
+          invoice_return_items (
+            quantity
+          )
+        ''')
           .eq('invoice_id', invoiceId)
           .order('created_at');
 
-      return response
-          .map<InvoiceItemModel>((json) => InvoiceItemModel.fromJson(json))
-          .toList();
+      return (response as List).map<InvoiceItemModel>((json) {
+        final itemJson = Map<String, dynamic>.from(json);
+
+        // -----------------------------------------------------------------------
+        // Calculate total returned quantity for this invoice item.
+        // -----------------------------------------------------------------------
+
+        int returnedQuantity = 0;
+
+        final returnItems =
+            (itemJson['invoice_return_items'] as List?) ?? const [];
+
+        for (final returnItem in returnItems) {
+          final returnItemJson = Map<String, dynamic>.from(returnItem);
+
+          returnedQuantity +=
+              (returnItemJson['quantity'] as num?)?.toInt() ?? 0;
+        }
+
+        // The nested relation is only needed to calculate returnedQuantity.
+        // We don't need to keep it inside InvoiceItemModel.
+        itemJson.remove('invoice_return_items');
+
+        itemJson['returned_quantity'] = returnedQuantity;
+
+        return InvoiceItemModel.fromJson(itemJson);
+      }).toList();
     } on PostgrestException catch (e) {
       throw BillingException(e.message);
     } catch (e) {

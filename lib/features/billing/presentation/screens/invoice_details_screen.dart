@@ -394,7 +394,7 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
         );
 
         // Notify BillingScreen that the invoice has changed.
-        Navigator.pop(context,);
+        Navigator.pop(context, true);
       }
     } on InvoiceReturnException catch (e) {
       if (!mounted) return;
@@ -471,6 +471,71 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
         ),
       );
     }
+  }
+
+  // ============================================================================
+  // Return-aware calculations
+  // ============================================================================
+
+  int get _totalSoldQuantity {
+    return _items.fold<int>(0, (total, item) => total + item.quantity);
+  }
+
+  int get _totalReturnedQuantity {
+    return _items.fold<int>(0, (total, item) => total + item.returnedQuantity);
+  }
+
+  int get _totalRemainingQuantity {
+    return _items.fold<int>(0, (total, item) {
+      final remaining = item.quantity - item.returnedQuantity;
+      return total + (remaining < 0 ? 0 : remaining);
+    });
+  }
+
+  bool get _hasReturns {
+    return _totalReturnedQuantity > 0;
+  }
+
+  bool get _isFullyReturned {
+    return _totalSoldQuantity > 0 &&
+        _totalReturnedQuantity >= _totalSoldQuantity;
+  }
+
+  double _itemOriginalAmount(InvoiceItemModel item) {
+    return item.sellingPrice * item.quantity;
+  }
+
+  double _itemReturnedAmount(InvoiceItemModel item) {
+    return item.sellingPrice * item.returnedQuantity;
+  }
+
+  double _itemNetAmount(InvoiceItemModel item) {
+    return _itemOriginalAmount(item) - _itemReturnedAmount(item);
+  }
+
+  int _itemRemainingQuantity(InvoiceItemModel item) {
+    final remaining = item.quantity - item.returnedQuantity;
+
+    return remaining < 0 ? 0 : remaining;
+  }
+
+  double get _returnedAmount {
+    return _items.fold<double>(
+      0,
+      (total, item) => total + _itemReturnedAmount(item),
+    );
+  }
+
+  double get _netGrandTotal {
+    final value = _invoice!.grandTotal - _returnedAmount;
+
+    return value < 0 ? 0 : value;
+  }
+
+  double get _netDueAmount {
+    final value = _netGrandTotal - _invoice!.paidAmount;
+
+    return value < 0 ? 0 : value;
   }
 
   //--------------------------------------------------------------------------
@@ -911,9 +976,17 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
               editable: false,
               productName: item.productName,
               subtitle: subtitle.isEmpty ? null : subtitle,
+
               quantity: item.quantity,
+              returnedQuantity: item.returnedQuantity,
+
               unitPrice: item.sellingPrice,
-              totalPrice: item.lineTotal,
+
+              originalPrice: _itemOriginalAmount(item),
+              returnedAmount: _itemReturnedAmount(item),
+              netAmount: _itemNetAmount(item),
+
+              totalPrice: _itemNetAmount(item),
             );
           },
         ),

@@ -9,6 +9,7 @@ class InvoiceItemModel {
     required this.purchasePrice,
     required this.sellingPrice,
     required this.quantity,
+    required this.returnedQuantity,
     required this.discount,
     required this.tax,
     required this.lineSubtotal,
@@ -30,7 +31,11 @@ class InvoiceItemModel {
   final double purchasePrice;
   final double sellingPrice;
 
+  /// Original quantity sold on the invoice.
   final int quantity;
+
+  /// Total quantity returned for this invoice item.
+  final int returnedQuantity;
 
   final double discount;
   final double tax;
@@ -43,6 +48,33 @@ class InvoiceItemModel {
   final String? imeiNumber;
 
   final DateTime createdAt;
+
+  // ===========================================================================
+  // Return Calculations
+  // ===========================================================================
+
+  /// Quantity that is still with the customer.
+  int get remainingQuantity => quantity - returnedQuantity;
+
+  /// Original value of all units sold.
+  double get originalAmount => quantity * sellingPrice;
+
+  /// Value of the units that have been returned.
+  double get returnedAmount => returnedQuantity * sellingPrice;
+
+  /// Value of the units that remain after the return.
+  double get netAmount => remainingQuantity * sellingPrice;
+
+  /// Whether this item has any return.
+  bool get hasReturn => returnedQuantity > 0;
+
+  /// Whether the complete quantity of this item has been returned.
+  bool get isFullyReturned =>
+      quantity > 0 && returnedQuantity >= quantity;
+
+  /// Whether only part of this item's quantity has been returned.
+  bool get isPartiallyReturned =>
+      returnedQuantity > 0 && returnedQuantity < quantity;
 
   factory InvoiceItemModel.fromJson(Map<String, dynamic> json) {
     return InvoiceItemModel(
@@ -57,7 +89,10 @@ class InvoiceItemModel {
       purchasePrice: (json['purchase_price'] as num).toDouble(),
       sellingPrice: (json['selling_price'] as num).toDouble(),
 
-      quantity: json['quantity'] as int,
+      quantity: (json['quantity'] as num).toInt(),
+
+      returnedQuantity:
+          (json['returned_quantity'] as num?)?.toInt() ?? 0,
 
       discount: (json['discount'] as num).toDouble(),
       tax: (json['tax'] as num).toDouble(),
@@ -84,6 +119,7 @@ class InvoiceItemModel {
       'purchase_price': purchasePrice,
       'selling_price': sellingPrice,
       'quantity': quantity,
+      'returned_quantity': returnedQuantity,
       'discount': discount,
       'tax': tax,
       'line_subtotal': lineSubtotal,
@@ -105,6 +141,7 @@ class InvoiceItemModel {
     double? purchasePrice,
     double? sellingPrice,
     int? quantity,
+    int? returnedQuantity,
     double? discount,
     double? tax,
     double? lineSubtotal,
@@ -124,6 +161,7 @@ class InvoiceItemModel {
       purchasePrice: purchasePrice ?? this.purchasePrice,
       sellingPrice: sellingPrice ?? this.sellingPrice,
       quantity: quantity ?? this.quantity,
+      returnedQuantity: returnedQuantity ?? this.returnedQuantity,
       discount: discount ?? this.discount,
       tax: tax ?? this.tax,
       lineSubtotal: lineSubtotal ?? this.lineSubtotal,

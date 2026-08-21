@@ -7,6 +7,10 @@ class InvoiceItemTile extends StatelessWidget {
     required this.quantity,
     required this.unitPrice,
     required this.totalPrice,
+    this.returnedQuantity = 0,
+    this.originalPrice,
+    this.returnedAmount,
+    this.netAmount,
     this.subtitle,
     this.onTap,
     this.onDelete,
@@ -23,6 +27,26 @@ class InvoiceItemTile extends StatelessWidget {
   final double unitPrice;
   final double totalPrice;
 
+  /// Quantity already returned by the customer.
+  ///
+  /// Defaults to 0 so Create Invoice and Edit Invoice remain unchanged.
+  final int returnedQuantity;
+
+  /// Original item amount before returns.
+  ///
+  /// Only used by the non-editable Invoice Details view.
+  final double? originalPrice;
+
+  /// Value of the returned quantity.
+  ///
+  /// Only used by the non-editable Invoice Details view.
+  final double? returnedAmount;
+
+  /// Final item amount after return.
+  ///
+  /// Only used by the non-editable Invoice Details view.
+  final double? netAmount;
+
   final Widget? leading;
 
   final VoidCallback? onTap;
@@ -36,6 +60,11 @@ class InvoiceItemTile extends StatelessWidget {
   /// true  -> Create Invoice
   /// false -> Invoice Details
   final bool editable;
+
+  int get remainingQuantity {
+    final remaining = quantity - returnedQuantity;
+    return remaining < 0 ? 0 : remaining;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -117,10 +146,13 @@ class InvoiceItemTile extends StatelessWidget {
               //---------------------------------------------------------------
               // INFORMATION
               //---------------------------------------------------------------
+              //---------------------------------------------------------------
+              // INFORMATION
+              //---------------------------------------------------------------
               Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 14,
-                  vertical: 10,
+                  vertical: 12,
                 ),
                 decoration: BoxDecoration(
                   color: colorScheme.surface.withValues(alpha: .55),
@@ -129,55 +161,9 @@ class InvoiceItemTile extends StatelessWidget {
                   ),
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            children: [
-                              Text(
-                                'Quantity',
-                                style: theme.textTheme.labelSmall?.copyWith(
-                                  color: colorScheme.onSurfaceVariant,
-                                ),
-                              ),
-
-                              const SizedBox(height: 10),
-
-                              editable
-                                  ? _QuantityStepper(
-                                      quantity: quantity,
-                                      onDecrease: onDecrease,
-                                      onIncrease: onIncrease,
-                                    )
-                                  : Text(
-                                      '$quantity',
-                                      style: theme.textTheme.titleLarge
-                                          ?.copyWith(
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                    ),
-                            ],
-                          ),
-                        ),
-
-                        Container(
-                          width: 1,
-                          height: 34,
-                          color: colorScheme.outlineVariant,
-                        ),
-
-                        Expanded(
-                          child: _InfoTile(
-                            title: 'Unit Price',
-                            value: '₹${unitPrice.toStringAsFixed(2)}',
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                child: editable
+                    ? _buildEditableInformation(context)
+                    : _buildReturnAwareInformation(context),
               ),
 
               const SizedBox(height: 22),
@@ -192,7 +178,7 @@ class InvoiceItemTile extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Total',
+                        editable ? 'Total' : 'Net Amount',
                           style: theme.textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.w700,
                             color: colorScheme.onSurface,
@@ -259,6 +245,113 @@ class InvoiceItemTile extends StatelessWidget {
     );
   }
 
+  Widget _buildEditableInformation(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Row(
+      children: [
+        Expanded(
+          child: Column(
+            children: [
+              Text(
+                'Quantity',
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                ),
+              ),
+
+              const SizedBox(height: 10),
+
+              _QuantityStepper(
+                quantity: quantity,
+                onDecrease: onDecrease,
+                onIncrease: onIncrease,
+              ),
+            ],
+          ),
+        ),
+
+        Container(width: 1, height: 34, color: colorScheme.outlineVariant),
+
+        Expanded(
+          child: _InfoTile(
+            title: 'Unit Price',
+            value: '₹${unitPrice.toStringAsFixed(2)}',
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildReturnAwareInformation(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(
+              child: _InfoTile(title: 'Sold', value: '$quantity'),
+            ),
+
+            Container(width: 1, height: 34, color: colorScheme.outlineVariant),
+
+            Expanded(
+              child: _InfoTile(title: 'Returned', value: '$returnedQuantity'),
+            ),
+
+            Container(width: 1, height: 34, color: colorScheme.outlineVariant),
+
+            Expanded(
+              child: _InfoTile(title: 'Remaining', value: '$remainingQuantity'),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 14),
+
+        Divider(
+          height: 1,
+          color: colorScheme.outlineVariant.withValues(alpha: .5),
+        ),
+
+        const SizedBox(height: 14),
+
+        _InfoRow(
+          title: 'Unit Price',
+          value: '₹${unitPrice.toStringAsFixed(2)}',
+        ),
+
+        if (originalPrice != null) ...[
+          const SizedBox(height: 8),
+          _InfoRow(
+            title: 'Original Amount',
+            value: '₹${originalPrice!.toStringAsFixed(2)}',
+          ),
+        ],
+
+        if (returnedAmount != null && returnedAmount! > 0) ...[
+          const SizedBox(height: 8),
+          _InfoRow(
+            title: 'Returned Amount',
+            value: '₹${returnedAmount!.toStringAsFixed(2)}',
+          ),
+        ],
+
+        if (netAmount != null) ...[
+          const SizedBox(height: 8),
+          _InfoRow(
+            title: 'Net Amount',
+            value: '₹${netAmount!.toStringAsFixed(2)}',
+            emphasize: true,
+          ),
+        ],
+      ],
+    );
+  }
+
   Widget _buildLeading(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
@@ -306,6 +399,45 @@ class _InfoTile extends StatelessWidget {
           textAlign: TextAlign.center,
           style: theme.textTheme.titleSmall?.copyWith(
             fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  const _InfoRow({
+    required this.title,
+    required this.value,
+    this.emphasize = false,
+  });
+
+  final String title;
+  final String value;
+  final bool emphasize;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          title,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: colorScheme.onSurfaceVariant,
+            fontWeight: emphasize ? FontWeight.w600 : FontWeight.w500,
+          ),
+        ),
+
+        Text(
+          value,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            fontWeight: FontWeight.w700,
+            color: emphasize ? colorScheme.primary : colorScheme.onSurface,
           ),
         ),
       ],
