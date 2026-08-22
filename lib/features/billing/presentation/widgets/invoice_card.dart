@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:storemate/app/theme/app_colors.dart';
 import 'package:storemate/features/billing/data/models/invoice_model.dart';
+import 'package:storemate/features/billing/presentation/utils/invoice_financial_calculator.dart';
 
 class InvoiceCard extends StatelessWidget {
   const InvoiceCard({super.key, required this.invoice, required this.onTap});
@@ -235,10 +236,36 @@ class _InvoiceAmount extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
+    // -------------------------------------------------------------------------
+    // Financial calculation
+    // -------------------------------------------------------------------------
+    //
+    // Billing card must display the current financial value after returns.
+    //
+    // Original invoice:
+    //     grandTotal
+    //
+    // Returned:
+    //     returnedAmount
+    //
+    // Net invoice:
+    //     grandTotal - returnedAmount
+    //
+    final financial = InvoiceFinancialCalculator.calculate(
+      originalAmount: invoice.grandTotal,
+      returnedAmount: invoice.returnedAmount,
+      paidAmount: invoice.paidAmount,
+      refundedAmount: 0,
+    );
+
     final status = invoice.displayStatus;
 
     final isReturned = status == 'returned';
     final isPartiallyReturned = status == 'partially_returned';
+
+    // -------------------------------------------------------------------------
+    // Fully Returned
+    // -------------------------------------------------------------------------
 
     if (isReturned) {
       return Row(
@@ -249,14 +276,16 @@ class _InvoiceAmount extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  _formatCurrency(invoice.grandTotal),
+                  _formatCurrency(financial.netInvoiceAmount),
                   style: theme.textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.w700,
                   ),
                 ),
+
                 const SizedBox(height: 4),
+
                 Text(
-                  'Total Amount',
+                  'Net Amount',
                   style: theme.textTheme.labelMedium?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                     fontWeight: FontWeight.w500,
@@ -266,10 +295,17 @@ class _InvoiceAmount extends StatelessWidget {
             ),
           ),
 
-          _StatusAmountBadge(label: 'Returned', color: AppColors.primary),
+          _StatusAmountBadge(
+            label: 'Returned',
+            color: AppColors.primary,
+          ),
         ],
       );
     }
+
+    // -------------------------------------------------------------------------
+    // Partially Returned
+    // -------------------------------------------------------------------------
 
     if (isPartiallyReturned) {
       return Row(
@@ -280,14 +316,16 @@ class _InvoiceAmount extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  _formatCurrency(invoice.grandTotal),
+                  _formatCurrency(financial.netInvoiceAmount),
                   style: theme.textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.w700,
                   ),
                 ),
+
                 const SizedBox(height: 4),
+
                 Text(
-                  'Total Amount',
+                  'Net Amount',
                   style: theme.textTheme.labelMedium?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                     fontWeight: FontWeight.w500,
@@ -305,7 +343,11 @@ class _InvoiceAmount extends StatelessWidget {
       );
     }
 
-    final hasDue = invoice.dueAmount > 0;
+    // -------------------------------------------------------------------------
+    // Normal Invoice
+    // -------------------------------------------------------------------------
+
+    final hasDue = financial.hasAmountDue;
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.end,
@@ -315,12 +357,14 @@ class _InvoiceAmount extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                _formatCurrency(invoice.grandTotal),
+                _formatCurrency(financial.netInvoiceAmount),
                 style: theme.textTheme.headlineSmall?.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
               ),
+
               const SizedBox(height: 4),
+
               Text(
                 'Total Amount',
                 style: theme.textTheme.labelMedium?.copyWith(
@@ -334,11 +378,14 @@ class _InvoiceAmount extends StatelessWidget {
 
         if (hasDue)
           _StatusAmountBadge(
-            label: 'Due ${_formatCurrency(invoice.dueAmount)}',
+            label: 'Due ${_formatCurrency(financial.amountDue)}',
             color: AppColors.error,
           )
         else
-          _StatusAmountBadge(label: 'Paid', color: AppColors.success),
+          _StatusAmountBadge(
+            label: 'Paid',
+            color: AppColors.success,
+          ),
       ],
     );
   }

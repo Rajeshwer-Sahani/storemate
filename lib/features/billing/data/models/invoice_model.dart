@@ -54,6 +54,7 @@ class InvoiceModel {
 
   final double paidAmount;
   final double dueAmount;
+  
 
   // ===========================================================================
   // Items & Returns
