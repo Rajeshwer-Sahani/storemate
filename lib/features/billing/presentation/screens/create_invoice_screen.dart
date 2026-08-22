@@ -182,7 +182,9 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                             subtotal: _controller.subtotal,
                             discount: _controller.discount,
                             tax: _controller.tax,
-                            grandTotal: _controller.grandTotal,
+                            originalTotal: _controller.grandTotal,
+                            returnedAmount: 0,
+                            netInvoiceAmount: _controller.grandTotal,
                           ),
 
                           const SizedBox(height: 28),

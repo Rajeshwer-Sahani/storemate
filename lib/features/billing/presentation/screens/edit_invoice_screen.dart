@@ -292,7 +292,9 @@ class _EditInvoiceScreenState extends State<EditInvoiceScreen> {
           subtotal: _controller.subtotal,
           discount: _controller.discount,
           tax: _controller.tax,
-          grandTotal: _controller.grandTotal,
+          originalTotal: _controller.grandTotal,
+          returnedAmount: 0,
+          netInvoiceAmount: _controller.grandTotal,
         ),
       ],
     );

@@ -18,6 +18,7 @@ import 'package:storemate/features/billing/data/services/invoice_return_service.
 import 'package:storemate/features/billing/presentation/screens/edit_invoice_screen.dart';
 import 'package:storemate/features/billing/presentation/screens/invoice_return_screen.dart';
 import 'package:storemate/features/billing/presentation/screens/invoice_timeline_screen.dart';
+import 'package:storemate/features/billing/presentation/utils/invoice_financial_calculator.dart';
 import 'package:storemate/features/billing/presentation/widgets/delete_invoice_dialog.dart';
 import 'package:storemate/features/billing/presentation/widgets/invoice_action_menu.dart';
 
@@ -999,23 +1000,54 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
   //---------------------------------------------------------------------
   // Summary
   //---------------------------------------------------------------------
-  Widget _buildSummarySection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const AppSectionHeader(title: 'Summary'),
+  //---------------------------------------------------------------------
+// Summary
+//---------------------------------------------------------------------
+Widget _buildSummarySection() {
+  final financial = _financialSummary!;
 
-        const SizedBox(height: 12),
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const AppSectionHeader(title: 'Summary'),
 
-        InvoiceSummaryCard(
-          subtotal: _invoice!.subtotal,
-          discount: _invoice!.discount,
-          tax: _invoice!.tax,
-          grandTotal: _invoice!.grandTotal,
+      const SizedBox(height: 12),
+
+      InvoiceSummaryCard(
+        subtotal: _invoice!.subtotal,
+        discount: _invoice!.discount,
+        tax: _invoice!.tax,
+
+        // Original invoice amount — never modified by returns.
+        originalTotal: financial.originalAmount,
+
+        // Return-aware values.
+        returnedAmount: financial.returnedAmount,
+        netInvoiceAmount: financial.netInvoiceAmount,
+      ),
+
+      const SizedBox(height: 18),
+    ],
+  );
+}
+
+  InvoiceFinancialSummary? get _financialSummary {
+    if (_invoice == null) return null;
+
+    final returnedAmount = InvoiceFinancialCalculator.calculateReturnedAmount(
+      _items.map(
+        (item) => InvoiceFinancialItem(
+          sellingPrice: item.sellingPrice,
+          returnedQuantity: item.returnedQuantity,
         ),
+      ),
+    );
 
-        const SizedBox(height: 18),
-      ],
+    return InvoiceFinancialCalculator.calculate(
+      originalAmount: _invoice!.grandTotal,
+      returnedAmount: returnedAmount,
+      paidAmount: _invoice!.paidAmount,
+      refundedAmount: 0, // temporary until refund source is connected
     );
   }
 
@@ -1023,6 +1055,7 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
   // Payment
   //---------------------------------------------------------------------
   Widget _buildPaymentSection() {
+    final financial = _financialSummary!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -1033,9 +1066,9 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
         InvoicePaymentCard(
           readOnly: true,
           paymentMethod: _invoice!.paymentMethod,
-          paidAmount: _invoice!.paidAmount,
-          grandTotal: _invoice!.grandTotal,
-          dueAmount: _invoice!.dueAmount,
+          paidAmount: financial.paidAmount,
+          grandTotal: financial.netInvoiceAmount,
+          dueAmount: financial.amountDue,
         ),
 
         const SizedBox(height: 18),

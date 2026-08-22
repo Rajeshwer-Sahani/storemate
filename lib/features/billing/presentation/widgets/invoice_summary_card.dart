@@ -6,18 +6,30 @@ class InvoiceSummaryCard extends StatelessWidget {
     required this.subtotal,
     required this.discount,
     required this.tax,
-    required this.grandTotal,
+    required this.originalTotal,
+    required this.returnedAmount,
+    required this.netInvoiceAmount,
   });
 
   final double subtotal;
   final double discount;
   final double tax;
-  final double grandTotal;
+
+  /// Original invoice total at the time the invoice was created.
+  final double originalTotal;
+
+  /// Total value of goods returned.
+  final double returnedAmount;
+
+  /// Original total after subtracting returned amount.
+  final double netInvoiceAmount;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+
+    final hasReturns = returnedAmount > 0;
 
     return Card(
       margin: EdgeInsets.zero,
@@ -25,7 +37,10 @@ class InvoiceSummaryCard extends StatelessWidget {
         padding: const EdgeInsets.all(18),
         child: Column(
           children: [
-            _SummaryRow(label: 'Subtotal', value: subtotal),
+            _SummaryRow(
+              label: 'Subtotal',
+              value: subtotal,
+            ),
 
             const SizedBox(height: 14),
 
@@ -47,10 +62,49 @@ class InvoiceSummaryCard extends StatelessWidget {
 
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 18),
-              child: Divider(color: colorScheme.outlineVariant, height: 1),
+              child: Divider(
+                color: colorScheme.outlineVariant,
+                height: 1,
+              ),
             ),
 
-            _SummaryRow(label: 'Grand Total', value: grandTotal, isTotal: true),
+            // -----------------------------------------------------------
+            // Original Invoice Total
+            // -----------------------------------------------------------
+            _SummaryRow(
+              label: 'Original Total',
+              value: originalTotal,
+              isTotal: !hasReturns,
+            ),
+
+            // -----------------------------------------------------------
+            // Return-aware financial information
+            // -----------------------------------------------------------
+            if (hasReturns) ...[
+              const SizedBox(height: 14),
+
+              _SummaryRow(
+                label: 'Returned Amount',
+                value: returnedAmount,
+                valueColor: colorScheme.error,
+                prefix: '- ',
+              ),
+
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 18),
+                child: Divider(
+                  color: colorScheme.outlineVariant,
+                  height: 1,
+                ),
+              ),
+
+              _SummaryRow(
+                label: 'Net Invoice Total',
+                value: netInvoiceAmount,
+                isTotal: true,
+                valueColor: colorScheme.primary,
+              ),
+            ],
           ],
         ),
       ),
@@ -79,16 +133,24 @@ class _SummaryRow extends StatelessWidget {
     final colorScheme = theme.colorScheme;
 
     final textStyle = isTotal
-        ? theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800)
+        ? theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w800,
+          )
         : theme.textTheme.bodyLarge;
 
     return Row(
       children: [
-        Expanded(child: Text(label, style: textStyle)),
+        Expanded(
+          child: Text(
+            label,
+            style: textStyle,
+          ),
+        ),
         Text(
           '$prefix₹${value.toStringAsFixed(2)}',
           style: textStyle?.copyWith(
-            color: valueColor ?? (isTotal ? Colors.green.shade700 : null),
+            color: valueColor ??
+                (isTotal ? colorScheme.primary : null),
           ),
         ),
       ],
