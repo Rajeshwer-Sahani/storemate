@@ -27,9 +27,31 @@ class EditInvoiceScreen extends StatefulWidget {
 class _EditInvoiceScreenState extends State<EditInvoiceScreen> {
   late final EditInvoiceController _controller;
 
+  bool _isEditBlocked = false;
+
   @override
   void initState() {
     super.initState();
+
+    if (widget.invoice.returnedAmount > 0) {
+      _isEditBlocked = true;
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Invoice cannot be edited because it has one or more returns.',
+            ),
+          ),
+        );
+
+        Navigator.pop(context);
+      });
+
+      return;
+    }
 
     _controller = EditInvoiceController(
       billingService: BillingService(),
@@ -47,6 +69,9 @@ class _EditInvoiceScreenState extends State<EditInvoiceScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (_isEditBlocked) {
+      return const Scaffold(body: SizedBox.shrink());
+    }
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, _) {

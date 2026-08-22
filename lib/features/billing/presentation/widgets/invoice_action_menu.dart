@@ -78,12 +78,14 @@ class InvoiceActionMenu extends StatelessWidget {
         //---------------------------------------------------------------------------
         // Edit Invoice
         //---------------------------------------------------------------------------
-        _buildMenuItem(
-          context: context,
-          value: InvoiceAction.edit,
-          icon: Icons.edit_outlined,
-          title: 'Edit Invoice',
-        ),
+        // An invoice cannot be edited once any return exists.
+        if (invoice.returnedAmount <= 0)
+          _buildMenuItem(
+            context: context,
+            value: InvoiceAction.edit,
+            icon: Icons.edit_outlined,
+            title: 'Edit Invoice',
+          ),
 
         //--------------------------------------------------------------------------
         // Receive Payment
@@ -100,10 +102,11 @@ class InvoiceActionMenu extends StatelessWidget {
         /// Replace `true` with `!invoice.isReturned`
         /// after the invoice status system is implemented.
 
-        //--------------------------------------------------------------------------
+        //---------------------------------------------------------------------------
         // Return Invoice
-        //--------------------------------------------------------------------------
-        if (true)
+        //---------------------------------------------------------------------------
+        // A return can only be initiated while there is still a returnable amount.
+        if (invoice.returnedAmount < invoice.grandTotal)
           _buildMenuItem(
             context: context,
             value: InvoiceAction.returnInvoice,
