@@ -108,11 +108,15 @@ class _PaymentCardState extends State<InvoicePaymentCard> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    final dueAmount = widget.dueAmount;
+    final double remainingDue = (widget.grandTotal - widget.paidAmount).clamp(
+      0,
+      double.infinity,
+    );
 
     final bool hasChange = widget.paidAmount > widget.grandTotal;
 
-    final bool isPaid = widget.paidAmount == widget.grandTotal;
+    final bool isPaid =
+        !hasChange && (widget.grandTotal - widget.paidAmount).abs() < 0.01;
 
     final double changeAmount = hasChange
         ? widget.paidAmount - widget.grandTotal
@@ -301,7 +305,7 @@ class _PaymentCardState extends State<InvoicePaymentCard> {
                   Text(
                     hasChange
                         ? '₹${changeAmount.toStringAsFixed(2)}'
-                        : '₹${dueAmount.toStringAsFixed(2)}',
+                        : '₹${remainingDue.toStringAsFixed(2)}',
                     textAlign: TextAlign.center,
                     style: theme.textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.bold,

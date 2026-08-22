@@ -687,11 +687,21 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
             ),
           ),
         ),
-        InvoiceBottomBar(
-          grandTotal: _invoice!.grandTotal,
-          buttonText: 'Print Invoice',
-          buttonIcon: Icons.print_rounded,
-          onPressed: _printInvoice,
+
+        // -----------------------------------------------------------------------
+        // Sticky Bottom Bar
+        // -----------------------------------------------------------------------
+        Builder(
+          builder: (context) {
+            final financial = _financialSummary!;
+
+            return InvoiceBottomBar(
+              grandTotal: financial.netInvoiceAmount,
+              buttonText: 'Print Invoice',
+              buttonIcon: Icons.print_rounded,
+              onPressed: _printInvoice,
+            );
+          },
         ),
       ],
     );
@@ -834,7 +844,8 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
           //-------------------------------------------------------------
           Builder(
             builder: (_) {
-              final bool hasDue = _invoice!.dueAmount > 0;
+              final financial = _financialSummary!;
+              final bool hasDue = financial.amountDue > 0;
 
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -879,7 +890,7 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
 
                         Text(
                           hasDue
-                              ? 'Due: ${formatCurrency(_invoice!.dueAmount)}'
+                              ? 'Due: ${formatCurrency(financial.amountDue)}'
                               : 'Fully Paid',
                           style: theme.textTheme.titleSmall?.copyWith(
                             color: Colors.white,
@@ -1001,35 +1012,35 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
   // Summary
   //---------------------------------------------------------------------
   //---------------------------------------------------------------------
-// Summary
-//---------------------------------------------------------------------
-Widget _buildSummarySection() {
-  final financial = _financialSummary!;
+  // Summary
+  //---------------------------------------------------------------------
+  Widget _buildSummarySection() {
+    final financial = _financialSummary!;
 
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      const AppSectionHeader(title: 'Summary'),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const AppSectionHeader(title: 'Summary'),
 
-      const SizedBox(height: 12),
+        const SizedBox(height: 12),
 
-      InvoiceSummaryCard(
-        subtotal: _invoice!.subtotal,
-        discount: _invoice!.discount,
-        tax: _invoice!.tax,
+        InvoiceSummaryCard(
+          subtotal: _invoice!.subtotal,
+          discount: _invoice!.discount,
+          tax: _invoice!.tax,
 
-        // Original invoice amount — never modified by returns.
-        originalTotal: financial.originalAmount,
+          // Original invoice amount — never modified by returns.
+          originalTotal: financial.originalAmount,
 
-        // Return-aware values.
-        returnedAmount: financial.returnedAmount,
-        netInvoiceAmount: financial.netInvoiceAmount,
-      ),
+          // Return-aware values.
+          returnedAmount: financial.returnedAmount,
+          netInvoiceAmount: financial.netInvoiceAmount,
+        ),
 
-      const SizedBox(height: 18),
-    ],
-  );
-}
+        const SizedBox(height: 18),
+      ],
+    );
+  }
 
   InvoiceFinancialSummary? get _financialSummary {
     if (_invoice == null) return null;
