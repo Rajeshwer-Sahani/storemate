@@ -111,9 +111,7 @@ class _EmiPlanListScreenState extends State<EmiPlanListScreen> {
   }
 
   int get _activePlans {
-    return widget.controller.emiPlans
-        .where((plan) => plan.isActive)
-        .length;
+    return widget.controller.emiPlans.where((plan) => plan.isActive).length;
   }
 
   double get _totalFinanced {
@@ -148,35 +146,26 @@ class _EmiPlanListScreenState extends State<EmiPlanListScreen> {
               // =================================================================
               // Header
               // =================================================================
-              SliverToBoxAdapter(
-                child: _buildHeader(context),
-              ),
+              SliverToBoxAdapter(child: _buildHeader(context)),
 
               // =================================================================
               // Error
               // =================================================================
               if (controller.hasError)
-                SliverToBoxAdapter(
-                  child: _buildErrorState(context),
-                ),
+                SliverToBoxAdapter(child: _buildErrorState(context)),
 
               // =================================================================
               // Loading
               // =================================================================
-              if (controller.isLoading &&
-                  controller.emiPlans.isEmpty)
+              if (controller.isLoading && controller.emiPlans.isEmpty)
                 SliverFillRemaining(
                   hasScrollBody: false,
-                  child: EmiLoadingWidget(
-                    message: 'Loading EMI plans...',
-                  ),
+                  child: EmiLoadingWidget(message: 'Loading EMI plans...'),
                 )
-
               // =================================================================
               // Initial Empty State
               // =================================================================
-              else if (!controller.isLoading &&
-                  controller.emiPlans.isEmpty)
+              else if (!controller.isLoading && controller.emiPlans.isEmpty)
                 SliverFillRemaining(
                   hasScrollBody: false,
                   child: EmiEmptyState(
@@ -184,18 +173,13 @@ class _EmiPlanListScreenState extends State<EmiPlanListScreen> {
                     onRefresh: _refresh,
                   ),
                 )
-
               // =================================================================
               // Content
               // =================================================================
               else ...[
-                SliverToBoxAdapter(
-                  child: _buildStatistics(context),
-                ),
+                SliverToBoxAdapter(child: _buildStatistics(context)),
 
-                SliverToBoxAdapter(
-                  child: _buildSearchField(context),
-                ),
+                SliverToBoxAdapter(child: _buildSearchField(context)),
 
                 if (_filteredPlans.isEmpty)
                   SliverFillRemaining(
@@ -204,16 +188,10 @@ class _EmiPlanListScreenState extends State<EmiPlanListScreen> {
                   )
                 else
                   SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(
-                      20,
-                      4,
-                      20,
-                      32,
-                    ),
+                    padding: const EdgeInsets.fromLTRB(20, 4, 20, 32),
                     sliver: SliverList.separated(
                       itemCount: _filteredPlans.length,
-                      separatorBuilder: (_, __) =>
-                          const SizedBox(height: 14),
+                      separatorBuilder: (_, __) => const SizedBox(height: 14),
                       itemBuilder: (context, index) {
                         final plan = _filteredPlans[index];
 
@@ -380,9 +358,7 @@ class _EmiPlanListScreenState extends State<EmiPlanListScreen> {
                   tooltip: 'Clear search',
                 ),
           filled: true,
-          fillColor: colorScheme.surfaceContainerHighest.withValues(
-            alpha: .45,
-          ),
+          fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: .45),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide.none,
@@ -390,17 +366,12 @@ class _EmiPlanListScreenState extends State<EmiPlanListScreen> {
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide(
-              color: colorScheme.outlineVariant.withValues(
-                alpha: .45,
-              ),
+              color: colorScheme.outlineVariant.withValues(alpha: .45),
             ),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(
-              color: colorScheme.primary,
-              width: 1.5,
-            ),
+            borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
           ),
         ),
       ),
@@ -483,23 +454,17 @@ class _EmiPlanListScreenState extends State<EmiPlanListScreen> {
         decoration: BoxDecoration(
           color: colorScheme.errorContainer.withValues(alpha: .55),
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: colorScheme.error.withValues(alpha: .20),
-          ),
+          border: Border.all(color: colorScheme.error.withValues(alpha: .20)),
         ),
         child: Row(
           children: [
-            Icon(
-              Icons.error_outline_rounded,
-              color: colorScheme.error,
-            ),
+            Icon(Icons.error_outline_rounded, color: colorScheme.error),
 
             const SizedBox(width: 12),
 
             Expanded(
               child: Text(
-                widget.controller.errorMessage ??
-                    'Something went wrong.',
+                widget.controller.errorMessage ?? 'Something went wrong.',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: colorScheme.onErrorContainer,
                 ),
@@ -568,9 +533,7 @@ class _StatisticCard extends StatelessWidget {
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: colorScheme.outlineVariant.withValues(
-            alpha: .50,
-          ),
+          color: colorScheme.outlineVariant.withValues(alpha: .50),
         ),
       ),
       child: Column(
@@ -583,11 +546,7 @@ class _StatisticCard extends StatelessWidget {
               color: color.withValues(alpha: .10),
               borderRadius: BorderRadius.circular(11),
             ),
-            child: Icon(
-              icon,
-              size: 20,
-              color: color,
-            ),
+            child: Icon(icon, size: 20, color: color),
           ),
 
           const SizedBox(height: 12),
