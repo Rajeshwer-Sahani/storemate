@@ -5,9 +5,7 @@ import '../../data/requests/create_emi_plan_request.dart';
 import '../../data/services/emi_service.dart';
 
 class CreateEmiPlanController extends ChangeNotifier {
-  CreateEmiPlanController({
-    required EmiService service,
-  }) : _service = service;
+  CreateEmiPlanController({required EmiService service}) : _service = service;
 
   final EmiService _service;
 
@@ -39,9 +37,7 @@ class CreateEmiPlanController extends ChangeNotifier {
   // Create EMI Plan
   // ===========================================================================
 
-  Future<EmiPlanModel?> createEmiPlan(
-    CreateEmiPlanRequest request,
-  ) async {
+  Future<EmiPlanModel?> createEmiPlan(CreateEmiPlanRequest request) async {
     _setLoading(true);
 
     _errorMessage = null;
