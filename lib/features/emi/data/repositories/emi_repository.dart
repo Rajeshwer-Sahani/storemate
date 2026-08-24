@@ -4,62 +4,59 @@ import 'package:storemate/features/emi/data/requests/record_emi_payment_request.
 import '../models/emi_installment_model.dart';
 import '../models/emi_payment_model.dart';
 import '../models/emi_plan_model.dart';
-import '../repositories/emi_repository.dart';
 
-class EmiService {
-  EmiService({
-    required EmiRepository repository,
-  }) : _repository = repository;
-
-  final EmiRepository _repository;
-
+abstract class EmiRepository {
   // ===========================================================================
   // EMI Plans
   // ===========================================================================
 
-  Future<List<EmiPlanModel>> getEmiPlans() {
-    return _repository.getEmiPlans();
-  }
+  /// Fetch all EMI plans belonging to the current user's store.
+  Future<List<EmiPlanModel>> getEmiPlans();
 
-  Future<EmiPlanModel> getEmiPlanById(
-    String emiPlanId,
-  ) {
-    return _repository.getEmiPlanById(emiPlanId);
-  }
+  /// Fetch a single EMI plan by its ID.
+  Future<EmiPlanModel> getEmiPlanById(String emiPlanId);
 
+  /// Create a new EMI plan through the authoritative database RPC.
+  ///
+  /// The database handles:
+  /// - invoice validation
+  /// - financed amount calculation
+  /// - EMI plan creation
+  /// - installment generation
+  /// - installment amount calculation
+  /// - final installment rounding
+  /// - transaction atomicity
   Future<EmiPlanModel> createEmiPlan(
     CreateEmiPlanRequest request,
-  ) {
-    return _repository.createEmiPlan(request);
-  }
+  );
 
   // ===========================================================================
   // Installments
   // ===========================================================================
 
+  /// Fetch all installments belonging to an EMI plan.
   Future<List<EmiInstallmentModel>> getInstallments(
     String emiPlanId,
-  ) {
-    return _repository.getInstallments(emiPlanId);
-  }
+  );
 
   // ===========================================================================
   // Payments
   // ===========================================================================
 
+  /// Fetch all payments belonging to an EMI plan.
   Future<List<EmiPaymentModel>> getPayments(
     String emiPlanId,
-  ) {
-    return _repository.getPayments(emiPlanId);
-  }
+  );
 
-  // ===========================================================================
-  // Record Payment
-  // ===========================================================================
-
+  /// Record an EMI payment through the authoritative database RPC.
+  ///
+  /// The database handles:
+  /// - payment creation
+  /// - installment allocation
+  /// - installment balance updates
+  /// - EMI plan balance updates
+  /// - EMI plan status
   Future<EmiPaymentModel> recordPayment(
     RecordEmiPaymentRequest request,
-  ) {
-    return _repository.recordPayment(request);
-  }
+  );
 }
