@@ -74,12 +74,12 @@ class _AppSearchFieldState extends State<AppSearchField> {
             splashRadius: 20,
             icon: Icon(
               Icons.close_rounded,
+              size: 20,
               color: theme.colorScheme.onSurfaceVariant,
             ),
             onPressed: () {
               widget.controller?.clear();
               widget.onChanged?.call('');
-              setState(() {});
             },
           ),
 
@@ -91,9 +91,10 @@ class _AppSearchFieldState extends State<AppSearchField> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     return SizedBox(
-      height: 56,
+      height: 52,
       child: TextField(
         controller: widget.controller,
         onChanged: widget.onChanged,
@@ -107,55 +108,58 @@ class _AppSearchFieldState extends State<AppSearchField> {
         textInputAction: widget.textInputAction,
 
         decoration: InputDecoration(
+          hintText: widget.hintText,
+
           hintStyle:
               widget.hintStyle ??
-              TextStyle(
-                color: theme.colorScheme.onSurfaceVariant,
-                fontSize: 16,
+              theme.textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onSurfaceVariant,
               ),
 
           contentPadding: const EdgeInsets.symmetric(
-            horizontal: 18,
-            vertical: 16,
+            horizontal: 16,
+            vertical: 14,
           ),
 
-          hintText: widget.hintText,
-
-          prefixIcon: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Icon(
-              Icons.search_rounded,
-              size: 26,
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
+          prefixIcon: Icon(
+            Icons.search_rounded,
+            size: 22,
+            color: colorScheme.onSurfaceVariant,
           ),
-          prefixIconConstraints: const BoxConstraints(minWidth: 58),
+
+          prefixIconConstraints: const BoxConstraints(
+            minWidth: 52,
+          ),
 
           suffixIcon: _buildSuffixIcon(theme),
 
-          fillColor: theme.colorScheme.surface,
+          fillColor: colorScheme.surface,
           filled: true,
 
           border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(18),
-            borderSide: BorderSide.none,
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide(
+              color: colorScheme.outlineVariant,
+            ),
           ),
 
           enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(18),
-            borderSide: BorderSide(color: theme.colorScheme.outlineVariant),
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide(
+              color: colorScheme.outlineVariant,
+            ),
           ),
 
           focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(14),
             borderSide: BorderSide(
-              color: theme.colorScheme.primary,
+              color: colorScheme.primary,
               width: 1.5,
             ),
           ),
         ),
 
-        style: theme.textTheme.bodyLarge,
+        style: theme.textTheme.bodyMedium,
       ),
     );
   }
