@@ -3,7 +3,7 @@ import 'package:storemate/core/widgets/app_search_field.dart';
 
 import '../../../../features/billing/data/models/invoice_model.dart';
 import '../../../../features/billing/data/services/billing_service.dart';
-import 'create_emi_plan_screen.dart';
+
 
 class SelectInvoiceForEmiScreen extends StatefulWidget {
   const SelectInvoiceForEmiScreen({super.key, this.onInvoiceSelected});
@@ -901,7 +901,6 @@ class _SelectInvoiceForEmiScreenState extends State<SelectInvoiceForEmiScreen> {
     );
   }
 
-
   // ===========================================================================
   // Security Footer
   // ===========================================================================
@@ -1203,7 +1202,7 @@ class _SelectInvoiceForEmiScreenState extends State<SelectInvoiceForEmiScreen> {
   // Selection
   // ===========================================================================
 
-  Future<void> _selectInvoice(InvoiceModel invoice) async {
+  void _selectInvoice(InvoiceModel invoice) {
     FocusScope.of(context).unfocus();
 
     if (widget.onInvoiceSelected != null) {
@@ -1211,9 +1210,7 @@ class _SelectInvoiceForEmiScreenState extends State<SelectInvoiceForEmiScreen> {
       return;
     }
 
-    await Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => CreateEmiPlanScreen(invoice: invoice)),
-    );
+    Navigator.of(context).pop<InvoiceModel>(invoice);
   }
 
   // ===========================================================================

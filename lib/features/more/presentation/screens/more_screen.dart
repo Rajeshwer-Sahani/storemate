@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:storemate/features/billing/data/models/invoice_model.dart';
 
 import 'package:storemate/features/emi/data/repositories/emi_repository_impl.dart';
+import 'package:storemate/features/emi/data/services/emi_service.dart';
+import 'package:storemate/features/emi/presentation/controllers/create_emi_plan_controller.dart';
 import 'package:storemate/features/emi/presentation/controllers/emi_controller.dart';
+import 'package:storemate/features/emi/presentation/screens/create_emi_plan_screen.dart';
 import 'package:storemate/features/emi/presentation/screens/emi_plan_list_screen.dart';
 import 'package:storemate/features/emi/presentation/screens/select_invoice_for_emi_screen.dart';
 import 'package:storemate/features/more/widgets/more_section_header.dart';
@@ -657,18 +661,31 @@ class _EmiPlanRouteState extends State<_EmiPlanRoute> {
   }
 
   Future<void> _onCreateEmiPlan() async {
-  final selectedInvoice = await Navigator.of(context).push<InvoiceModel>(
-    MaterialPageRoute(
-      builder: (_) => const SelectInvoiceForEmiScreen(),
-    ),
-  );
+    final selectedInvoice = await Navigator.of(context).push<InvoiceModel>(
+      MaterialPageRoute(builder: (_) => const SelectInvoiceForEmiScreen()),
+    );
 
-  if (!mounted || selectedInvoice == null) {
-    return;
+    if (!mounted || selectedInvoice == null) {
+      return;
+    }
+
+    final createdPlan = await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ChangeNotifierProvider(
+          create: (_) => CreateEmiPlanController(
+            service: EmiService(repository: EmiRepositoryImpl()),
+          ),
+          child: CreateEmiPlanScreen(invoice: selectedInvoice),
+        ),
+      ),
+    );
+
+    if (!mounted || createdPlan == null) {
+      return;
+    }
+
+    // Refresh EMI plans here after creation.
   }
-
-  // Navigate to CreateEmiPlanScreen here.
-}
 
   void _onPlanTap(String emiPlanId) {
     // Navigate to EMI Plan Details later.
