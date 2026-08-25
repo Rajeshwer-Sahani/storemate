@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:storemate/features/billing/data/models/invoice_model.dart';
 
 import 'package:storemate/features/emi/data/repositories/emi_repository_impl.dart';
 import 'package:storemate/features/emi/presentation/controllers/emi_controller.dart';
 import 'package:storemate/features/emi/presentation/screens/emi_plan_list_screen.dart';
+import 'package:storemate/features/emi/presentation/screens/select_invoice_for_emi_screen.dart';
 import 'package:storemate/features/more/widgets/more_section_header.dart';
 
 import '../../../../core/widgets/app_module_header.dart';
@@ -654,13 +656,21 @@ class _EmiPlanRouteState extends State<_EmiPlanRoute> {
     );
   }
 
-  void _onCreateEmiPlan() {
-    // TODO:
-    // Navigate to Create EMI Plan screen.
+  Future<void> _onCreateEmiPlan() async {
+  final selectedInvoice = await Navigator.of(context).push<InvoiceModel>(
+    MaterialPageRoute(
+      builder: (_) => const SelectInvoiceForEmiScreen(),
+    ),
+  );
+
+  if (!mounted || selectedInvoice == null) {
+    return;
   }
 
+  // Navigate to CreateEmiPlanScreen here.
+}
+
   void _onPlanTap(String emiPlanId) {
-    // TODO:
-    // Navigate to EMI Plan Details screen.
+    // Navigate to EMI Plan Details later.
   }
 }

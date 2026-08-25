@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:storemate/features/emi/data/requests/create_emi_plan_request.dart';
 
 import '../../data/models/emi_installment_model.dart';
 import '../../data/models/emi_payment_model.dart';
@@ -7,9 +8,7 @@ import '../../data/requests/record_emi_payment_request.dart';
 import '../../data/repositories/emi_repository.dart';
 
 class EmiController extends ChangeNotifier {
-  EmiController({
-    required EmiRepository repository,
-  }) : _repository = repository;
+  EmiController({required EmiRepository repository}) : _repository = repository;
 
   final EmiRepository _repository;
 
@@ -54,6 +53,10 @@ class EmiController extends ChangeNotifier {
 
   bool get isLoadingDetails => _isLoadingDetails;
 
+  bool _isCreatingPlan = false;
+
+  bool get isCreatingPlan => _isCreatingPlan;
+
   bool _isRecordingPayment = false;
 
   bool get isRecordingPayment => _isRecordingPayment;
@@ -82,6 +85,31 @@ class EmiController extends ChangeNotifier {
       _setError(_getErrorMessage(e));
     } finally {
       _setLoading(false);
+    }
+  }
+
+  // ===========================================================================
+  // Create EMI Plan
+  // ===========================================================================
+
+  Future<EmiPlanModel?> createEmiPlan(CreateEmiPlanRequest request) async {
+    _setCreatingPlan(true);
+    _clearError();
+
+    try {
+      final plan = await _repository.createEmiPlan(request);
+
+      // Add the newly created plan to the local list immediately.
+      _emiPlans = [plan, ..._emiPlans];
+
+      notifyListeners();
+
+      return plan;
+    } catch (e) {
+      _setError(_getErrorMessage(e));
+      return null;
+    } finally {
+      _setCreatingPlan(false);
     }
   }
 
@@ -214,6 +242,11 @@ class EmiController extends ChangeNotifier {
 
   void _setLoading(bool value) {
     _isLoading = value;
+    notifyListeners();
+  }
+
+  void _setCreatingPlan(bool value) {
+    _isCreatingPlan = value;
     notifyListeners();
   }
 

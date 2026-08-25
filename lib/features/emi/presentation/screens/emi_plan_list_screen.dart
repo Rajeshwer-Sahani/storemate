@@ -220,8 +220,7 @@ class _EmiPlanListScreenState extends State<EmiPlanListScreen> {
                       // ========================================================
                       // EMI PLAN CONTENT
                       // ========================================================
-                      else if (!controller.isLoading &&
-                          controller.emiPlans.isEmpty) ...[
+                      else ...[
                         _buildStatistics(context),
 
                         const SizedBox(height: 20),
