@@ -353,229 +353,154 @@ class _SelectInvoiceForEmiScreenState extends State<SelectInvoiceForEmiScreen> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    final isEligible = _isEligibleForEmi(invoice);
-
-    return Opacity(
-      opacity: isEligible ? 1 : 0.72,
-      child: Material(
-        color: colorScheme.surface,
-        borderRadius: BorderRadius.circular(15),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(15),
-          onTap: isEligible
-              ? () => _selectInvoice(invoice)
-              : () => _showNotEligibleReason(invoice),
-          child: Ink(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(15),
-              border: Border.all(
-                color: colorScheme.outlineVariant.withValues(alpha: 0.55),
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.025),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
+    return Material(
+      color: colorScheme.surface,
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: () => _selectInvoice(invoice),
+        child: Ink(
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: colorScheme.outlineVariant.withValues(alpha: 0.55),
             ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.025),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
             child: Column(
               children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Invoice icon
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: isEligible
-                              ? Colors.green.withValues(alpha: 0.09)
-                              : colorScheme.error.withValues(alpha: 0.07),
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: Icon(
-                          Icons.receipt_long_outlined,
-                          color: isEligible
-                              ? Colors.green.shade700
-                              : colorScheme.error,
-                          size: 24,
-                        ),
-                      ),
+                // -----------------------------------------------------------------
+                // Header
+                // -----------------------------------------------------------------
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _buildInvoiceIcon(context),
 
-                      const SizedBox(width: 12),
+                    const SizedBox(width: 12),
 
-                      // Invoice information
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              invoice.invoiceNumber,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: theme.textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
+                    Expanded(child: _buildInvoiceIdentity(context, invoice)),
 
-                            const SizedBox(height: 4),
+                    const SizedBox(width: 10),
 
-                            Text(
-                              invoice.customerName.trim().isEmpty
-                                  ? 'Walk-in Customer'
-                                  : invoice.customerName,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                color: colorScheme.onSurfaceVariant,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-
-                            if (invoice.customerPhone != null &&
-                                invoice.customerPhone!.trim().isNotEmpty) ...[
-                              const SizedBox(height: 3),
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.phone_outlined,
-                                    size: 14,
-                                    color: colorScheme.onSurfaceVariant,
-                                  ),
-                                  const SizedBox(width: 5),
-                                  Flexible(
-                                    child: Text(
-                                      invoice.customerPhone!,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: theme.textTheme.bodySmall
-                                          ?.copyWith(
-                                            color: colorScheme.onSurfaceVariant,
-                                          ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
-
-                            const SizedBox(height: 3),
-
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.calendar_today_outlined,
-                                  size: 13,
-                                  color: colorScheme.onSurfaceVariant,
-                                ),
-                                const SizedBox(width: 5),
-                                Text(
-                                  _formatDate(invoice.invoiceDate),
-                                  style: theme.textTheme.bodySmall?.copyWith(
-                                    color: colorScheme.onSurfaceVariant,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      const SizedBox(width: 8),
-
-                      // Outstanding
-                      _buildOutstandingAmount(context, invoice, isEligible),
-
-                      if (isEligible) ...[
-                        const SizedBox(width: 4),
-                        Icon(
-                          Icons.chevron_right_rounded,
-                          size: 24,
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                      ],
-                    ],
-                  ),
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      size: 25,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ],
                 ),
+
+                const SizedBox(height: 14),
+
+                // -----------------------------------------------------------------
+                // Outstanding Amount
+                // -----------------------------------------------------------------
+                _buildOutstandingAmount(context, invoice),
+
+                const SizedBox(height: 14),
 
                 Divider(
                   height: 1,
                   thickness: 1,
-                  indent: 14,
-                  endIndent: 14,
                   color: colorScheme.outlineVariant.withValues(alpha: 0.45),
                 ),
 
-                // Financial summary
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: _buildFinancialValue(
-                          context,
-                          label: 'Total Amount',
-                          amount: invoice.grandTotal,
-                        ),
+                const SizedBox(height: 12),
+
+                // -----------------------------------------------------------------
+                // Financial Summary
+                // -----------------------------------------------------------------
+                Row(
+                  children: [
+                    Expanded(
+                      child: _buildFinancialValue(
+                        context,
+                        label: 'Total Amount',
+                        amount: invoice.grandTotal,
                       ),
-                      _buildVerticalDivider(context),
-                      Expanded(
-                        child: _buildFinancialValue(
-                          context,
-                          label: 'Paid Amount',
-                          amount: invoice.paidAmount,
-                          valueColor: colorScheme.primary,
-                        ),
+                    ),
+
+                    _buildVerticalDivider(context),
+
+                    Expanded(
+                      child: _buildFinancialValue(
+                        context,
+                        label: 'Paid Amount',
+                        amount: invoice.paidAmount,
+                        valueColor: colorScheme.primary,
                       ),
-                      _buildVerticalDivider(context),
-                      Expanded(
-                        child: _buildFinancialValue(
-                          context,
-                          label: 'Outstanding',
-                          amount: invoice.dueAmount,
-                          valueColor: isEligible
-                              ? Colors.green.shade700
-                              : colorScheme.error,
-                        ),
+                    ),
+
+                    _buildVerticalDivider(context),
+
+                    Expanded(
+                      child: _buildFinancialValue(
+                        context,
+                        label: 'Outstanding',
+                        amount: invoice.dueAmount,
+                        valueColor: Colors.green.shade700,
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
 
-                // Bottom action / status
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(14, 0, 14, 11),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      if (isEligible)
-                        _buildPaymentStatusBadge(context, invoice)
-                      else
-                        _buildNotEligibleBadge(context, invoice),
+                const SizedBox(height: 13),
 
-                      const Spacer(),
+                // -----------------------------------------------------------------
+                // Status + CTA
+                // -----------------------------------------------------------------
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    _buildPaymentStatusBadge(context, invoice),
 
-                      if (isEligible)
-                        Row(
-                          children: [
-                            Text(
-                              'Create EMI plan',
-                              style: theme.textTheme.labelLarge?.copyWith(
-                                color: colorScheme.primary,
-                                fontWeight: FontWeight.w700,
+                    const Spacer(),
+
+                    Flexible(
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(8),
+                        onTap: () => _selectInvoice(invoice),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 4,
+                            vertical: 4,
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  'Create EMI plan',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: theme.textTheme.labelLarge?.copyWith(
+                                    color: colorScheme.primary,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 3),
-                            Icon(
-                              Icons.arrow_forward_rounded,
-                              size: 18,
-                              color: colorScheme.primary,
-                            ),
-                          ],
+                              const SizedBox(width: 4),
+                              Icon(
+                                Icons.arrow_forward_rounded,
+                                size: 19,
+                                color: colorScheme.primary,
+                              ),
+                            ],
+                          ),
                         ),
-                    ],
-                  ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -586,39 +511,158 @@ class _SelectInvoiceForEmiScreenState extends State<SelectInvoiceForEmiScreen> {
   }
 
   // ===========================================================================
-  // Outstanding Amount
+  // Invoice Icon
   // ===========================================================================
 
-  Widget _buildOutstandingAmount(
-    BuildContext context,
-    InvoiceModel invoice,
-    bool isEligible,
-  ) {
+  Widget _buildInvoiceIcon(BuildContext context) {
+    return Container(
+      width: 50,
+      height: 50,
+      decoration: BoxDecoration(
+        color: Colors.blue.withValues(alpha: 0.09),
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: Icon(
+        Icons.receipt_long_outlined,
+        color: Colors.blue.shade700,
+        size: 25,
+      ),
+    );
+  }
+
+  // ===========================================================================
+  // Invoice Identity
+  // ===========================================================================
+
+  Widget _buildInvoiceIdentity(BuildContext context, InvoiceModel invoice) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    final valueColor = isEligible ? Colors.green.shade700 : colorScheme.error;
+    final customerName = invoice.customerName.trim().isEmpty
+        ? 'Walk-in Customer'
+        : invoice.customerName.trim();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Invoice number
+        Text(
+          invoice.invoiceNumber,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: theme.textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0.2,
+          ),
+        ),
+
+        const SizedBox(height: 4),
+
+        // Customer name
+        Text(
+          customerName,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: colorScheme.onSurfaceVariant,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+
+        const SizedBox(height: 6),
+
+        // Phone + Date
+        Wrap(
+          spacing: 12,
+          runSpacing: 4,
+          children: [
+            if (invoice.customerPhone != null &&
+                invoice.customerPhone!.trim().isNotEmpty)
+              _buildInvoiceMetaItem(
+                context,
+                icon: Icons.phone_outlined,
+                text: invoice.customerPhone!.trim(),
+              ),
+
+            _buildInvoiceMetaItem(
+              context,
+              icon: Icons.calendar_today_outlined,
+              text: _formatDate(invoice.invoiceDate),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // ===========================================================================
+  // Invoice Meta Item
+  // ===========================================================================
+
+  Widget _buildInvoiceMetaItem(
+    BuildContext context, {
+    required IconData icon,
+    required String text,
+  }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 14, color: colorScheme.onSurfaceVariant),
+        const SizedBox(width: 5),
+        Text(
+          text,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: colorScheme.onSurfaceVariant,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ===========================================================================
+  // Outstanding Amount
+  // ===========================================================================
+
+  Widget _buildOutstandingAmount(BuildContext context, InvoiceModel invoice) {
+    final theme = Theme.of(context);
+
+    final valueColor = Colors.green.shade700;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         color: valueColor.withValues(alpha: 0.07),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(12),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
+      child: Row(
         children: [
-          Text(
-            'Outstanding',
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.w500,
+          Icon(
+            Icons.account_balance_wallet_outlined,
+            size: 20,
+            color: valueColor,
+          ),
+
+          const SizedBox(width: 9),
+
+          Expanded(
+            child: Text(
+              'Outstanding Amount',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
-          const SizedBox(height: 2),
+
           Text(
             _formatCurrency(invoice.dueAmount),
-            style: theme.textTheme.labelLarge?.copyWith(
+            style: theme.textTheme.titleSmall?.copyWith(
               color: valueColor,
               fontWeight: FontWeight.w800,
             ),
@@ -686,16 +730,20 @@ class _SelectInvoiceForEmiScreenState extends State<SelectInvoiceForEmiScreen> {
 
   Widget _buildPaymentStatusBadge(BuildContext context, InvoiceModel invoice) {
     final theme = Theme.of(context);
-    final colorScheme = Theme.of(context).colorScheme;
+    final colorScheme = theme.colorScheme;
 
     final isUnpaid = invoice.paidAmount <= 0;
+
+    final statusColor = isUnpaid ? colorScheme.error : Colors.amber.shade700;
+
+    final statusBackground = statusColor.withValues(alpha: 0.09);
 
     final label = isUnpaid ? 'Unpaid' : 'Partially Paid';
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.green.withValues(alpha: 0.08),
+        color: statusBackground,
         borderRadius: BorderRadius.circular(20),
       ),
       child: Row(
@@ -705,15 +753,17 @@ class _SelectInvoiceForEmiScreenState extends State<SelectInvoiceForEmiScreen> {
             width: 7,
             height: 7,
             decoration: BoxDecoration(
-              color: Colors.green.shade700,
+              color: statusColor,
               shape: BoxShape.circle,
             ),
           ),
-          const SizedBox(width: 5),
+
+          const SizedBox(width: 6),
+
           Text(
             label,
             style: theme.textTheme.labelSmall?.copyWith(
-              color: Colors.green.shade700,
+              color: statusColor,
               fontWeight: FontWeight.w700,
             ),
           ),
@@ -754,74 +804,103 @@ class _SelectInvoiceForEmiScreenState extends State<SelectInvoiceForEmiScreen> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
+    final accentColor = Colors.orange.shade800;
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 4, 20, 12),
       child: Container(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
         decoration: BoxDecoration(
           color: Colors.orange.withValues(alpha: 0.055),
           borderRadius: BorderRadius.circular(14),
           border: Border.all(color: Colors.orange.withValues(alpha: 0.30)),
         ),
-        child: Row(
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(
-                color: Colors.orange.withValues(alpha: 0.12),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.verified_user_outlined,
-                size: 17,
-                color: Colors.orange.shade800,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
+            // -------------------------------------------------------------------
+            // Header
+            // -------------------------------------------------------------------
+            Row(
+              children: [
+                Container(
+                  width: 28,
+                  height: 28,
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.verified_user_outlined,
+                    size: 16,
+                    color: accentColor,
+                  ),
+                ),
+
+                const SizedBox(width: 9),
+
+                Expanded(
+                  child: Text(
                     'Why some invoices are not eligible?',
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: Colors.orange.shade900,
                       fontWeight: FontWeight.w800,
                     ),
                   ),
-                  const SizedBox(height: 3),
-                  Text(
-                    'Invoices that are paid in full, cancelled, '
-                    'or fully returned cannot be converted into EMI plans.',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                      height: 1.35,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-            const SizedBox(width: 8),
-            OutlinedButton(
-              onPressed: _showHelpDialog,
-              style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.orange.shade900,
-                padding: const EdgeInsets.symmetric(horizontal: 10),
-                minimumSize: const Size(0, 38),
-                side: BorderSide(color: Colors.orange.withValues(alpha: 0.40)),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+
+            const SizedBox(height: 7),
+
+            // -------------------------------------------------------------------
+            // Description
+            // -------------------------------------------------------------------
+            Padding(
+              padding: const EdgeInsets.only(left: 37),
+              child: Text(
+                'Fully paid, cancelled, or fully returned invoices '
+                'cannot be converted into EMI plans.',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                  height: 1.35,
                 ),
               ),
-              child: const Text('Learn More'),
+            ),
+
+            const SizedBox(height: 10),
+
+            // -------------------------------------------------------------------
+            // Learn More
+            // -------------------------------------------------------------------
+            Align(
+              alignment: Alignment.centerRight,
+              child: OutlinedButton(
+                onPressed: _showHelpDialog,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: accentColor,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 8,
+                  ),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  side: BorderSide(
+                    color: Colors.orange.withValues(alpha: 0.40),
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                child: const Text('Learn More'),
+              ),
             ),
           ],
         ),
       ),
     );
   }
+
 
   // ===========================================================================
   // Security Footer
