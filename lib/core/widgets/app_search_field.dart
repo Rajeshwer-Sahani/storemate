@@ -5,6 +5,7 @@ class AppSearchField extends StatefulWidget {
     super.key,
     this.controller,
     this.hintText = 'Search',
+    this.hintStyle,
     this.onChanged,
     this.onSubmitted,
     this.onTap,
@@ -17,6 +18,8 @@ class AppSearchField extends StatefulWidget {
   final TextEditingController? controller;
 
   final String hintText;
+
+  final TextStyle? hintStyle;
 
   final ValueChanged<String>? onChanged;
 
@@ -96,14 +99,20 @@ class _AppSearchFieldState extends State<AppSearchField> {
         onChanged: widget.onChanged,
         onSubmitted: widget.onSubmitted,
         onTap: widget.onTap,
+        onTapOutside: (_) {
+          FocusManager.instance.primaryFocus?.unfocus();
+        },
         readOnly: widget.readOnly,
         autofocus: widget.autofocus,
         textInputAction: widget.textInputAction,
 
         decoration: InputDecoration(
-          hintStyle: theme.textTheme.bodyLarge?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
-          ),
+          hintStyle:
+              widget.hintStyle ??
+              TextStyle(
+                color: theme.colorScheme.onSurfaceVariant,
+                fontSize: 16,
+              ),
 
           contentPadding: const EdgeInsets.symmetric(
             horizontal: 18,

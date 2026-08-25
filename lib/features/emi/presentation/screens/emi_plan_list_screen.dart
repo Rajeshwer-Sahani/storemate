@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:storemate/core/widgets/app_search_field.dart';
 
 import '../controllers/emi_controller.dart';
 import '../widgets/emi_empty_state.dart';
@@ -27,6 +28,10 @@ class EmiPlanListScreen extends StatefulWidget {
 
 class _EmiPlanListScreenState extends State<EmiPlanListScreen> {
   late final TextEditingController _searchController;
+
+  void _dismissKeyboard() {
+    FocusScope.of(context).unfocus();
+  }
 
   String _searchQuery = '';
 
@@ -61,9 +66,9 @@ class _EmiPlanListScreenState extends State<EmiPlanListScreen> {
   }
 
   void _onControllerChanged() {
-    if (mounted) {
-      setState(() {});
-    }
+    if (!mounted) return;
+
+    setState(() {});
   }
 
   // ===========================================================================
@@ -92,8 +97,8 @@ class _EmiPlanListScreenState extends State<EmiPlanListScreen> {
     }
 
     return plans.where((plan) {
-      final status = plan.status.toLowerCase();
-      final interestType = plan.interestType.toLowerCase();
+      final status = plan.status.toString().toLowerCase();
+      final interestType = plan.interestType.toString().toLowerCase();
       final tenure = plan.tenureMonths.toString();
 
       return status.contains(_searchQuery) ||
@@ -106,9 +111,7 @@ class _EmiPlanListScreenState extends State<EmiPlanListScreen> {
   // Statistics
   // ===========================================================================
 
-  int get _totalPlans {
-    return widget.controller.emiPlans.length;
-  }
+  int get _totalPlans => widget.controller.emiPlans.length;
 
   int get _activePlans {
     return widget.controller.emiPlans.where((plan) => plan.isActive).length;
@@ -135,78 +138,127 @@ class _EmiPlanListScreenState extends State<EmiPlanListScreen> {
   @override
   Widget build(BuildContext context) {
     final controller = widget.controller;
+    final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
+      backgroundColor: colorScheme.surface,
       body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: _refresh,
-          child: CustomScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            slivers: [
-              // =================================================================
-              // Header
-              // =================================================================
-              SliverToBoxAdapter(child: _buildHeader(context)),
+        child: Column(
+          children: [
+            // ================================================================
+            // FIXED HEADER
+            // ================================================================
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
+              child: _buildHeader(context),
+            ),
 
-              // =================================================================
-              // Error
-              // =================================================================
-              if (controller.hasError)
-                SliverToBoxAdapter(child: _buildErrorState(context)),
-
-              // =================================================================
-              // Loading
-              // =================================================================
-              if (controller.isLoading && controller.emiPlans.isEmpty)
-                SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: EmiLoadingWidget(message: 'Loading EMI plans...'),
-                )
-              // =================================================================
-              // Initial Empty State
-              // =================================================================
-              else if (!controller.isLoading && controller.emiPlans.isEmpty)
-                SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: EmiEmptyState(
-                    onCreateEmiPlan: widget.onCreateEmiPlan,
-                    onRefresh: _refresh,
-                  ),
-                )
-              // =================================================================
-              // Content
-              // =================================================================
-              else ...[
-                SliverToBoxAdapter(child: _buildStatistics(context)),
-
-                SliverToBoxAdapter(child: _buildSearchField(context)),
-
-                if (_filteredPlans.isEmpty)
-                  SliverFillRemaining(
-                    hasScrollBody: false,
-                    child: _buildSearchEmptyState(context),
-                  )
-                else
-                  SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(20, 4, 20, 32),
-                    sliver: SliverList.separated(
-                      itemCount: _filteredPlans.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 14),
-                      itemBuilder: (context, index) {
-                        final plan = _filteredPlans[index];
-
-                        return EmiPlanCard(
-                          plan: plan,
-                          onTap: widget.onPlanTap == null
-                              ? null
-                              : () => widget.onPlanTap!(plan.id),
-                        );
-                      },
+            // ================================================================
+            // SCROLLABLE CONTENT
+            // ================================================================
+            Expanded(
+              child: GestureDetector(
+                behavior: HitTestBehavior.translucent,
+                onTap: _dismissKeyboard,
+                child: RefreshIndicator.adaptive(
+                  onRefresh: _refresh,
+                  displacement: 24,
+                  child: ListView(
+                    keyboardDismissBehavior:
+                        ScrollViewKeyboardDismissBehavior.onDrag,
+                    physics: const AlwaysScrollableScrollPhysics(
+                      parent: BouncingScrollPhysics(),
                     ),
+                    padding: const EdgeInsets.fromLTRB(20, 26, 20, 32),
+                    children: [
+                      // ========================================================
+                      // Error
+                      // ========================================================
+                      if (controller.hasError) ...[
+                        _buildErrorState(context),
+                        const SizedBox(height: 12),
+                      ],
+
+                      // ========================================================
+                      // Loading
+                      // ========================================================
+                      if (controller.isLoading &&
+                          controller.emiPlans.isEmpty) ...[
+                        const SizedBox(height: 24),
+                        const SizedBox(
+                          height: 320,
+                          child: EmiLoadingWidget(
+                            message: 'Loading EMI plans...',
+                          ),
+                        ),
+                      ]
+                      // ========================================================
+                      // Empty State
+                      // ========================================================
+                      else if (!controller.isLoading &&
+                          controller.emiPlans.isEmpty) ...[
+                        _buildStatistics(context),
+
+                        const SizedBox(height: 20),
+
+                        _buildSearchField(context),
+
+                        const SizedBox(height: 26),
+
+                        _buildPlansHeader(context),
+
+                        const SizedBox(height: 12),
+
+                        SizedBox(
+                          height: 420,
+                          child: EmiEmptyState(
+                            onCreateEmiPlan: widget.onCreateEmiPlan,
+                            onRefresh: _refresh,
+                          ),
+                        ),
+                      ]
+                      // ========================================================
+                      // EMI PLAN CONTENT
+                      // ========================================================
+                      else if (!controller.isLoading &&
+                          controller.emiPlans.isEmpty) ...[
+                        _buildStatistics(context),
+
+                        const SizedBox(height: 20),
+
+                        AppSearchField(
+                          controller: _searchController,
+                          hintText:
+                              'Search by status, interest type or tenure...',
+                          hintStyle: TextStyle(
+                            color: Theme.of(
+                              context,
+                            ).colorScheme.onSurfaceVariant,
+                            fontSize: 16,
+                            letterSpacing: -0.3,
+                          ),
+                          onChanged: _onSearchChanged,
+                        ),
+                        const SizedBox(height: 26),
+
+                        _buildPlansHeader(context),
+
+                        const SizedBox(height: 12),
+
+                        if (_filteredPlans.isEmpty)
+                          SizedBox(
+                            height: 300,
+                            child: _buildSearchEmptyState(context),
+                          )
+                        else
+                          ..._buildPlanCards(),
+                      ],
+                    ],
                   ),
-              ],
-            ],
-          ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -218,42 +270,94 @@ class _EmiPlanListScreenState extends State<EmiPlanListScreen> {
 
   Widget _buildHeader(BuildContext context) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'EMI Plans',
-                  style: theme.textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  'Manage customer installment plans',
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        // ---------------------------------------------------------------------
+        // Back Button
+        // ---------------------------------------------------------------------
+        SizedBox(
+          width: 42,
+          height: 42,
+          child: OutlinedButton(
+            onPressed: () => Navigator.of(context).maybePop(),
+            style: OutlinedButton.styleFrom(
+              padding: EdgeInsets.zero,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              side: BorderSide(
+                color: colorScheme.outlineVariant.withValues(alpha: 0.65),
+              ),
+            ),
+            child: Icon(
+              Icons.arrow_back_rounded,
+              size: 24,
+              color: colorScheme.onSurface,
             ),
           ),
+        ),
 
-          const SizedBox(width: 12),
+        const SizedBox(width: 14),
 
-          FilledButton.icon(
-            onPressed: widget.onCreateEmiPlan,
-            icon: const Icon(Icons.add_rounded),
-            label: const Text('Create'),
+        // ---------------------------------------------------------------------
+        // Title
+        // ---------------------------------------------------------------------
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'EMI Plans',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.5,
+                  fontSize: 20,
+                  height: 1.15,
+                ),
+              ),
+
+              const SizedBox(height: 5),
+
+              Text(
+                'Manage customer installment plans',
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                  height: 1.25,
+                  fontSize: 12,
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+
+        const SizedBox(width: 12),
+
+        // ---------------------------------------------------------------------
+        // Create Button
+        // ---------------------------------------------------------------------
+        FilledButton.icon(
+          onPressed: widget.onCreateEmiPlan,
+          icon: const Icon(Icons.add_rounded, size: 18),
+          label: const Text('Create', style: TextStyle(fontSize: 16)),
+          style: FilledButton.styleFrom(
+            minimumSize: const Size(0, 40),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            textStyle: theme.textTheme.labelLarge?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -263,73 +367,71 @@ class _EmiPlanListScreenState extends State<EmiPlanListScreen> {
 
   Widget _buildStatistics(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    const totalPlansColor = Color(0xFF2563EB);
+    const activeColor = Color(0xFF16A34A);
+    const financedColor = Color(0xFF7C3AED);
+    const outstandingColor = Color(0xFFDC2626);
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 16, 20, 18),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Overview',
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w800,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Overview',
+          style: theme.textTheme.titleLarge?.copyWith(
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.3,
+            fontSize: 19,
+          ),
+        ),
+
+        const SizedBox(height: 12),
+
+        Row(
+          children: [
+            Expanded(
+              child: _StatisticCard(
+                icon: Icons.description_outlined,
+                label: 'Total Plans',
+                value: _totalPlans.toString(),
+                color: totalPlansColor,
+              ),
             ),
-          ),
-
-          const SizedBox(height: 12),
-
-          Row(
-            children: [
-              Expanded(
-                child: _StatisticCard(
-                  icon: Icons.description_outlined,
-                  label: 'Total Plans',
-                  value: _totalPlans.toString(),
-                  color: colorScheme.primary,
-                ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _StatisticCard(
+                icon: Icons.autorenew_rounded,
+                label: 'Active',
+                value: _activePlans.toString(),
+                color: activeColor,
               ),
+            ),
+          ],
+        ),
 
-              const SizedBox(width: 12),
+        const SizedBox(height: 12),
 
-              Expanded(
-                child: _StatisticCard(
-                  icon: Icons.autorenew_rounded,
-                  label: 'Active',
-                  value: _activePlans.toString(),
-                  color: colorScheme.tertiary,
-                ),
+        Row(
+          children: [
+            Expanded(
+              child: _StatisticCard(
+                icon: Icons.account_balance_wallet_outlined,
+                label: 'Financed',
+                value: _formatCurrency(_totalFinanced),
+                color: financedColor,
               ),
-            ],
-          ),
-
-          const SizedBox(height: 12),
-
-          Row(
-            children: [
-              Expanded(
-                child: _StatisticCard(
-                  icon: Icons.account_balance_wallet_outlined,
-                  label: 'Financed',
-                  value: _formatCurrency(_totalFinanced),
-                  color: colorScheme.secondary,
-                ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _StatisticCard(
+                icon: Icons.pending_actions_rounded,
+                label: 'Outstanding',
+                value: _formatCurrency(_totalOutstanding),
+                color: outstandingColor,
               ),
-
-              const SizedBox(width: 12),
-
-              Expanded(
-                child: _StatisticCard(
-                  icon: Icons.pending_actions_rounded,
-                  label: 'Outstanding',
-                  value: _formatCurrency(_totalOutstanding),
-                  color: colorScheme.error,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -341,41 +443,95 @@ class _EmiPlanListScreenState extends State<EmiPlanListScreen> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-      child: TextField(
-        controller: _searchController,
-        onChanged: _onSearchChanged,
-        textInputAction: TextInputAction.search,
-        decoration: InputDecoration(
-          hintText: 'Search by status, interest type or tenure...',
-          prefixIcon: const Icon(Icons.search_rounded),
-          suffixIcon: _searchQuery.isEmpty
-              ? null
-              : IconButton(
-                  onPressed: _clearSearch,
-                  icon: const Icon(Icons.clear_rounded),
-                  tooltip: 'Clear search',
-                ),
-          filled: true,
-          fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: .45),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide.none,
+    return TextField(
+      controller: _searchController,
+      onChanged: _onSearchChanged,
+      textInputAction: TextInputAction.search,
+      decoration: InputDecoration(
+        hintText: 'Search by status, interest type or tenure...',
+        hintStyle: TextStyle(color: colorScheme.onSurfaceVariant),
+        prefixIcon: const Icon(Icons.search_rounded, size: 23),
+        suffixIcon: _searchQuery.isEmpty
+            ? null
+            : IconButton(
+                onPressed: _clearSearch,
+                icon: const Icon(Icons.clear_rounded, size: 21),
+                tooltip: 'Clear search',
+              ),
+        filled: true,
+        fillColor: colorScheme.surfaceContainerHighest.withValues(alpha: 0.40),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 18,
+          vertical: 17,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(
+            color: colorScheme.outlineVariant.withValues(alpha: 0.45),
           ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(
-              color: colorScheme.outlineVariant.withValues(alpha: .45),
-            ),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
-          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
         ),
       ),
     );
+  }
+
+  // ===========================================================================
+  // Plans Header
+  // ===========================================================================
+
+  Widget _buildPlansHeader(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Expanded(
+          child: Text(
+            'All EMI Plans',
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.3,
+              fontSize: 19,
+            ),
+          ),
+        ),
+
+        Text(
+          '${_filteredPlans.length} ${_filteredPlans.length == 1 ? 'plan' : 'plans'}',
+          style: theme.textTheme.bodyMedium?.copyWith(
+            color: colorScheme.onSurfaceVariant,
+            fontWeight: FontWeight.w600,
+            fontSize: 13,
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ===========================================================================
+  // Plan Cards
+  // ===========================================================================
+
+  List<Widget> _buildPlanCards() {
+    return [
+      for (int index = 0; index < _filteredPlans.length; index++) ...[
+        EmiPlanCard(
+          plan: _filteredPlans[index],
+          onTap: widget.onPlanTap == null
+              ? null
+              : () => widget.onPlanTap!(_filteredPlans[index].id),
+        ),
+        if (index != _filteredPlans.length - 1) const SizedBox(height: 12),
+      ],
+    ];
   }
 
   // ===========================================================================
@@ -388,45 +544,46 @@ class _EmiPlanListScreenState extends State<EmiPlanListScreen> {
 
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.all(28),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 72,
-              height: 72,
+              width: 68,
+              height: 68,
               decoration: BoxDecoration(
                 color: colorScheme.surfaceContainerHighest,
                 shape: BoxShape.circle,
               ),
               child: Icon(
                 Icons.search_off_rounded,
-                size: 34,
+                size: 28,
                 color: colorScheme.onSurfaceVariant,
               ),
             ),
 
-            const SizedBox(height: 18),
+            const SizedBox(height: 16),
 
             Text(
               'No matching EMI plans',
               textAlign: TextAlign.center,
-              style: theme.textTheme.titleLarge?.copyWith(
+              style: theme.textTheme.titleMedium?.copyWith(
                 fontWeight: FontWeight.w800,
               ),
             ),
 
-            const SizedBox(height: 8),
+            const SizedBox(height: 7),
 
             Text(
               'Try a different search term or clear the search.',
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: colorScheme.onSurfaceVariant,
+                height: 1.4,
               ),
             ),
 
-            const SizedBox(height: 18),
+            const SizedBox(height: 16),
 
             OutlinedButton.icon(
               onPressed: _clearSearch,
@@ -447,45 +604,42 @@ class _EmiPlanListScreenState extends State<EmiPlanListScreen> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 8),
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: colorScheme.errorContainer.withValues(alpha: .55),
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: colorScheme.error.withValues(alpha: .20)),
-        ),
-        child: Row(
-          children: [
-            Icon(Icons.error_outline_rounded, color: colorScheme.error),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: colorScheme.errorContainer.withValues(alpha: 0.55),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: colorScheme.error.withValues(alpha: 0.20)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.error_outline_rounded, color: colorScheme.error),
 
-            const SizedBox(width: 12),
+          const SizedBox(width: 12),
 
-            Expanded(
-              child: Text(
-                widget.controller.errorMessage ?? 'Something went wrong.',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onErrorContainer,
-                ),
+          Expanded(
+            child: Text(
+              widget.controller.errorMessage ?? 'Something went wrong.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: colorScheme.onErrorContainer,
               ),
             ),
+          ),
 
-            const SizedBox(width: 8),
+          const SizedBox(width: 8),
 
-            IconButton(
-              onPressed: widget.controller.clearError,
-              icon: const Icon(Icons.close_rounded),
-              tooltip: 'Dismiss',
-            ),
-          ],
-        ),
+          IconButton(
+            onPressed: widget.controller.clearError,
+            icon: const Icon(Icons.close_rounded),
+            tooltip: 'Dismiss',
+          ),
+        ],
       ),
     );
   }
 
   // ===========================================================================
-  // Formatting
+  // Currency Formatting
   // ===========================================================================
 
   String _formatCurrency(double amount) {
@@ -528,45 +682,61 @@ class _StatisticCard extends StatelessWidget {
     final colorScheme = theme.colorScheme;
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      constraints: const BoxConstraints(minHeight: 112),
+      padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: colorScheme.outlineVariant.withValues(alpha: .50),
+          color: colorScheme.outlineVariant.withValues(alpha: 0.50),
         ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
           Container(
-            width: 38,
-            height: 38,
+            width: 42,
+            height: 42,
             decoration: BoxDecoration(
-              color: color.withValues(alpha: .10),
-              borderRadius: BorderRadius.circular(11),
+              color: color.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(13),
             ),
-            child: Icon(icon, size: 20, color: color),
+            child: Icon(icon, size: 21, color: color),
           ),
 
-          const SizedBox(height: 12),
+          const SizedBox(width: 12),
 
-          Text(
-            value,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w800,
-            ),
-          ),
+          Expanded(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 13,
+                    letterSpacing: -0.2,
+                  ),
+                ),
 
-          const SizedBox(height: 3),
+                const SizedBox(height: 5),
 
-          Text(
-            label,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.w600,
+                Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: label == 'Active' || label == 'Outstanding'
+                        ? color
+                        : colorScheme.onSurface,
+                    letterSpacing: -0.3,
+                  ),
+                ),
+              ],
             ),
           ),
         ],
