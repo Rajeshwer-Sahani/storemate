@@ -43,9 +43,7 @@ class _CreateEmiPlanScreenState extends State<CreateEmiPlanScreen> {
   void initState() {
     super.initState();
 
-    final now = DateTime.now();
-
-    _firstDueDate = _addOneMonthSafely(now);
+    _firstDueDate = _addOneMonthSafely(DateTime.now());
   }
 
   // ===========================================================================
@@ -54,8 +52,12 @@ class _CreateEmiPlanScreenState extends State<CreateEmiPlanScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Create EMI Plan')),
+      backgroundColor: colorScheme.surface,
+      appBar: _buildAppBar(context),
       body: Consumer<CreateEmiPlanController>(
         builder: (context, controller, _) {
           return Form(
@@ -66,16 +68,27 @@ class _CreateEmiPlanScreenState extends State<CreateEmiPlanScreen> {
                 keyboardDismissBehavior:
                     ScrollViewKeyboardDismissBehavior.onDrag,
                 slivers: [
-                  SliverToBoxAdapter(child: _buildHeader(context)),
-
                   SliverPadding(
-                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                    padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
                     sliver: SliverList(
                       delegate: SliverChildListDelegate([
+                        // -----------------------------------------------------
+                        // Intro
+                        // -----------------------------------------------------
+                        _buildHeader(context),
+
+                        const SizedBox(height: 20),
+
+                        // -----------------------------------------------------
+                        // Selected Invoice
+                        // -----------------------------------------------------
                         _buildInvoiceCard(context),
 
                         const SizedBox(height: 28),
 
+                        // -----------------------------------------------------
+                        // EMI Schedule
+                        // -----------------------------------------------------
                         _buildSectionHeader(
                           context,
                           icon: Icons.payments_outlined,
@@ -84,7 +97,7 @@ class _CreateEmiPlanScreenState extends State<CreateEmiPlanScreen> {
                               'Configure how the customer will repay this invoice.',
                         ),
 
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 28),
 
                         _buildTenureField(context),
 
@@ -98,24 +111,41 @@ class _CreateEmiPlanScreenState extends State<CreateEmiPlanScreen> {
 
                         const SizedBox(height: 20),
 
+                        // -----------------------------------------------------
+                        // Configuration Preview
+                        // -----------------------------------------------------
                         _buildSchedulePreview(context),
 
                         const SizedBox(height: 20),
 
+                        // -----------------------------------------------------
+                        // Information
+                        // -----------------------------------------------------
                         _buildInformationCard(context),
 
+                        // -----------------------------------------------------
+                        // Error
+                        // -----------------------------------------------------
                         if (controller.errorMessage != null) ...[
-                          const SizedBox(height: 20),
+                          const SizedBox(height: 16),
                           _buildErrorMessage(context, controller.errorMessage!),
                         ],
 
-                        const SizedBox(height: 28),
+                        const SizedBox(height: 24),
 
+                        // -----------------------------------------------------
+                        // Submit
+                        // -----------------------------------------------------
                         _buildSubmitButton(context, controller),
 
-                        const SizedBox(height: 12),
+                        const SizedBox(height: 14),
 
+                        // -----------------------------------------------------
+                        // Security Footer
+                        // -----------------------------------------------------
                         _buildFooterNote(context),
+
+                        const SizedBox(height: 4),
                       ]),
                     ),
                   ),
@@ -129,6 +159,45 @@ class _CreateEmiPlanScreenState extends State<CreateEmiPlanScreen> {
   }
 
   // ===========================================================================
+  // App Bar
+  // ===========================================================================
+
+  PreferredSizeWidget _buildAppBar(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return AppBar(
+      elevation: 0,
+      scrolledUnderElevation: 0,
+      backgroundColor: colorScheme.surface,
+      surfaceTintColor: Colors.transparent,
+      centerTitle: true,
+      leading: IconButton(
+        onPressed: () {
+          Navigator.of(context).maybePop();
+        },
+        icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 21),
+        tooltip: 'Back',
+      ),
+      title: Text(
+        'Create EMI Plan',
+        style: theme.textTheme.titleLarge?.copyWith(
+          fontWeight: FontWeight.w800,
+          letterSpacing: -0.3,
+        ),
+      ),
+      actions: [
+        IconButton(
+          onPressed: _showHelpDialog,
+          icon: const Icon(Icons.help_outline_rounded, size: 23),
+          tooltip: 'Help',
+        ),
+        const SizedBox(width: 8),
+      ],
+    );
+  }
+
+  // ===========================================================================
   // Header
   // ===========================================================================
 
@@ -136,66 +205,81 @@ class _CreateEmiPlanScreenState extends State<CreateEmiPlanScreen> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Set up an EMI plan',
-            style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w800,
-              letterSpacing: -0.3,
-            ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Set up an EMI plan',
+          style: theme.textTheme.headlineSmall?.copyWith(
+            fontWeight: FontWeight.w800,
+            letterSpacing: -0.5,
+            fontSize: 22
           ),
-          const SizedBox(height: 7),
-          Text(
-            'Create a structured repayment plan for the selected invoice.',
-            style: theme.textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-              height: 1.45,
-            ),
+        ),
+        const SizedBox(height: 3),
+        Text(
+          'Create a structured repayment plan for the selected invoice.',
+          style: theme.textTheme.bodyLarge?.copyWith(
+            color: colorScheme.onSurfaceVariant,
+            height: 1.45,
+            letterSpacing: -0.5,
+            fontSize: 15
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
   // ===========================================================================
-  // Invoice Card
+  // Selected Invoice Card
+  // ===========================================================================
+
+  // ===========================================================================
+  // Selected Invoice Card
   // ===========================================================================
 
   Widget _buildInvoiceCard(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
+    final customerName = widget.invoice.customerName.trim().isEmpty
+        ? 'Walk-in Customer'
+        : widget.invoice.customerName.trim();
+
+    final customerPhone = widget.invoice.customerPhone?.trim();
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: colorScheme.primaryContainer.withValues(alpha: 0.35),
+        // Soft blue tint instead of the heavy primaryContainer overlay.
+        color: colorScheme.primary.withValues(alpha: 0.075),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: colorScheme.primary.withValues(alpha: 0.14)),
+        border: Border.all(color: colorScheme.primary.withValues(alpha: 0.16)),
       ),
       child: Column(
         children: [
+          // -------------------------------------------------------------------
+          // Invoice Header
+          // -------------------------------------------------------------------
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                width: 46,
-                height: 46,
+                width: 50,
+                height: 50,
                 decoration: BoxDecoration(
-                  color: colorScheme.primary.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(14),
+                  color: colorScheme.primary.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(15),
                 ),
                 child: Icon(
                   Icons.receipt_long_rounded,
                   color: colorScheme.primary,
-                  size: 23,
+                  size: 25,
                 ),
               ),
 
-              const SizedBox(width: 13),
+              const SizedBox(width: 12),
 
               Expanded(
                 child: Column(
@@ -203,9 +287,9 @@ class _CreateEmiPlanScreenState extends State<CreateEmiPlanScreen> {
                   children: [
                     Text(
                       'Selected Invoice',
-                      style: theme.textTheme.labelMedium?.copyWith(
+                      style: theme.textTheme.bodySmall?.copyWith(
                         color: colorScheme.onSurfaceVariant,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
                     const SizedBox(height: 3),
@@ -215,36 +299,43 @@ class _CreateEmiPlanScreenState extends State<CreateEmiPlanScreen> {
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w800,
+                        letterSpacing: 0.2,
                       ),
                     ),
                   ],
                 ),
               ),
 
+              const SizedBox(width: 10),
+
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+                width: 38,
+                height: 38,
                 decoration: BoxDecoration(
-                  color: colorScheme.tertiary.withValues(alpha: 0.10),
-                  borderRadius: BorderRadius.circular(10),
+                  color: colorScheme.primary.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(
                   Icons.check_circle_rounded,
-                  size: 18,
-                  color: colorScheme.tertiary,
+                  size: 22,
+                  color: colorScheme.primary,
                 ),
               ),
             ],
           ),
 
-          const SizedBox(height: 18),
+          const SizedBox(height: 17),
 
           Divider(
             height: 1,
-            color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+            color: colorScheme.primary.withValues(alpha: 0.12),
           ),
 
           const SizedBox(height: 16),
 
+          // -------------------------------------------------------------------
+          // Amounts
+          // -------------------------------------------------------------------
           Row(
             children: [
               Expanded(
@@ -257,8 +348,8 @@ class _CreateEmiPlanScreenState extends State<CreateEmiPlanScreen> {
 
               Container(
                 width: 1,
-                height: 36,
-                color: colorScheme.outlineVariant.withValues(alpha: 0.5),
+                height: 40,
+                color: colorScheme.primary.withValues(alpha: 0.12),
               ),
 
               Expanded(
@@ -272,34 +363,59 @@ class _CreateEmiPlanScreenState extends State<CreateEmiPlanScreen> {
             ],
           ),
 
-          if (widget.invoice.customerName.trim().isNotEmpty) ...[
-            const SizedBox(height: 16),
+          const SizedBox(height: 16),
 
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.person_outline_rounded,
-                    size: 18,
-                    color: colorScheme.onSurfaceVariant,
+          // -------------------------------------------------------------------
+          // Customer + Phone
+          // -------------------------------------------------------------------
+          Row(
+            children: [
+              Icon(
+                Icons.person_outline_rounded,
+                size: 19,
+                color: colorScheme.onSurfaceVariant,
+              ),
+
+              const SizedBox(width: 8),
+
+              Expanded(
+                child: Text(
+                  customerName,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                    color: colorScheme.onSurface,
                   ),
-                  const SizedBox(width: 7),
-                  Expanded(
-                    child: Text(
-                      widget.invoice.customerName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: colorScheme.onSurface,
-                      ),
+                ),
+              ),
+
+              if (customerPhone != null && customerPhone.isNotEmpty) ...[
+                const SizedBox(width: 12),
+
+                Icon(
+                  Icons.phone_outlined,
+                  size: 17,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+
+                const SizedBox(width: 6),
+
+                Flexible(
+                  child: Text(
+                    customerPhone,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.right,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                ],
-              ),
-            ),
-          ],
+                ),
+              ],
+            ],
+          ),
         ],
       ),
     );
@@ -321,14 +437,16 @@ class _CreateEmiPlanScreenState extends State<CreateEmiPlanScreen> {
         children: [
           Text(
             label,
-            style: theme.textTheme.labelSmall?.copyWith(
+            style: theme.textTheme.labelMedium?.copyWith(
               color: colorScheme.onSurfaceVariant,
               fontWeight: FontWeight.w600,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 5),
           Text(
             _formatCurrency(amount),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w800,
               color: emphasize ? colorScheme.primary : colorScheme.onSurface,
@@ -353,19 +471,19 @@ class _CreateEmiPlanScreenState extends State<CreateEmiPlanScreen> {
     final colorScheme = theme.colorScheme;
 
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Container(
-          width: 38,
-          height: 38,
+          width: 46,
+          height: 46,
           decoration: BoxDecoration(
             color: colorScheme.primary.withValues(alpha: 0.10),
-            borderRadius: BorderRadius.circular(11),
+            borderRadius: BorderRadius.circular(13),
           ),
-          child: Icon(icon, size: 20, color: colorScheme.primary),
+          child: Icon(icon, size: 22, color: colorScheme.primary),
         ),
 
-        const SizedBox(width: 11),
+        const SizedBox(width: 12),
 
         Expanded(
           child: Column(
@@ -373,16 +491,19 @@ class _CreateEmiPlanScreenState extends State<CreateEmiPlanScreen> {
             children: [
               Text(
                 title,
-                style: theme.textTheme.titleMedium?.copyWith(
+                style: theme.textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.w800,
+                  letterSpacing: -0.5,
                 ),
               ),
               const SizedBox(height: 3),
               Text(
                 subtitle,
-                style: theme.textTheme.bodySmall?.copyWith(
+                style: theme.textTheme.bodyMedium?.copyWith(
                   color: colorScheme.onSurfaceVariant,
                   height: 1.35,
+                  letterSpacing: -0.5,
+                  fontSize: 15
                 ),
               ),
             ],
@@ -399,10 +520,12 @@ class _CreateEmiPlanScreenState extends State<CreateEmiPlanScreen> {
   Widget _buildTenureField(BuildContext context) {
     return DropdownButtonFormField<int>(
       initialValue: _tenureMonths,
-      decoration: const InputDecoration(
+      decoration: InputDecoration(
         labelText: 'Tenure',
         hintText: 'Select repayment tenure',
-        prefixIcon: Icon(Icons.calendar_month_rounded),
+        prefixIcon: const Icon(Icons.calendar_month_rounded),
+        filled: true,
+        fillColor: Theme.of(context).colorScheme.surface,
       ),
       items: const [
         DropdownMenuItem(value: 3, child: Text('3 Months')),
@@ -439,10 +562,12 @@ class _CreateEmiPlanScreenState extends State<CreateEmiPlanScreen> {
   Widget _buildFrequencyField(BuildContext context) {
     return DropdownButtonFormField<String>(
       initialValue: _frequency,
-      decoration: const InputDecoration(
+      decoration: InputDecoration(
         labelText: 'Payment Frequency',
         hintText: 'Select payment frequency',
-        prefixIcon: Icon(Icons.repeat_rounded),
+        prefixIcon: const Icon(Icons.repeat_rounded),
+        filled: true,
+        fillColor: Theme.of(context).colorScheme.surface,
       ),
       items: const [DropdownMenuItem(value: 'monthly', child: Text('Monthly'))],
       onChanged: (value) {
@@ -487,21 +612,28 @@ class _CreateEmiPlanScreenState extends State<CreateEmiPlanScreen> {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            InkWell(
-              borderRadius: BorderRadius.circular(14),
-              onTap: _selectFirstDueDate,
-              child: InputDecorator(
-                decoration: InputDecoration(
-                  labelText: 'First Due Date',
-                  prefixIcon: const Icon(Icons.event_available_rounded),
-                  suffixIcon: const Icon(Icons.keyboard_arrow_down_rounded),
-                  errorText: field.errorText,
-                ),
-                child: Text(
-                  _formatDate(_firstDueDate),
-                  style: theme.textTheme.bodyLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    color: hasError ? colorScheme.error : colorScheme.onSurface,
+            Material(
+              color: Colors.transparent,
+              child: InkWell(
+                borderRadius: BorderRadius.circular(14),
+                onTap: _selectFirstDueDate,
+                child: InputDecorator(
+                  decoration: InputDecoration(
+                    labelText: 'First Due Date',
+                    prefixIcon: const Icon(Icons.event_available_rounded),
+                    suffixIcon: const Icon(Icons.keyboard_arrow_down_rounded),
+                    errorText: field.errorText,
+                    filled: true,
+                    fillColor: colorScheme.surface,
+                  ),
+                  child: Text(
+                    _formatDate(_firstDueDate),
+                    style: theme.textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                      color: hasError
+                          ? colorScheme.error
+                          : colorScheme.onSurface,
+                    ),
                   ),
                 ),
               ),
@@ -528,42 +660,92 @@ class _CreateEmiPlanScreenState extends State<CreateEmiPlanScreen> {
   // Schedule Preview
   // ===========================================================================
 
+  // ===========================================================================
+  // Schedule Preview
+  // ===========================================================================
+
   Widget _buildSchedulePreview(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+
+    // Semantic success/confirmation colors.
+    // Kept local so the card works correctly in both light and dark mode.
+    final isDark = theme.brightness == Brightness.dark;
+
+    final successColor = isDark
+        ? const Color(0xFF81C784)
+        : const Color(0xFF43A047);
+
+    final successBackground = isDark
+        ? const Color(0xFF1B2A1D)
+        : const Color(0xFFF1F8F2);
+
+    final successBorder = isDark
+        ? const Color(0xFF355C3A)
+        : const Color(0xFFDCEFE0);
+
+    final successIconBackground = isDark
+        ? const Color(0xFF263D29)
+        : const Color(0xFFE5F4E7);
 
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: colorScheme.outlineVariant.withValues(alpha: 0.55),
-        ),
+        color: successBackground,
+        borderRadius: BorderRadius.circular(17),
+        border: Border.all(color: successBorder),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Icon(Icons.auto_graph_rounded, size: 21, color: colorScheme.primary),
+          // -------------------------------------------------------------------
+          // Icon
+          // -------------------------------------------------------------------
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: successIconBackground,
+              borderRadius: BorderRadius.circular(13),
+            ),
+            child: Icon(
+              Icons.auto_graph_rounded,
+              size: 22,
+              color: successColor,
+            ),
+          ),
 
-          const SizedBox(width: 11),
+          const SizedBox(width: 13),
 
+          // -------------------------------------------------------------------
+          // Configuration Details
+          // -------------------------------------------------------------------
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'Plan configuration',
-                  style: theme.textTheme.labelLarge?.copyWith(
-                    fontWeight: FontWeight.w700,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    color: colorScheme.onSurface,
                   ),
                 ),
+
                 const SizedBox(height: 4),
+
                 Text(
                   '${_tenureMonths} monthly installments • '
                   'Starts ${_formatDate(_firstDueDate)}',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w500,
+                    height: 1.35,
                   ),
                 ),
               ],
@@ -575,7 +757,7 @@ class _CreateEmiPlanScreenState extends State<CreateEmiPlanScreen> {
   }
 
   // ===========================================================================
-  // Information
+  // Information Card
   // ===========================================================================
 
   Widget _buildInformationCard(BuildContext context) {
@@ -588,15 +770,23 @@ class _CreateEmiPlanScreenState extends State<CreateEmiPlanScreen> {
       decoration: BoxDecoration(
         color: colorScheme.primary.withValues(alpha: 0.055),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: colorScheme.primary.withValues(alpha: 0.12)),
+        border: Border.all(color: colorScheme.primary.withValues(alpha: 0.16)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            Icons.info_outline_rounded,
-            size: 20,
-            color: colorScheme.primary,
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: colorScheme.primary.withValues(alpha: 0.10),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.info_outline_rounded,
+              size: 19,
+              color: colorScheme.primary,
+            ),
           ),
 
           const SizedBox(width: 11),
@@ -627,34 +817,47 @@ class _CreateEmiPlanScreenState extends State<CreateEmiPlanScreen> {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.fromLTRB(14, 14, 8, 14),
       decoration: BoxDecoration(
         color: colorScheme.error.withValues(alpha: 0.07),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(15),
         border: Border.all(color: colorScheme.error.withValues(alpha: 0.18)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.error_outline_rounded, color: colorScheme.error, size: 21),
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: colorScheme.error.withValues(alpha: 0.10),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.error_outline_rounded,
+              color: colorScheme.error,
+              size: 19,
+            ),
+          ),
 
           const SizedBox(width: 10),
 
           Expanded(
-            child: Text(
-              message,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: colorScheme.error,
-                height: 1.4,
+            child: Padding(
+              padding: const EdgeInsets.only(top: 2),
+              child: Text(
+                message,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: colorScheme.error,
+                  height: 1.4,
+                ),
               ),
             ),
           ),
 
-          const SizedBox(width: 4),
-
           IconButton(
             onPressed: context.read<CreateEmiPlanController>().clearError,
-            icon: const Icon(Icons.close_rounded),
+            icon: const Icon(Icons.close_rounded, size: 19),
             visualDensity: VisualDensity.compact,
             tooltip: 'Dismiss',
           ),
@@ -664,27 +867,41 @@ class _CreateEmiPlanScreenState extends State<CreateEmiPlanScreen> {
   }
 
   // ===========================================================================
-  // Submit
+  // Submit Button
   // ===========================================================================
 
   Widget _buildSubmitButton(
     BuildContext context,
     CreateEmiPlanController controller,
   ) {
+    final colorScheme = Theme.of(context).colorScheme;
+
     return SizedBox(
       width: double.infinity,
-      height: 52,
+      height: 54,
       child: FilledButton.icon(
         onPressed: controller.isLoading ? null : _submit,
+        style: FilledButton.styleFrom(
+          backgroundColor: colorScheme.primary,
+          foregroundColor: colorScheme.onPrimary,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
+          elevation: 0,
+        ),
         icon: controller.isLoading
-            ? const SizedBox(
-                width: 19,
-                height: 19,
-                child: CircularProgressIndicator(strokeWidth: 2.2),
+            ? SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.2,
+                  color: colorScheme.onPrimary,
+                ),
               )
-            : const Icon(Icons.add_task_rounded),
+            : const Icon(Icons.add_task_rounded, size: 21),
         label: Text(
           controller.isLoading ? 'Creating EMI Plan...' : 'Create EMI Plan',
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
         ),
       ),
     );
@@ -698,25 +915,88 @@ class _CreateEmiPlanScreenState extends State<CreateEmiPlanScreen> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(
-          Icons.lock_outline_rounded,
-          size: 14,
-          color: colorScheme.onSurfaceVariant,
-        ),
-        const SizedBox(width: 6),
-        Flexible(
-          child: Text(
-            'Financial calculations are securely handled by the database.',
-            textAlign: TextAlign.center,
-            style: theme.textTheme.labelSmall?.copyWith(
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.lock_outline_rounded,
+              size: 16,
               color: colorScheme.onSurfaceVariant,
             ),
-          ),
+
+            const SizedBox(width: 8),
+
+            Text(
+              'Financial calculations are securely handled by the database.',
+              maxLines: 1,
+              softWrap: false,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w500,
+                height: 1.0,
+                letterSpacing: -0.05,
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
+    );
+  }
+
+  // ===========================================================================
+  // Help
+  // ===========================================================================
+
+  void _showHelpDialog() {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    showDialog<void>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: colorScheme.primary.withValues(alpha: 0.10),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.help_outline_rounded,
+                  size: 20,
+                  color: colorScheme.primary,
+                ),
+              ),
+              const SizedBox(width: 10),
+              const Expanded(child: Text('Creating an EMI plan')),
+            ],
+          ),
+          content: Text(
+            'Select the repayment tenure, payment frequency, '
+            'and first due date for this invoice.\n\n'
+            'StoreMate will calculate and validate the final '
+            'financed amount, applicable charges, and repayment '
+            'schedule when the EMI plan is created.',
+            style: theme.textTheme.bodyMedium?.copyWith(height: 1.5),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('Got it'),
+            ),
+          ],
+        );
+      },
     );
   }
 
