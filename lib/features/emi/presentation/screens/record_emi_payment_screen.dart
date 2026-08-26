@@ -11,7 +11,7 @@ class RecordEmiPaymentScreen extends StatefulWidget {
     super.key,
     required this.emiPlanId,
     required this.installment,
-    this.onRecorded, required double remainingAmount,
+    this.onRecorded,
   });
 
   /// EMI plan against which the payment will be recorded.
@@ -204,11 +204,20 @@ class _RecordEmiPaymentScreenState extends State<RecordEmiPaymentScreen> {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(17),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: colorScheme.primaryContainer.withValues(alpha: 0.28),
+        color: colorScheme.surface,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: colorScheme.primary.withValues(alpha: 0.18)),
+        border: Border.all(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.55),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withValues(alpha: 0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -220,7 +229,7 @@ class _RecordEmiPaymentScreenState extends State<RecordEmiPaymentScreen> {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: colorScheme.primary.withValues(alpha: 0.10),
+                  color: colorScheme.primaryContainer.withValues(alpha: 0.25),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Icon(
@@ -266,7 +275,7 @@ class _RecordEmiPaymentScreenState extends State<RecordEmiPaymentScreen> {
             width: double.infinity,
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
-              color: colorScheme.surface.withValues(alpha: 0.65),
+              color: colorScheme.surfaceContainerLowest,
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
                 color: colorScheme.outlineVariant.withValues(alpha: 0.45),
@@ -285,7 +294,6 @@ class _RecordEmiPaymentScreenState extends State<RecordEmiPaymentScreen> {
                         ),
                       ),
                     ),
-
                     _StatusBadge(status: installment.status),
                   ],
                 ),
@@ -299,9 +307,7 @@ class _RecordEmiPaymentScreenState extends State<RecordEmiPaymentScreen> {
                       size: 16,
                       color: colorScheme.onSurfaceVariant,
                     ),
-
                     const SizedBox(width: 6),
-
                     Text(
                       'Due ${_formatDisplayDate(installment.dueDate)}',
                       style: theme.textTheme.bodySmall?.copyWith(
@@ -312,7 +318,7 @@ class _RecordEmiPaymentScreenState extends State<RecordEmiPaymentScreen> {
                   ],
                 ),
 
-                const SizedBox(height: 12),
+                const SizedBox(height: 14),
 
                 Row(
                   children: [
@@ -327,7 +333,7 @@ class _RecordEmiPaymentScreenState extends State<RecordEmiPaymentScreen> {
                       child: _InstallmentAmount(
                         label: 'Paid',
                         amount: installment.paidAmount,
-                        amountColor: Colors.green,
+                        amountColor: colorScheme.tertiary,
                       ),
                     ),
 
@@ -337,7 +343,7 @@ class _RecordEmiPaymentScreenState extends State<RecordEmiPaymentScreen> {
                         amount: installment.remainingAmount,
                         amountColor: installment.remainingAmount > 0
                             ? colorScheme.error
-                            : Colors.green,
+                            : colorScheme.tertiary,
                       ),
                     ),
                   ],
@@ -396,11 +402,12 @@ class _RecordEmiPaymentScreenState extends State<RecordEmiPaymentScreen> {
 
     return Container(
       decoration: BoxDecoration(
-        color: colorScheme.primaryContainer.withValues(alpha: 0.30),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: colorScheme.primary.withValues(alpha: 0.20)),
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: colorScheme.outlineVariant.withValues(alpha: 0.65),
+        ),
       ),
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       child: TextFormField(
         controller: _amountController,
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
@@ -416,17 +423,15 @@ class _RecordEmiPaymentScreenState extends State<RecordEmiPaymentScreen> {
             Icons.currency_rupee_rounded,
             color: colorScheme.primary,
           ),
-          prefixText: '₹ ',
-          prefixStyle: theme.textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.w800,
-            color: colorScheme.primary,
-          ),
           border: InputBorder.none,
           enabledBorder: InputBorder.none,
           focusedBorder: InputBorder.none,
           errorBorder: InputBorder.none,
           focusedErrorBorder: InputBorder.none,
-          filled: false,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 18,
+          ),
         ),
         validator: (value) {
           final text = value?.trim() ?? '';
@@ -866,7 +871,7 @@ class _StatusBadge extends StatelessWidget {
 
     switch (normalized) {
       case 'paid':
-        color = Colors.green;
+        color = colorScheme.tertiary;
         break;
 
       case 'overdue':
@@ -875,7 +880,7 @@ class _StatusBadge extends StatelessWidget {
 
       case 'partially_paid':
       case 'partially paid':
-        color = Colors.orange;
+        color = colorScheme.secondary;
         break;
 
       case 'due':

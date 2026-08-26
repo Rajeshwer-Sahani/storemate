@@ -736,7 +736,6 @@ class _EmiPlanRouteState extends State<_EmiPlanRoute> {
           child: RecordEmiPaymentScreen(
             emiPlanId: emiPlanId,
             installment: installment,
-            remainingAmount: installment.remainingAmount,
           ),
         ),
       ),
