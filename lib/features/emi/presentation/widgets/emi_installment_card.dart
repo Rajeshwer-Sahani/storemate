@@ -5,12 +5,13 @@ import '../../data/models/emi_installment_model.dart';
 
 class EmiInstallmentCard extends StatelessWidget {
   const EmiInstallmentCard({
-    super.key,
+    super.key, 
     required this.installment,
-    this.onTap,
-  });
+    this.onTap
+    });
 
   final EmiInstallmentModel installment;
+
   final VoidCallback? onTap;
 
   @override
@@ -18,182 +19,181 @@ class EmiInstallmentCard extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    final statusColor = _statusColor(
-      context,
-      installment.status,
-    );
+    final statusColor = _statusColor(context, installment.status);
 
-    final statusLabel = _statusLabel(
-      installment.status,
-    );
+    final statusLabel = _statusLabel(installment.status);
 
-    final isPaid = installment.status.toLowerCase() == 'paid';
-    final isCancelled = installment.status.toLowerCase() == 'cancelled';
+    final normalizedStatus = installment.status.toLowerCase();
+
+    final isPaid = normalizedStatus == 'paid';
+
+    final isCancelled =
+        normalizedStatus == 'cancelled' || normalizedStatus == 'canceled';
+
+    final canRecordPayment =
+        onTap != null &&
+        !isPaid &&
+        !isCancelled &&
+        installment.remainingAmount > 0.01;
 
     return Card(
       margin: EdgeInsets.zero,
       clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // =============================================================
-              // Header
-              // =============================================================
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _InstallmentNumber(
-                    number: installment.installmentNumber,
-                    color: statusColor,
-                  ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // =============================================================
+            // Header
+            // =============================================================
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _InstallmentNumber(
+                  number: installment.installmentNumber,
+                  color: statusColor,
+                ),
 
-                  const SizedBox(width: 14),
+                const SizedBox(width: 14),
 
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Installment #${installment.installmentNumber}',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Installment #${installment.installmentNumber}',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
                         ),
+                      ),
 
-                        const SizedBox(height: 4),
+                      const SizedBox(height: 4),
 
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.calendar_today_rounded,
-                              size: 14,
-                              color: colorScheme.onSurfaceVariant,
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.calendar_today_rounded,
+                            size: 14,
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+
+                          const SizedBox(width: 6),
+
+                          Expanded(
+                            child: Text(
                               'Due ${_formatDate(installment.dueDate)}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                               style: theme.textTheme.bodySmall?.copyWith(
                                 color: colorScheme.onSurfaceVariant,
                               ),
                             ),
-                          ],
-                        ),
-                      ],
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(width: 8),
+
+                _StatusBadge(label: statusLabel, color: statusColor),
+              ],
+            ),
+
+            const SizedBox(height: 18),
+
+            // =============================================================
+            // Amount Summary
+            // =============================================================
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerLowest,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: colorScheme.outlineVariant.withValues(alpha: .45),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: _AmountItem(
+                      label: 'Scheduled',
+                      amount: installment.scheduledAmount,
                     ),
                   ),
 
-                  _StatusBadge(
-                    label: statusLabel,
-                    color: statusColor,
+                  Container(
+                    width: 1,
+                    height: 42,
+                    color: colorScheme.outlineVariant.withValues(alpha: .45),
+                  ),
+
+                  Expanded(
+                    child: _AmountItem(
+                      label: 'Paid',
+                      amount: installment.paidAmount,
+                      amountColor: colorScheme.tertiary,
+                      alignment: CrossAxisAlignment.center,
+                    ),
+                  ),
+
+                  Container(
+                    width: 1,
+                    height: 42,
+                    color: colorScheme.outlineVariant.withValues(alpha: .45),
+                  ),
+
+                  Expanded(
+                    child: _AmountItem(
+                      label: 'Remaining',
+                      amount: installment.remainingAmount,
+                      amountColor: installment.remainingAmount > 0.01
+                          ? colorScheme.error
+                          : colorScheme.tertiary,
+                      alignment: CrossAxisAlignment.end,
+                    ),
                   ),
                 ],
               ),
+            ),
 
-              const SizedBox(height: 18),
+            const SizedBox(height: 16),
 
-              // =============================================================
-              // Amount Summary
-              // =============================================================
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: colorScheme.surfaceContainerLowest,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                    color: colorScheme.outlineVariant.withValues(
-                      alpha: .45,
-                    ),
-                  ),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: _AmountItem(
-                        label: 'Scheduled',
-                        amount: installment.scheduledAmount,
-                      ),
-                    ),
+            // =============================================================
+            // Payment Progress
+            // =============================================================
+            _PaymentProgress(
+              scheduledAmount: installment.scheduledAmount,
+              paidAmount: installment.paidAmount,
+              isPaid: isPaid,
+              isCancelled: isCancelled,
+            ),
 
-                    Container(
-                      width: 1,
-                      height: 42,
-                      color: colorScheme.outlineVariant.withValues(
-                        alpha: .45,
-                      ),
-                    ),
-
-                    Expanded(
-                      child: _AmountItem(
-                        label: 'Paid',
-                        amount: installment.paidAmount,
-                        amountColor: Colors.green,
-                        alignment: CrossAxisAlignment.center,
-                      ),
-                    ),
-
-                    Container(
-                      width: 1,
-                      height: 42,
-                      color: colorScheme.outlineVariant.withValues(
-                        alpha: .45,
-                      ),
-                    ),
-
-                    Expanded(
-                      child: _AmountItem(
-                        label: 'Remaining',
-                        amount: installment.remainingAmount,
-                        amountColor: installment.remainingAmount > 0
-                            ? colorScheme.error
-                            : Colors.green,
-                        alignment: CrossAxisAlignment.end,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
+            // =============================================================
+            // Record Payment
+            // =============================================================
+            //
+            // This button is intentionally shown only when the parent
+            // screen identifies this installment as the current/next
+            // payable installment and provides onTap.
+            //
+            if (canRecordPayment) ...[
               const SizedBox(height: 16),
 
-              // =============================================================
-              // Payment Progress
-              // =============================================================
-              _PaymentProgress(
-                scheduledAmount: installment.scheduledAmount,
-                paidAmount: installment.paidAmount,
-                isPaid: isPaid,
-                isCancelled: isCancelled,
-              ),
-
-              // =============================================================
-              // Action
-              // =============================================================
-              if (onTap != null && !isPaid && !isCancelled) ...[
-                const SizedBox(height: 16),
-
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: onTap,
-                    icon: const Icon(
-                      Icons.payments_outlined,
-                      size: 18,
-                    ),
-                    label: Text(
-                      installment.paidAmount > 0
-                          ? 'Continue Payment'
-                          : 'Record Payment',
-                    ),
-                  ),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: onTap,
+                  icon: const Icon(Icons.payments_outlined, size: 18),
+                  label: const Text('Record Payment'),
                 ),
-              ],
+              ),
             ],
-          ),
+          ],
         ),
       ),
     );
@@ -238,10 +238,7 @@ class EmiInstallmentCard extends StatelessWidget {
     }
   }
 
-  Color _statusColor(
-    BuildContext context,
-    String status,
-  ) {
+  Color _statusColor(BuildContext context, String status) {
     final colorScheme = Theme.of(context).colorScheme;
 
     switch (status.toLowerCase()) {
@@ -253,10 +250,10 @@ class EmiInstallmentCard extends StatelessWidget {
 
       case 'partially_paid':
       case 'partially paid':
-        return Colors.orange;
+        return colorScheme.tertiary;
 
       case 'paid':
-        return Colors.green;
+        return colorScheme.tertiary;
 
       case 'overdue':
         return colorScheme.error;
@@ -276,10 +273,7 @@ class EmiInstallmentCard extends StatelessWidget {
 // =============================================================================
 
 class _InstallmentNumber extends StatelessWidget {
-  const _InstallmentNumber({
-    required this.number,
-    required this.color,
-  });
+  const _InstallmentNumber({required this.number, required this.color});
 
   final int number;
   final Color color;
@@ -292,9 +286,7 @@ class _InstallmentNumber extends StatelessWidget {
       decoration: BoxDecoration(
         color: color.withValues(alpha: .10),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: color.withValues(alpha: .18),
-        ),
+        border: Border.all(color: color.withValues(alpha: .18)),
       ),
       alignment: Alignment.center,
       child: Text(
@@ -338,7 +330,9 @@ class _AmountItem extends StatelessWidget {
             color: theme.colorScheme.onSurfaceVariant,
           ),
         ),
+
         const SizedBox(height: 5),
+
         Text(
           '₹${amount.toStringAsFixed(2)}',
           style: theme.textTheme.titleSmall?.copyWith(
@@ -380,7 +374,7 @@ class _PaymentProgress extends StatelessWidget {
     final progressColor = isCancelled
         ? colorScheme.onSurfaceVariant
         : isPaid
-        ? Colors.green
+        ? colorScheme.tertiary
         : colorScheme.primary;
 
     return Column(
@@ -396,6 +390,7 @@ class _PaymentProgress extends StatelessWidget {
                 ),
               ),
             ),
+
             Text(
               '${(progress * 100).toStringAsFixed(0)}%',
               style: theme.textTheme.labelMedium?.copyWith(
@@ -414,9 +409,7 @@ class _PaymentProgress extends StatelessWidget {
             value: progress,
             minHeight: 6,
             backgroundColor: colorScheme.surfaceContainerHighest,
-            valueColor: AlwaysStoppedAnimation<Color>(
-              progressColor,
-            ),
+            valueColor: AlwaysStoppedAnimation<Color>(progressColor),
           ),
         ),
       ],
@@ -429,10 +422,7 @@ class _PaymentProgress extends StatelessWidget {
 // =============================================================================
 
 class _StatusBadge extends StatelessWidget {
-  const _StatusBadge({
-    required this.label,
-    required this.color,
-  });
+  const _StatusBadge({required this.label, required this.color});
 
   final String label;
   final Color color;
@@ -440,16 +430,11 @@ class _StatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 10,
-        vertical: 6,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: color.withValues(alpha: .10),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: color.withValues(alpha: .20),
-        ),
+        border: Border.all(color: color.withValues(alpha: .20)),
       ),
       child: Text(
         label,

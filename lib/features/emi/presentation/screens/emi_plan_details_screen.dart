@@ -20,19 +20,31 @@ class EmiPlanDetailsScreen extends StatefulWidget {
   });
 
   final EmiController controller;
+
   final String emiPlanId;
 
-  /// Opens the Record EMI Payment flow.
+  /// Opens the Record EMI Payment screen.
   ///
-  /// The actual payment operation should remain inside
+  /// The actual payment operation remains inside
   /// RecordEmiPaymentScreen / RecordEmiPaymentController.
-  final VoidCallback? onRecordPayment;
+  ///
+  /// The current outstanding amount is supplied so the payment screen
+  /// can validate the entered amount against the displayed balance.
+  final Future<void> Function(
+    String emiPlanId,
+    EmiInstallmentModel installment,
+  )?
+  onRecordPayment;
 
   @override
   State<EmiPlanDetailsScreen> createState() => _EmiPlanDetailsScreenState();
 }
 
 class _EmiPlanDetailsScreenState extends State<EmiPlanDetailsScreen> {
+  // ===========================================================================
+  // Lifecycle
+  // ===========================================================================
+
   @override
   void initState() {
     super.initState();
@@ -56,12 +68,37 @@ class _EmiPlanDetailsScreenState extends State<EmiPlanDetailsScreen> {
   // Navigation
   // ===========================================================================
 
-  void _handleRecordPayment() {
+  Future<void> _handleRecordPayment(EmiInstallmentModel installment) async {
     final callback = widget.onRecordPayment;
+    final plan = widget.controller.selectedPlan;
 
-    if (callback != null) {
-      callback();
+    if (callback == null || plan == null) {
+      return;
     }
+
+    if (plan.isCompleted || plan.isCancelled) {
+      return;
+    }
+
+    final status = installment.status.toLowerCase();
+
+    final isCancelled = status == 'cancelled' || status == 'canceled';
+
+    if (isCancelled) {
+      return;
+    }
+
+    if (installment.remainingAmount <= 0.01) {
+      return;
+    }
+
+    await callback(widget.emiPlanId, installment);
+
+    if (!mounted) {
+      return;
+    }
+
+    await _refresh();
   }
 
   // ===========================================================================
@@ -87,7 +124,6 @@ class _EmiPlanDetailsScreenState extends State<EmiPlanDetailsScreen> {
             ],
           ),
           body: _buildBody(context),
-          bottomNavigationBar: _buildRecordPaymentButton(context),
         );
       },
     );
@@ -221,6 +257,8 @@ class _EmiPlanDetailsScreenState extends State<EmiPlanDetailsScreen> {
 
                 Text(
                   'Plan ID: ${_shortId(plan.id)}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: colorScheme.onSurfaceVariant,
                   ),
@@ -273,8 +311,7 @@ class _EmiPlanDetailsScreenState extends State<EmiPlanDetailsScreen> {
   // ===========================================================================
 
   Widget _buildNextDueSection(BuildContext context, EmiPlanModel plan) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
+    final colorScheme = Theme.of(context).colorScheme;
 
     final nextInstallment = _getNextInstallment();
 
@@ -293,7 +330,8 @@ class _EmiPlanDetailsScreenState extends State<EmiPlanDetailsScreen> {
     final dueDate = nextInstallment.dueDate.toLocal();
 
     final isOverdue =
-        nextInstallment.remainingAmount > 0 && dueDate.isBefore(DateTime.now());
+        nextInstallment.remainingAmount > 0.01 &&
+        dueDate.isBefore(DateTime.now());
 
     final color = isOverdue ? colorScheme.error : colorScheme.primary;
 
@@ -308,16 +346,80 @@ class _EmiPlanDetailsScreenState extends State<EmiPlanDetailsScreen> {
 
         const SizedBox(height: 12),
 
-        _buildInfoCard(
-          context,
-          icon: isOverdue
-              ? Icons.warning_amber_rounded
-              : Icons.calendar_month_rounded,
-          title: 'Installment #${nextInstallment.installmentNumber}',
-          message:
-              '${_formatDate(dueDate)} • '
-              '₹${nextInstallment.remainingAmount.toStringAsFixed(2)} remaining',
-          color: color,
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainerLowest,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: colorScheme.outlineVariant.withValues(alpha: .5),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Installment #${nextInstallment.installmentNumber}',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+
+                  EmiStatusBadge(status: nextInstallment.status),
+                ],
+              ),
+
+              const SizedBox(height: 10),
+
+              Row(
+                children: [
+                  Icon(
+                    isOverdue
+                        ? Icons.warning_amber_rounded
+                        : Icons.calendar_month_rounded,
+                    size: 19,
+                    color: color,
+                  ),
+
+                  const SizedBox(width: 8),
+
+                  Text(
+                    _formatDate(dueDate),
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 8),
+
+              Text(
+                '₹${nextInstallment.remainingAmount.toStringAsFixed(2)} remaining',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.icon(
+                  onPressed: () => _handleRecordPayment(nextInstallment),
+                  icon: const Icon(Icons.payments_rounded),
+                  label: const Text('Record Payment'),
+                ),
+              ),
+            ],
+          ),
         ),
       ],
     );
@@ -331,6 +433,8 @@ class _EmiPlanDetailsScreenState extends State<EmiPlanDetailsScreen> {
     BuildContext context,
     List<EmiInstallmentModel> installments,
   ) {
+    final nextInstallment = _getNextInstallment();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -339,12 +443,7 @@ class _EmiPlanDetailsScreenState extends State<EmiPlanDetailsScreen> {
           title: 'Installment Schedule',
           icon: Icons.calendar_view_month_rounded,
           trailing: installments.isNotEmpty
-              ? Text(
-                  '${installments.length}',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
-                )
+              ? _buildCountBadge(context, installments.length)
               : null,
         ),
 
@@ -357,12 +456,21 @@ class _EmiPlanDetailsScreenState extends State<EmiPlanDetailsScreen> {
             message: 'No installment schedule is available.',
           )
         else
-          ...installments.map(
-            (installment) => Padding(
+          ...installments.map((installment) {
+            final isNextInstallment =
+                nextInstallment?.installmentNumber ==
+                installment.installmentNumber;
+
+            return Padding(
               padding: const EdgeInsets.only(bottom: 12),
-              child: EmiInstallmentCard(installment: installment),
-            ),
-          ),
+              child: EmiInstallmentCard(
+                installment: installment,
+                onTap: isNextInstallment
+                    ? () => _handleRecordPayment(installment)
+                    : null,
+              ),
+            );
+          }),
       ],
     );
   }
@@ -383,12 +491,7 @@ class _EmiPlanDetailsScreenState extends State<EmiPlanDetailsScreen> {
           title: 'Payment History',
           icon: Icons.receipt_long_rounded,
           trailing: payments.isNotEmpty
-              ? Text(
-                  '${payments.length}',
-                  style: Theme.of(
-                    context,
-                  ).textTheme.labelLarge?.copyWith(fontWeight: FontWeight.w700),
-                )
+              ? _buildCountBadge(context, payments.length)
               : null,
         ),
 
@@ -420,38 +523,6 @@ class _EmiPlanDetailsScreenState extends State<EmiPlanDetailsScreen> {
   }
 
   // ===========================================================================
-  // Record Payment Button
-  // ===========================================================================
-
-  Widget? _buildRecordPaymentButton(BuildContext context) {
-    final controller = widget.controller;
-    final plan = controller.selectedPlan;
-
-    if (plan == null ||
-        widget.onRecordPayment == null ||
-        plan.isCompleted ||
-        plan.isCancelled ||
-        !plan.hasRemainingAmount) {
-      return null;
-    }
-
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return SafeArea(
-      minimum: const EdgeInsets.fromLTRB(16, 10, 16, 16),
-      child: FilledButton.icon(
-        onPressed: controller.isRecordingPayment ? null : _handleRecordPayment,
-        icon: const Icon(Icons.payments_rounded),
-        label: const Text('Record Payment'),
-        style: FilledButton.styleFrom(
-          minimumSize: const Size(double.infinity, 52),
-          backgroundColor: colorScheme.primary,
-        ),
-      ),
-    );
-  }
-
-  // ===========================================================================
   // Section Title
   // ===========================================================================
 
@@ -466,9 +537,17 @@ class _EmiPlanDetailsScreenState extends State<EmiPlanDetailsScreen> {
 
     return Row(
       children: [
-        Icon(icon, size: 20, color: colorScheme.primary),
+        Container(
+          width: 34,
+          height: 34,
+          decoration: BoxDecoration(
+            color: colorScheme.primary.withValues(alpha: .08),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, size: 18, color: colorScheme.primary),
+        ),
 
-        const SizedBox(width: 8),
+        const SizedBox(width: 10),
 
         Expanded(
           child: Text(
@@ -481,6 +560,32 @@ class _EmiPlanDetailsScreenState extends State<EmiPlanDetailsScreen> {
 
         if (trailing != null) trailing,
       ],
+    );
+  }
+
+  // ===========================================================================
+  // Count Badge
+  // ===========================================================================
+
+  Widget _buildCountBadge(BuildContext context, int count) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      constraints: const BoxConstraints(minWidth: 30),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        '$count',
+        textAlign: TextAlign.center,
+        style: theme.textTheme.labelMedium?.copyWith(
+          fontWeight: FontWeight.w800,
+          color: colorScheme.onSurfaceVariant,
+        ),
+      ),
     );
   }
 
@@ -548,7 +653,7 @@ class _EmiPlanDetailsScreenState extends State<EmiPlanDetailsScreen> {
   }
 
   // ===========================================================================
-  // Section Empty State
+  // Empty State
   // ===========================================================================
 
   Widget _buildSectionEmptyState(
@@ -588,7 +693,7 @@ class _EmiPlanDetailsScreenState extends State<EmiPlanDetailsScreen> {
   }
 
   // ===========================================================================
-  // Error
+  // Error State
   // ===========================================================================
 
   Widget _buildErrorState(BuildContext context) {
@@ -601,16 +706,25 @@ class _EmiPlanDetailsScreenState extends State<EmiPlanDetailsScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.error_outline_rounded,
-              size: 48,
-              color: colorScheme.error,
+            Container(
+              width: 72,
+              height: 72,
+              decoration: BoxDecoration(
+                color: colorScheme.error.withValues(alpha: .08),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.error_outline_rounded,
+                size: 40,
+                color: colorScheme.error,
+              ),
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 18),
 
             Text(
               'Unable to load EMI plan',
+              textAlign: TextAlign.center,
               style: theme.textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.w800,
               ),
@@ -655,6 +769,7 @@ class _EmiPlanDetailsScreenState extends State<EmiPlanDetailsScreen> {
         borderRadius: BorderRadius.circular(14),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(
             Icons.error_outline_rounded,
@@ -688,16 +803,25 @@ class _EmiPlanDetailsScreenState extends State<EmiPlanDetailsScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.account_balance_wallet_outlined,
-              size: 52,
-              color: colorScheme.onSurfaceVariant,
+            Container(
+              width: 76,
+              height: 76,
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerHigh,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.account_balance_wallet_outlined,
+                size: 42,
+                color: colorScheme.onSurfaceVariant,
+              ),
             ),
 
-            const SizedBox(height: 16),
+            const SizedBox(height: 18),
 
             Text(
               'EMI plan not found',
+              textAlign: TextAlign.center,
               style: theme.textTheme.titleLarge?.copyWith(
                 fontWeight: FontWeight.w800,
               ),
@@ -729,13 +853,13 @@ class _EmiPlanDetailsScreenState extends State<EmiPlanDetailsScreen> {
       return null;
     }
 
-    final pending = installments
-        .where(
-          (installment) =>
-              installment.remainingAmount > 0.01 &&
-              installment.status.toLowerCase() != 'cancelled',
-        )
-        .toList();
+    final pending = installments.where((installment) {
+      final status = installment.status.toLowerCase();
+
+      final isCancelled = status == 'cancelled' || status == 'canceled';
+
+      return installment.remainingAmount > 0.01 && !isCancelled;
+    }).toList();
 
     if (pending.isEmpty) {
       return null;
@@ -746,14 +870,15 @@ class _EmiPlanDetailsScreenState extends State<EmiPlanDetailsScreen> {
     return pending.first;
   }
 
-  String _formatDate(DateTime date) {
-    return DateFormat('dd MMM yyyy').format(date.toLocal());
-  }
-
   String _shortId(String id) {
-    if (id.length <= 8) {
+    if (id.length <= 12) {
       return id;
     }
-    return '${id.substring(0, 8)}...';
+
+    return '${id.substring(0, 6)}...${id.substring(id.length - 4)}';
+  }
+
+  String _formatDate(DateTime date) {
+    return DateFormat('dd MMM yyyy').format(date);
   }
 }
