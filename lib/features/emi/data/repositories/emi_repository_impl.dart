@@ -8,9 +8,8 @@ import '../requests/record_emi_payment_request.dart';
 import 'emi_repository.dart';
 
 class EmiRepositoryImpl implements EmiRepository {
-  EmiRepositoryImpl({
-    SupabaseClient? supabase,
-  }) : _supabase = supabase ?? Supabase.instance.client;
+  EmiRepositoryImpl({SupabaseClient? supabase})
+    : _supabase = supabase ?? Supabase.instance.client;
 
   final SupabaseClient _supabase;
 
@@ -26,27 +25,19 @@ class EmiRepositoryImpl implements EmiRepository {
         .order('created_at', ascending: false);
 
     return (response as List)
-        .map(
-          (json) => EmiPlanModel.fromJson(
-            Map<String, dynamic>.from(json),
-          ),
-        )
+        .map((json) => EmiPlanModel.fromJson(Map<String, dynamic>.from(json)))
         .toList();
   }
 
   @override
-  Future<EmiPlanModel> getEmiPlanById(
-    String emiPlanId,
-  ) async {
+  Future<EmiPlanModel> getEmiPlanById(String emiPlanId) async {
     final response = await _supabase
         .from('emi_plans')
         .select()
         .eq('id', emiPlanId)
         .single();
 
-    return EmiPlanModel.fromJson(
-      Map<String, dynamic>.from(response),
-    );
+    return EmiPlanModel.fromJson(Map<String, dynamic>.from(response));
   }
 
   // ===========================================================================
@@ -54,9 +45,7 @@ class EmiRepositoryImpl implements EmiRepository {
   // ===========================================================================
 
   @override
-  Future<EmiPlanModel> createEmiPlan(
-    CreateEmiPlanRequest request,
-  ) async {
+  Future<EmiPlanModel> createEmiPlan(CreateEmiPlanRequest request) async {
     final response = await _supabase.rpc(
       'create_emi_plan',
       params: request.toRpcParams(),
@@ -99,9 +88,7 @@ class EmiRepositoryImpl implements EmiRepository {
         .eq('id', emiPlanId)
         .single();
 
-    return EmiPlanModel.fromJson(
-      Map<String, dynamic>.from(planResponse),
-    );
+    return EmiPlanModel.fromJson(Map<String, dynamic>.from(planResponse));
   }
 
   // ===========================================================================
@@ -109,9 +96,7 @@ class EmiRepositoryImpl implements EmiRepository {
   // ===========================================================================
 
   @override
-  Future<List<EmiInstallmentModel>> getInstallments(
-    String emiPlanId,
-  ) async {
+  Future<List<EmiInstallmentModel>> getInstallments(String emiPlanId) async {
     final response = await _supabase
         .from('emi_installments')
         .select()
@@ -120,9 +105,8 @@ class EmiRepositoryImpl implements EmiRepository {
 
     return (response as List)
         .map(
-          (json) => EmiInstallmentModel.fromJson(
-            Map<String, dynamic>.from(json),
-          ),
+          (json) =>
+              EmiInstallmentModel.fromJson(Map<String, dynamic>.from(json)),
         )
         .toList();
   }
@@ -132,9 +116,7 @@ class EmiRepositoryImpl implements EmiRepository {
   // ===========================================================================
 
   @override
-  Future<List<EmiPaymentModel>> getPayments(
-    String emiPlanId,
-  ) async {
+  Future<List<EmiPaymentModel>> getPayments(String emiPlanId) async {
     final response = await _supabase
         .from('emi_payments')
         .select()
@@ -144,9 +126,7 @@ class EmiRepositoryImpl implements EmiRepository {
 
     return (response as List)
         .map(
-          (json) => EmiPaymentModel.fromJson(
-            Map<String, dynamic>.from(json),
-          ),
+          (json) => EmiPaymentModel.fromJson(Map<String, dynamic>.from(json)),
         )
         .toList();
   }
@@ -156,9 +136,7 @@ class EmiRepositoryImpl implements EmiRepository {
   // ===========================================================================
 
   @override
-  Future<EmiPaymentModel> recordPayment(
-    RecordEmiPaymentRequest request,
-  ) async {
+  Future<EmiPaymentModel> recordPayment(RecordEmiPaymentRequest request) async {
     final response = await _supabase.rpc(
       'record_emi_payment',
       params: request.toRpcParams(),
@@ -170,16 +148,7 @@ class EmiRepositoryImpl implements EmiRepository {
       );
     }
 
-    final result = Map<String, dynamic>.from(
-      response.first as Map,
-    );
-
-    /*
-     * The RPC returns payment_id and financial summary fields,
-     * while emi_payments contains the complete payment record.
-     *
-     * Fetch the authoritative payment row after the RPC succeeds.
-     */
+    final result = Map<String, dynamic>.from(response.first as Map);
 
     final paymentId = result['payment_id'] as String?;
 
@@ -195,8 +164,6 @@ class EmiRepositoryImpl implements EmiRepository {
         .eq('id', paymentId)
         .single();
 
-    return EmiPaymentModel.fromJson(
-      Map<String, dynamic>.from(paymentResponse),
-    );
+    return EmiPaymentModel.fromJson(Map<String, dynamic>.from(paymentResponse));
   }
 }

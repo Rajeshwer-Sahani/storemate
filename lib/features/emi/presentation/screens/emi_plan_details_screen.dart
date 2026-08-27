@@ -49,7 +49,13 @@ class _EmiPlanDetailsScreenState extends State<EmiPlanDetailsScreen> {
   void initState() {
     super.initState();
 
-    _loadDetails();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) {
+        return;
+      }
+
+      _loadDetails();
+    });
   }
 
   // ===========================================================================
