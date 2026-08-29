@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:storemate/core/widgets/app_search_field.dart';
+import 'package:storemate/features/emi/data/repositories/emi_repository.dart';
+import 'package:storemate/features/emi/data/repositories/emi_repository_impl.dart';
+import 'package:storemate/features/emi/data/services/emi_service.dart';
 
 import '../../../../features/billing/data/models/invoice_model.dart';
 import '../../../../features/billing/data/services/billing_service.dart';
-
 
 class SelectInvoiceForEmiScreen extends StatefulWidget {
   const SelectInvoiceForEmiScreen({super.key, this.onInvoiceSelected});
@@ -21,6 +23,7 @@ class _SelectInvoiceForEmiScreenState extends State<SelectInvoiceForEmiScreen> {
   // ===========================================================================
 
   late final BillingService _billingService;
+  late final EmiService _emiService;
 
   // ===========================================================================
   // State
@@ -39,13 +42,16 @@ class _SelectInvoiceForEmiScreenState extends State<SelectInvoiceForEmiScreen> {
   // ===========================================================================
 
   @override
-  void initState() {
-    super.initState();
+void initState() {
+  super.initState();
 
-    _billingService = BillingService();
+  _billingService = BillingService();
+  _emiService = EmiService(
+    repository: EmiRepositoryImpl(),
+  );
 
-    _loadInvoices();
-  }
+  _loadInvoices();
+}
 
   // ===========================================================================
   // Build
@@ -1112,12 +1118,29 @@ class _SelectInvoiceForEmiScreenState extends State<SelectInvoiceForEmiScreen> {
     try {
       final invoices = await _billingService.getInvoices();
 
+      final emiPlans = await _emiService.getEmiPlans();
+
       if (!mounted) {
         return;
       }
 
+      // -------------------------------------------------------------------------
+      // Invoices already linked to an EMI plan cannot be selected again.
+      // -------------------------------------------------------------------------
+      final emiInvoiceIds = emiPlans
+          .map((plan) => plan.invoiceId.trim())
+          .where((invoiceId) => invoiceId.isNotEmpty)
+          .toSet();
+
+      // -------------------------------------------------------------------------
+      // Final EMI eligibility
+      // -------------------------------------------------------------------------
       final eligibleInvoices = invoices
-          .where(_isEligibleForEmi)
+          .where(
+            (invoice) =>
+                _isEligibleForEmi(invoice) &&
+                !emiInvoiceIds.contains(invoice.id),
+          )
           .toList(growable: false);
 
       setState(() {
