@@ -230,56 +230,146 @@ class _EmiPlanDetailsScreenState extends State<EmiPlanDetailsScreen> {
           color: colorScheme.outlineVariant.withValues(alpha: .5),
         ),
       ),
-      child: Row(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 52,
-            height: 52,
-            decoration: BoxDecoration(
-              color: colorScheme.primary.withValues(alpha: .08),
-              borderRadius: BorderRadius.circular(15),
-            ),
-            child: Icon(
-              Icons.account_balance_wallet_rounded,
-              color: colorScheme.primary,
-              size: 26,
-            ),
+          // ===================================================================
+          // Primary Plan Information
+          // ===================================================================
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  color: colorScheme.primary.withValues(alpha: .08),
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: Icon(
+                  Icons.account_balance_wallet_rounded,
+                  color: colorScheme.primary,
+                  size: 26,
+                ),
+              ),
+
+              const SizedBox(width: 14),
+
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'EMI Plan',
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+
+                    const SizedBox(height: 4),
+
+                    Text(
+                      'Plan ID: ${_shortId(plan.id)}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(width: 12),
+
+              // Status
+              EmiStatusBadge(status: plan.status),
+            ],
           ),
 
-          const SizedBox(width: 14),
+          const SizedBox(height: 18),
 
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'EMI Plan',
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
+          // ===================================================================
+          // Divider
+          // ===================================================================
+          Divider(
+            height: 1,
+            thickness: 1,
+            color: colorScheme.outlineVariant.withValues(alpha: .45),
+          ),
+
+          const SizedBox(height: 18),
+
+          // ===================================================================
+          // Plan Metadata
+          // ===================================================================
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // -----------------------------------------------------------------
+              // Start Date
+              // -----------------------------------------------------------------
+              Expanded(
+                child: _PlanHeaderInfo(
+                  icon: Icons.calendar_month_outlined,
+                  label: 'Start Date',
+                  value: _formatDate(plan.startDate),
+                  
                 ),
+              ),
 
-                const SizedBox(height: 4),
+              _PlanHeaderDivider(),
 
-                Text(
-                  'Plan ID: ${_shortId(plan.id)}',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
+              // -----------------------------------------------------------------
+              // First Due Date
+              // -----------------------------------------------------------------
+              Expanded(
+                child: _PlanHeaderInfo(
+                  icon: Icons.event_available_rounded,
+                  label: 'First Due',
+                  value: _formatDate(plan.firstDueDate),
                 ),
+              ),
 
-                const SizedBox(height: 10),
+              _PlanHeaderDivider(),
 
-                EmiStatusBadge(status: plan.status),
-              ],
-            ),
+              // -----------------------------------------------------------------
+              // Interest
+              // -----------------------------------------------------------------
+              Expanded(
+                child: _PlanHeaderInfo(
+                  icon: Icons.percent_rounded,
+                  label: 'Interest',
+                  value:
+                      '${plan.interestRate.toStringAsFixed(2)}% ${_interestTypeLabel(plan.interestType)}',
+                ),
+              ),
+            ],
           ),
         ],
       ),
     );
+  }
+
+  String _formatDate(DateTime date) {
+    return DateFormat('dd MMM yyyy').format(date.toLocal());
+  }
+
+  String _interestTypeLabel(String type) {
+    switch (type.toLowerCase()) {
+      case 'flat':
+        return 'Flat';
+
+      case 'reducing':
+      case 'reducing_balance':
+        return 'Reducing';
+
+      case 'none':
+        return 'No Interest';
+
+      default:
+        return type;
+    }
   }
 
   // ===========================================================================
@@ -904,8 +994,80 @@ class _EmiPlanDetailsScreenState extends State<EmiPlanDetailsScreen> {
 
     return '${id.substring(0, 6)}...${id.substring(id.length - 4)}';
   }
+}
 
-  String _formatDate(DateTime date) {
-    return DateFormat('dd MMM yyyy').format(date);
+// =============================================================================
+// Plan Header Info
+// =============================================================================
+
+class _PlanHeaderInfo extends StatelessWidget {
+  const _PlanHeaderInfo({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
+
+  final IconData icon;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(icon, size: 16, color: colorScheme.tertiary),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.labelMedium?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: -0.04
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 6),
+        Text(
+          value,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: theme.textTheme.bodySmall?.copyWith(
+            fontWeight: FontWeight.w700,
+            letterSpacing: -0.05
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// =============================================================================
+// Plan Header Divider
+// =============================================================================
+
+class _PlanHeaderDivider extends StatelessWidget {
+  const _PlanHeaderDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Container(
+      width: 1,
+      height: 42,
+      margin: const EdgeInsets.symmetric(horizontal: 12),
+      color: colorScheme.outlineVariant.withValues(alpha: .45),
+    );
   }
 }

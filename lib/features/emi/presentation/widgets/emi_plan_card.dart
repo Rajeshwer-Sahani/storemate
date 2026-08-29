@@ -99,55 +99,74 @@ class EmiPlanCard extends StatelessWidget {
                     color: colorScheme.primary.withValues(alpha: .10),
                   ),
                 ),
-                child: Column(
+                child: Row(
                   children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.person_outline_rounded,
-                          size: 18,
-                          color: colorScheme.primary,
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            plan.displayCustomerName,
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w700,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                    // ---------------------------------------------------------
+                    // Customer
+                    // ---------------------------------------------------------
+                    Expanded(
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.person_outline_rounded,
+                            size: 18,
+                            color: colorScheme.primary,
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              plan.displayCustomerName,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
 
-                    const SizedBox(height: 10),
+                    // ---------------------------------------------------------
+                    // Divider
+                    // ---------------------------------------------------------
+                    Container(
+                      width: 1,
+                      height: 24,
+                      margin: const EdgeInsets.symmetric(horizontal: 12),
+                      color: colorScheme.outlineVariant.withValues(alpha: .45),
+                    ),
 
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.receipt_long_outlined,
-                          size: 18,
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            plan.displayInvoiceNumber,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: colorScheme.onSurfaceVariant,
-                              fontWeight: FontWeight.w600,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
+                    // ---------------------------------------------------------
+                    // Invoice
+                    // ---------------------------------------------------------
+                    Expanded(
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.receipt_long_outlined,
+                            size: 18,
+                            color: colorScheme.onSurfaceVariant,
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              plan.displayInvoiceNumber,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: colorScheme.onSurfaceVariant,
+                                fontWeight: FontWeight.w600,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
               ),
+              
               const SizedBox(height: 18),
 
               // =============================================================
@@ -265,30 +284,30 @@ class EmiPlanCard extends StatelessWidget {
 
               const SizedBox(height: 18),
 
-              // =============================================================
-              // Plan Details
-              // =============================================================
-              Wrap(
-                spacing: 10,
-                runSpacing: 10,
-                children: [
-                  _InfoChip(
-                    icon: Icons.calendar_today_rounded,
-                    label: 'Starts ${_formatDate(plan.startDate)}',
-                  ),
-                  _InfoChip(
-                    icon: Icons.event_available_rounded,
-                    label: 'First due ${_formatDate(plan.firstDueDate)}',
-                  ),
-                  _InfoChip(
-                    icon: Icons.percent_rounded,
-                    label:
-                        '${plan.interestRate.toStringAsFixed(2)}% ${_interestTypeLabel(plan.interestType)}',
-                  ),
-                ],
-              ),
+              // // =============================================================
+              // // Plan Details
+              // // =============================================================
+              // Wrap(
+              //   spacing: 10,
+              //   runSpacing: 10,
+              //   children: [
+              //     _InfoChip(
+              //       icon: Icons.calendar_today_rounded,
+              //       label: 'Starts ${_formatDate(plan.startDate)}',
+              //     ),
+              //     _InfoChip(
+              //       icon: Icons.event_available_rounded,
+              //       label: 'First due ${_formatDate(plan.firstDueDate)}',
+              //     ),
+              //     _InfoChip(
+              //       icon: Icons.percent_rounded,
+              //       label:
+              //           '${plan.interestRate.toStringAsFixed(2)}% ${_interestTypeLabel(plan.interestType)}',
+              //     ),
+              //   ],
+              // ),
 
-              const SizedBox(height: 18),
+              // const SizedBox(height: 18),
 
               // =============================================================
               // Interest + Processing Fee

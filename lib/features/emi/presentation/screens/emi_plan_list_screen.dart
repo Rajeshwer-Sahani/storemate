@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:storemate/core/widgets/app_search_field.dart';
+import 'package:storemate/features/emi/data/models/emi_plan_model.dart';
 
 import '../controllers/emi_controller.dart';
 import '../widgets/emi_empty_state.dart';
@@ -89,23 +90,33 @@ class _EmiPlanListScreenState extends State<EmiPlanListScreen> {
     });
   }
 
-  List<dynamic> get _filteredPlans {
-    final plans = widget.controller.emiPlans;
+  
 
-    if (_searchQuery.isEmpty) {
-      return plans;
-    }
+  List<EmiPlanModel> get _filteredPlans {
+  final plans = widget.controller.emiPlans;
 
-    return plans.where((plan) {
-      final status = plan.status.toString().toLowerCase();
-      final interestType = plan.interestType.toString().toLowerCase();
-      final tenure = plan.tenureMonths.toString();
-
-      return status.contains(_searchQuery) ||
-          interestType.contains(_searchQuery) ||
-          tenure.contains(_searchQuery);
-    }).toList();
+  if (_searchQuery.isEmpty) {
+    return plans;
   }
+
+  return plans.where((plan) {
+    final customerName = plan.displayCustomerName.trim().toLowerCase();
+    final invoiceNumber = plan.displayInvoiceNumber.trim().toLowerCase();
+
+    final status = plan.status.trim().toLowerCase();
+    final interestType = plan.interestType.trim().toLowerCase();
+
+    final tenure = plan.tenureMonths.toString();
+    final planId = plan.id.trim().toLowerCase();
+
+    return customerName.contains(_searchQuery) ||
+        invoiceNumber.contains(_searchQuery) ||
+        status.contains(_searchQuery) ||
+        interestType.contains(_searchQuery) ||
+        tenure.contains(_searchQuery) ||
+        planId.contains(_searchQuery);
+  }).toList();
+}
 
   // ===========================================================================
   // Statistics
@@ -447,9 +458,13 @@ class _EmiPlanListScreenState extends State<EmiPlanListScreen> {
       onChanged: _onSearchChanged,
       textInputAction: TextInputAction.search,
       decoration: InputDecoration(
-        hintText: 'Search by status, interest type or tenure...',
+        hintText: 'Search customer, invoice, status, tenure...',
         hintStyle: TextStyle(color: colorScheme.onSurfaceVariant),
-        prefixIcon: const Icon(Icons.search_rounded, size: 23),
+        prefixIcon: Icon(
+          Icons.search_rounded,
+          size: 23,
+          color: colorScheme.onSurfaceVariant,
+        ),
         suffixIcon: _searchQuery.isEmpty
             ? null
             : IconButton(
