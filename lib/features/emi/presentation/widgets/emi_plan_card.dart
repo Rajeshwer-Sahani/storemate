@@ -166,7 +166,7 @@ class EmiPlanCard extends StatelessWidget {
                   ],
                 ),
               ),
-              
+
               const SizedBox(height: 18),
 
               // =============================================================
@@ -270,44 +270,30 @@ class EmiPlanCard extends StatelessWidget {
 
               const SizedBox(height: 10),
 
-              ClipRRect(
-                borderRadius: BorderRadius.circular(10),
-                child: LinearProgressIndicator(
-                  value: progress,
-                  minHeight: 8,
-                  backgroundColor: colorScheme.surfaceContainerHighest,
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    isCompleted ? Colors.green : colorScheme.primary,
+              Container(
+                width: double.infinity,
+                height: 10,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(
+                    color: colorScheme.outlineVariant.withValues(alpha: 0.55),
+                    width: 1,
+                  ),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: LinearProgressIndicator(
+                    value: progress,
+                    minHeight: 8,
+                    backgroundColor: colorScheme.surfaceContainerHighest,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      isCompleted ? Colors.green : colorScheme.primary,
+                    ),
                   ),
                 ),
               ),
 
               const SizedBox(height: 18),
-
-              // // =============================================================
-              // // Plan Details
-              // // =============================================================
-              // Wrap(
-              //   spacing: 10,
-              //   runSpacing: 10,
-              //   children: [
-              //     _InfoChip(
-              //       icon: Icons.calendar_today_rounded,
-              //       label: 'Starts ${_formatDate(plan.startDate)}',
-              //     ),
-              //     _InfoChip(
-              //       icon: Icons.event_available_rounded,
-              //       label: 'First due ${_formatDate(plan.firstDueDate)}',
-              //     ),
-              //     _InfoChip(
-              //       icon: Icons.percent_rounded,
-              //       label:
-              //           '${plan.interestRate.toStringAsFixed(2)}% ${_interestTypeLabel(plan.interestType)}',
-              //     ),
-              //   ],
-              // ),
-
-              // const SizedBox(height: 18),
 
               // =============================================================
               // Interest + Processing Fee

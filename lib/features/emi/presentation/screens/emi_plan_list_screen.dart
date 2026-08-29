@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:storemate/core/widgets/app_search_field.dart';
 import 'package:storemate/features/emi/data/models/emi_plan_model.dart';
 
 import '../controllers/emi_controller.dart';
@@ -29,9 +28,10 @@ class EmiPlanListScreen extends StatefulWidget {
 
 class _EmiPlanListScreenState extends State<EmiPlanListScreen> {
   late final TextEditingController _searchController;
+  late final FocusNode _searchFocusNode;
 
   void _dismissKeyboard() {
-    FocusScope.of(context).unfocus();
+    _searchFocusNode.unfocus();
   }
 
   String _searchQuery = '';
@@ -41,6 +41,7 @@ class _EmiPlanListScreenState extends State<EmiPlanListScreen> {
     super.initState();
 
     _searchController = TextEditingController();
+    _searchFocusNode = FocusNode();
 
     widget.controller.addListener(_onControllerChanged);
 
@@ -51,6 +52,7 @@ class _EmiPlanListScreenState extends State<EmiPlanListScreen> {
   void dispose() {
     widget.controller.removeListener(_onControllerChanged);
     _searchController.dispose();
+    _searchFocusNode.dispose();
     super.dispose();
   }
 
@@ -90,33 +92,31 @@ class _EmiPlanListScreenState extends State<EmiPlanListScreen> {
     });
   }
 
-  
-
   List<EmiPlanModel> get _filteredPlans {
-  final plans = widget.controller.emiPlans;
+    final plans = widget.controller.emiPlans;
 
-  if (_searchQuery.isEmpty) {
-    return plans;
+    if (_searchQuery.isEmpty) {
+      return plans;
+    }
+
+    return plans.where((plan) {
+      final customerName = plan.displayCustomerName.trim().toLowerCase();
+      final invoiceNumber = plan.displayInvoiceNumber.trim().toLowerCase();
+
+      final status = plan.status.trim().toLowerCase();
+      final interestType = plan.interestType.trim().toLowerCase();
+
+      final tenure = plan.tenureMonths.toString();
+      final planId = plan.id.trim().toLowerCase();
+
+      return customerName.contains(_searchQuery) ||
+          invoiceNumber.contains(_searchQuery) ||
+          status.contains(_searchQuery) ||
+          interestType.contains(_searchQuery) ||
+          tenure.contains(_searchQuery) ||
+          planId.contains(_searchQuery);
+    }).toList();
   }
-
-  return plans.where((plan) {
-    final customerName = plan.displayCustomerName.trim().toLowerCase();
-    final invoiceNumber = plan.displayInvoiceNumber.trim().toLowerCase();
-
-    final status = plan.status.trim().toLowerCase();
-    final interestType = plan.interestType.trim().toLowerCase();
-
-    final tenure = plan.tenureMonths.toString();
-    final planId = plan.id.trim().toLowerCase();
-
-    return customerName.contains(_searchQuery) ||
-        invoiceNumber.contains(_searchQuery) ||
-        status.contains(_searchQuery) ||
-        interestType.contains(_searchQuery) ||
-        tenure.contains(_searchQuery) ||
-        planId.contains(_searchQuery);
-  }).toList();
-}
 
   // ===========================================================================
   // Statistics
@@ -236,19 +236,8 @@ class _EmiPlanListScreenState extends State<EmiPlanListScreen> {
 
                         const SizedBox(height: 20),
 
-                        AppSearchField(
-                          controller: _searchController,
-                          hintText:
-                              'Search by status, interest type or tenure...',
-                          hintStyle: TextStyle(
-                            color: Theme.of(
-                              context,
-                            ).colorScheme.onSurfaceVariant,
-                            fontSize: 16,
-                            letterSpacing: -0.3,
-                          ),
-                          onChanged: _onSearchChanged,
-                        ),
+                        _buildSearchField(context),
+
                         const SizedBox(height: 26),
 
                         _buildPlansHeader(context),
@@ -353,7 +342,10 @@ class _EmiPlanListScreenState extends State<EmiPlanListScreen> {
         // Create Button
         // ---------------------------------------------------------------------
         FilledButton.icon(
-          onPressed: widget.onCreateEmiPlan,
+          onPressed: () {
+            _dismissKeyboard();
+            widget.onCreateEmiPlan();
+          },
           icon: const Icon(Icons.add_rounded, size: 18),
           label: const Text('Create', style: TextStyle(fontSize: 16)),
           style: FilledButton.styleFrom(
@@ -455,11 +447,15 @@ class _EmiPlanListScreenState extends State<EmiPlanListScreen> {
 
     return TextField(
       controller: _searchController,
+      focusNode: _searchFocusNode,
       onChanged: _onSearchChanged,
       textInputAction: TextInputAction.search,
       decoration: InputDecoration(
         hintText: 'Search customer, invoice, status, tenure...',
-        hintStyle: TextStyle(color: colorScheme.onSurfaceVariant),
+        hintStyle: TextStyle(
+          color: colorScheme.onSurfaceVariant,
+          letterSpacing: -0.05,
+        ),
         prefixIcon: Icon(
           Icons.search_rounded,
           size: 23,
@@ -541,7 +537,12 @@ class _EmiPlanListScreenState extends State<EmiPlanListScreen> {
           plan: _filteredPlans[index],
           onTap: widget.onPlanTap == null
               ? null
-              : () => widget.onPlanTap!(_filteredPlans[index].id),
+              : () {
+                  // Remove focus from the search field before navigation.
+                  _dismissKeyboard();
+
+                  widget.onPlanTap!(_filteredPlans[index].id);
+                },
         ),
         if (index != _filteredPlans.length - 1) const SizedBox(height: 12),
       ],
