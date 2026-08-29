@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:storemate/features/emi/data/models/emi_plan_model.dart';
 
 import '../../data/models/emi_installment_model.dart';
 import '../../data/requests/record_emi_payment_request.dart';
@@ -10,6 +11,7 @@ class RecordEmiPaymentScreen extends StatefulWidget {
   const RecordEmiPaymentScreen({
     super.key,
     required this.emiPlanId,
+    required this.emiPlan,
     required this.installment,
     this.onRecorded,
   });
@@ -17,11 +19,13 @@ class RecordEmiPaymentScreen extends StatefulWidget {
   /// EMI plan against which the payment will be recorded.
   final String emiPlanId;
 
-  /// The specific installment for which this payment is being recorded.
+  /// The installment currently being viewed when recording the payment.
   final EmiInstallmentModel installment;
 
   /// Called after a payment has been successfully recorded.
   final VoidCallback? onRecorded;
+
+  final EmiPlanModel emiPlan;
 
   @override
   State<RecordEmiPaymentScreen> createState() => _RecordEmiPaymentScreenState();
@@ -450,8 +454,8 @@ class _RecordEmiPaymentScreenState extends State<RecordEmiPaymentScreen> {
             return 'Amount must be greater than zero';
           }
 
-          if (amount > widget.installment.remainingAmount + 0.01) {
-            return 'Amount cannot exceed the installment balance';
+          if (amount > widget.emiPlan.remainingAmount + 0.01) {
+            return 'Amount cannot exceed the EMI plan balance';
           }
 
           return null;
@@ -477,7 +481,7 @@ class _RecordEmiPaymentScreenState extends State<RecordEmiPaymentScreen> {
         DropdownMenuItem(value: 'UPI', child: Text('UPI')),
         DropdownMenuItem(value: 'Card', child: Text('Card')),
         DropdownMenuItem(value: 'Bank Transfer', child: Text('Bank Transfer')),
-        DropdownMenuItem(value: 'Cheque', child: Text('Cheque')),
+        DropdownMenuItem(value: 'Other', child: Text('Other')),
       ],
       onChanged: (value) {
         if (value == null) {
@@ -621,8 +625,8 @@ class _RecordEmiPaymentScreenState extends State<RecordEmiPaymentScreen> {
           const SizedBox(width: 9),
           Expanded(
             child: Text(
-              'Payment will update the EMI balance '
-              'and installment status automatically.',
+              'Payment will be applied to the current installment first, '
+              'then automatically carried forward to upcoming installments.',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: colorScheme.onSurfaceVariant,
                 height: 1.35,

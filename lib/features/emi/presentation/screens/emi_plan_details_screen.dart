@@ -32,6 +32,7 @@ class EmiPlanDetailsScreen extends StatefulWidget {
   /// can validate the entered amount against the displayed balance.
   final Future<void> Function(
     String emiPlanId,
+    EmiPlanModel emiPlan,
     EmiInstallmentModel installment,
   )?
   onRecordPayment;
@@ -98,7 +99,7 @@ class _EmiPlanDetailsScreenState extends State<EmiPlanDetailsScreen> {
       return;
     }
 
-    await callback(widget.emiPlanId, installment);
+    await callback(widget.emiPlanId, plan, installment);
 
     if (!mounted) {
       return;

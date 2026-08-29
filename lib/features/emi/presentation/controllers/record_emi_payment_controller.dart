@@ -5,9 +5,8 @@ import '../../data/requests/record_emi_payment_request.dart';
 import '../../data/services/emi_service.dart';
 
 class RecordEmiPaymentController extends ChangeNotifier {
-  RecordEmiPaymentController({
-    required EmiService service,
-  }) : _service = service;
+  RecordEmiPaymentController({required EmiService service})
+    : _service = service;
 
   final EmiService _service;
 

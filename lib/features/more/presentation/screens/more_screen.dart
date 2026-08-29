@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:storemate/features/billing/data/models/invoice_model.dart';
 import 'package:storemate/features/emi/data/models/emi_installment_model.dart';
+import 'package:storemate/features/emi/data/models/emi_plan_model.dart';
 
 import 'package:storemate/features/emi/data/repositories/emi_repository_impl.dart';
 import 'package:storemate/features/emi/data/services/emi_service.dart';
@@ -705,8 +706,8 @@ class _EmiPlanRouteState extends State<_EmiPlanRoute> {
         builder: (_) => EmiPlanDetailsScreen(
           controller: _controller,
           emiPlanId: emiPlanId,
-          onRecordPayment: (emiPlanId, installment) async {
-            await _onRecordPayment(emiPlanId, installment);
+          onRecordPayment: (emiPlanId, emiPlan, installment) async {
+            await _onRecordPayment(emiPlanId, emiPlan, installment);
           },
         ),
       ),
@@ -725,6 +726,7 @@ class _EmiPlanRouteState extends State<_EmiPlanRoute> {
 
   Future<void> _onRecordPayment(
     String emiPlanId,
+    EmiPlanModel emiPlan,
     EmiInstallmentModel installment,
   ) async {
     final payment = await Navigator.of(context).push(
@@ -735,6 +737,7 @@ class _EmiPlanRouteState extends State<_EmiPlanRoute> {
           ),
           child: RecordEmiPaymentScreen(
             emiPlanId: emiPlanId,
+            emiPlan: emiPlan,
             installment: installment,
           ),
         ),

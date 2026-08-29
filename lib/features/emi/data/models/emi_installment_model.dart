@@ -54,8 +54,7 @@ class EmiInstallmentModel {
   bool get hasRemainingAmount => remainingAmount > 0;
 
   /// Whether the installment is partially paid.
-  bool get isPartiallyPaid =>
-      paidAmount > 0 && remainingAmount > 0;
+  bool get isPartiallyPaid => paidAmount > 0 && remainingAmount > 0;
 
   /// Percentage of this installment that has been paid.
   double get paidPercentage {
@@ -89,9 +88,7 @@ class EmiInstallmentModel {
   // From JSON
   // ===========================================================================
 
-  factory EmiInstallmentModel.fromJson(
-    Map<String, dynamic> json,
-  ) {
+  factory EmiInstallmentModel.fromJson(Map<String, dynamic> json) {
     return EmiInstallmentModel(
       id: json['id'] as String,
 
@@ -100,40 +97,27 @@ class EmiInstallmentModel {
       // -----------------------------------------------------------------------
       // Installment Information
       // -----------------------------------------------------------------------
+      installmentNumber: (json['installment_number'] as num).toInt(),
 
-      installmentNumber:
-          (json['installment_number'] as num).toInt(),
+      dueDate: DateTime.parse(json['due_date'] as String),
 
-      dueDate: DateTime.parse(
-        json['due_date'] as String,
-      ),
+      scheduledAmount: (json['scheduled_amount'] as num).toDouble(),
 
-      scheduledAmount:
-          (json['scheduled_amount'] as num).toDouble(),
+      paidAmount: (json['paid_amount'] as num).toDouble(),
 
-      paidAmount:
-          (json['paid_amount'] as num).toDouble(),
-
-      remainingAmount:
-          (json['remaining_amount'] as num).toDouble(),
+      remainingAmount: (json['remaining_amount'] as num).toDouble(),
 
       // -----------------------------------------------------------------------
       // Status
       // -----------------------------------------------------------------------
-
       status: json['status'] as String,
 
       // -----------------------------------------------------------------------
       // Timestamps
       // -----------------------------------------------------------------------
+      createdAt: DateTime.parse(json['created_at'] as String),
 
-      createdAt: DateTime.parse(
-        json['created_at'] as String,
-      ),
-
-      updatedAt: DateTime.parse(
-        json['updated_at'] as String,
-      ),
+      updatedAt: DateTime.parse(json['updated_at'] as String),
     );
   }
 
@@ -181,18 +165,15 @@ class EmiInstallmentModel {
 
       emiPlanId: emiPlanId ?? this.emiPlanId,
 
-      installmentNumber:
-          installmentNumber ?? this.installmentNumber,
+      installmentNumber: installmentNumber ?? this.installmentNumber,
 
       dueDate: dueDate ?? this.dueDate,
 
-      scheduledAmount:
-          scheduledAmount ?? this.scheduledAmount,
+      scheduledAmount: scheduledAmount ?? this.scheduledAmount,
 
       paidAmount: paidAmount ?? this.paidAmount,
 
-      remainingAmount:
-          remainingAmount ?? this.remainingAmount,
+      remainingAmount: remainingAmount ?? this.remainingAmount,
 
       status: status ?? this.status,
 

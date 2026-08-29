@@ -1,3 +1,4 @@
+import 'package:storemate/features/emi/data/models/record_emi_payment_response.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/emi_installment_model.dart';
@@ -148,20 +149,22 @@ class EmiRepositoryImpl implements EmiRepository {
       );
     }
 
-    final result = Map<String, dynamic>.from(response.first as Map);
+    final rawResult = response.first;
 
-    final paymentId = result['payment_id'] as String?;
-
-    if (paymentId == null || paymentId.isEmpty) {
+    if (rawResult is! Map) {
       throw const FormatException(
-        'Payment ID was not returned by record_emi_payment RPC.',
+        'Invalid result received from record_emi_payment RPC.',
       );
     }
+
+    final result = Map<String, dynamic>.from(rawResult);
+
+    final rpcResult = RecordEmiPaymentResponse.fromJson(result);
 
     final paymentResponse = await _supabase
         .from('emi_payments')
         .select()
-        .eq('id', paymentId)
+        .eq('id', rpcResult.paymentId)
         .single();
 
     return EmiPaymentModel.fromJson(Map<String, dynamic>.from(paymentResponse));
