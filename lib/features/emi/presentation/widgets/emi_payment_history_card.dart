@@ -13,6 +13,14 @@ class EmiPaymentHistoryCard extends StatelessWidget {
   final EmiPaymentModel payment;
   final int paymentNumber;
 
+  bool get hasReference =>
+      payment.reference != null && payment.reference!.trim().isNotEmpty;
+
+  bool get hasNotes =>
+      payment.notes != null && payment.notes!.trim().isNotEmpty;
+
+  int get detailCount => 1 + (hasReference ? 1 : 0) + (hasNotes ? 1 : 0);
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -31,9 +39,7 @@ class EmiPaymentHistoryCard extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _PaymentIcon(
-                  color: colorScheme.primary,
-                ),
+                _PaymentIcon(color: colorScheme.primary),
 
                 const SizedBox(width: 14),
 
@@ -65,7 +71,7 @@ class EmiPaymentHistoryCard extends StatelessWidget {
                 Text(
                   '₹${payment.amount.toStringAsFixed(2)}',
                   style: theme.textTheme.titleMedium?.copyWith(
-                   color: Colors.green.shade600,
+                    color: Colors.green.shade600,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -75,11 +81,25 @@ class EmiPaymentHistoryCard extends StatelessWidget {
             const SizedBox(height: 18),
 
             // -----------------------------------------------------------------
+            // Header Divider
+            // -----------------------------------------------------------------
+            Divider(
+              height: 1,
+              thickness: 1,
+              color: colorScheme.outlineVariant.withValues(alpha: .45),
+            ),
+
+            const SizedBox(height: 16),
+
+            // -----------------------------------------------------------------
             // Payment Details
             // -----------------------------------------------------------------
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(14),
+              padding: EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: detailCount == 1 ? 2 : 4,
+              ),
               decoration: BoxDecoration(
                 color: colorScheme.surfaceContainerHighest.withValues(
                   alpha: 0.45,
@@ -94,9 +114,10 @@ class EmiPaymentHistoryCard extends StatelessWidget {
                     value: payment.paymentMethod,
                   ),
 
-                  if (payment.reference != null &&
-                      payment.reference!.trim().isNotEmpty) ...[
-                    const SizedBox(height: 12),
+                  if (hasReference) ...[
+                    _DetailDivider(
+                      color: colorScheme.outlineVariant.withValues(alpha: .40),
+                    ),
 
                     _DetailRow(
                       icon: Icons.tag_rounded,
@@ -105,9 +126,10 @@ class EmiPaymentHistoryCard extends StatelessWidget {
                     ),
                   ],
 
-                  if (payment.notes != null &&
-                      payment.notes!.trim().isNotEmpty) ...[
-                    const SizedBox(height: 12),
+                  if (hasNotes) ...[
+                    _DetailDivider(
+                      color: colorScheme.outlineVariant.withValues(alpha: .40),
+                    ),
 
                     _DetailRow(
                       icon: Icons.notes_rounded,
@@ -118,12 +140,22 @@ class EmiPaymentHistoryCard extends StatelessWidget {
                 ],
               ),
             ),
+            const SizedBox(height: 16),
+
+            // -----------------------------------------------------------------
+            // Recorded At Divider
+            // -----------------------------------------------------------------
+            Divider(
+              height: 1,
+              thickness: 1,
+              color: colorScheme.outlineVariant.withValues(alpha: .45),
+            ),
+
+            const SizedBox(height: 14),
 
             // -----------------------------------------------------------------
             // Recorded At
             // -----------------------------------------------------------------
-            const SizedBox(height: 14),
-
             Row(
               children: [
                 Icon(
@@ -134,12 +166,12 @@ class EmiPaymentHistoryCard extends StatelessWidget {
 
                 const SizedBox(width: 6),
 
-                Text(
-                  'Recorded ${DateFormat(
-                    'dd MMM yyyy • hh:mm a',
-                  ).format(payment.createdAt.toLocal())}',
-                  style: theme.textTheme.labelMedium?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
+                Expanded(
+                  child: Text(
+                    'Recorded ${DateFormat('dd MMM yyyy • hh:mm a').format(payment.createdAt.toLocal())}',
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
               ],
@@ -151,9 +183,7 @@ class EmiPaymentHistoryCard extends StatelessWidget {
   }
 
   String _formattedPaymentDate() {
-    return DateFormat(
-      'dd MMM yyyy',
-    ).format(payment.paymentDate.toLocal());
+    return DateFormat('dd MMM yyyy').format(payment.paymentDate.toLocal());
   }
 }
 
@@ -162,9 +192,7 @@ class EmiPaymentHistoryCard extends StatelessWidget {
 // =============================================================================
 
 class _PaymentIcon extends StatelessWidget {
-  const _PaymentIcon({
-    required this.color,
-  });
+  const _PaymentIcon({required this.color});
 
   final Color color;
 
@@ -177,10 +205,7 @@ class _PaymentIcon extends StatelessWidget {
         color: color.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(14),
       ),
-      child: Icon(
-        Icons.payments_rounded,
-        color: color,
-      ),
+      child: Icon(Icons.payments_rounded, color: color),
     );
   }
 }
@@ -205,40 +230,54 @@ class _DetailRow extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Icon(
-          icon,
-          size: 18,
-          color: colorScheme.onSurfaceVariant,
-        ),
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 11),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(icon, size: 18, color: colorScheme.onSurfaceVariant),
 
-        const SizedBox(width: 10),
+          const SizedBox(width: 10),
 
-        SizedBox(
-          width: 105,
-          child: Text(
-            label,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-              fontWeight: FontWeight.w600,
+          SizedBox(
+            width: 105,
+            child: Text(
+              label,
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
-        ),
 
-        const SizedBox(width: 12),
+          const SizedBox(width: 12),
 
-        Expanded(
-          child: Text(
-            value,
-            textAlign: TextAlign.end,
-            style: theme.textTheme.bodyMedium?.copyWith(
-              fontWeight: FontWeight.w600,
+          Expanded(
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
+  }
+}
+
+// =============================================================================
+// Detail Divider
+// =============================================================================
+
+class _DetailDivider extends StatelessWidget {
+  const _DetailDivider({required this.color});
+
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Divider(height: 1, thickness: 1, color: color);
   }
 }

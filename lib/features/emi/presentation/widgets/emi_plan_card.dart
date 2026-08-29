@@ -4,11 +4,7 @@ import 'package:intl/intl.dart';
 import '../../data/models/emi_plan_model.dart';
 
 class EmiPlanCard extends StatelessWidget {
-  const EmiPlanCard({
-    super.key,
-    required this.plan,
-    this.onTap,
-  });
+  const EmiPlanCard({super.key, required this.plan, this.onTap});
 
   final EmiPlanModel plan;
   final VoidCallback? onTap;
@@ -22,10 +18,7 @@ class EmiPlanCard extends StatelessWidget {
     final isCompleted = plan.isCompleted;
     final isCancelled = plan.isCancelled;
 
-    final statusColor = _statusColor(
-      context,
-      plan.status,
-    );
+    final statusColor = _statusColor(context, plan.status);
 
     return Card(
       margin: EdgeInsets.zero,
@@ -88,7 +81,74 @@ class EmiPlanCard extends StatelessWidget {
                 ],
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 18),
+
+              // =============================================================
+              // Identity
+              // =============================================================
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
+                decoration: BoxDecoration(
+                  color: colorScheme.primary.withValues(alpha: .05),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: colorScheme.primary.withValues(alpha: .10),
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.person_outline_rounded,
+                          size: 18,
+                          color: colorScheme.primary,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            plan.displayCustomerName,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.receipt_long_outlined,
+                          size: 18,
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            plan.displayInvoiceNumber,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 18),
 
               // =============================================================
               // Financial Summary
@@ -100,9 +160,7 @@ class EmiPlanCard extends StatelessWidget {
                   color: colorScheme.surfaceContainerLowest,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: colorScheme.outlineVariant.withValues(
-                      alpha: .45,
-                    ),
+                    color: colorScheme.outlineVariant.withValues(alpha: .45),
                   ),
                 ),
                 child: Column(
@@ -198,12 +256,9 @@ class EmiPlanCard extends StatelessWidget {
                 child: LinearProgressIndicator(
                   value: progress,
                   minHeight: 8,
-                  backgroundColor:
-                      colorScheme.surfaceContainerHighest,
+                  backgroundColor: colorScheme.surfaceContainerHighest,
                   valueColor: AlwaysStoppedAnimation<Color>(
-                    isCompleted
-                        ? Colors.green
-                        : colorScheme.primary,
+                    isCompleted ? Colors.green : colorScheme.primary,
                   ),
                 ),
               ),
@@ -331,10 +386,7 @@ class EmiPlanCard extends StatelessWidget {
     }
   }
 
-  Color _statusColor(
-    BuildContext context,
-    String status,
-  ) {
+  Color _statusColor(BuildContext context, String status) {
     final colorScheme = Theme.of(context).colorScheme;
 
     switch (status.toLowerCase()) {
@@ -464,10 +516,7 @@ class _CompactFinancialItem extends StatelessWidget {
 // =============================================================================
 
 class _InfoChip extends StatelessWidget {
-  const _InfoChip({
-    required this.icon,
-    required this.label,
-  });
+  const _InfoChip({required this.icon, required this.label});
 
   final IconData icon;
   final String label;
@@ -477,24 +526,15 @@ class _InfoChip extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 10,
-        vertical: 8,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withValues(
-          alpha: .45,
-        ),
+        color: colorScheme.surfaceContainerHighest.withValues(alpha: .45),
         borderRadius: BorderRadius.circular(10),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icon,
-            size: 15,
-            color: colorScheme.onSurfaceVariant,
-          ),
+          Icon(icon, size: 15, color: colorScheme.onSurfaceVariant),
           const SizedBox(width: 6),
           Text(
             label,
@@ -514,10 +554,7 @@ class _InfoChip extends StatelessWidget {
 // =============================================================================
 
 class _StatusBadge extends StatelessWidget {
-  const _StatusBadge({
-    required this.label,
-    required this.color,
-  });
+  const _StatusBadge({required this.label, required this.color});
 
   final String label;
   final Color color;
@@ -525,16 +562,11 @@ class _StatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 10,
-        vertical: 6,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: color.withValues(alpha: .10),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: color.withValues(alpha: .20),
-        ),
+        border: Border.all(color: color.withValues(alpha: .20)),
       ),
       child: Text(
         label,

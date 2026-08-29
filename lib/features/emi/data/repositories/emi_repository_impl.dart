@@ -25,9 +25,11 @@ class EmiRepositoryImpl implements EmiRepository {
         .select()
         .order('created_at', ascending: false);
 
-    return (response as List)
-        .map((json) => EmiPlanModel.fromJson(Map<String, dynamic>.from(json)))
+    final rows = (response as List)
+        .map((json) => Map<String, dynamic>.from(json))
         .toList();
+
+    return _buildPlansWithIdentity(rows);
   }
 
   @override
@@ -38,7 +40,151 @@ class EmiRepositoryImpl implements EmiRepository {
         .eq('id', emiPlanId)
         .single();
 
-    return EmiPlanModel.fromJson(Map<String, dynamic>.from(response));
+    final row = Map<String, dynamic>.from(response);
+
+    final plans = await _buildPlansWithIdentity([row]);
+
+    if (plans.isEmpty) {
+      throw const FormatException(
+        'Unable to load EMI plan identity information.',
+      );
+    }
+
+    return plans.first;
+  }
+
+  // ===========================================================================
+  // EMI Plan Identity
+  // ===========================================================================
+
+  /// Enriches EMI plan rows with human-readable customer and invoice
+  /// information.
+  ///
+  /// We intentionally keep:
+  ///
+  /// customerId / invoiceId
+  ///
+  /// as the authoritative database relationships while adding:
+  ///
+  /// customerName / customerPhone / invoiceNumber
+  ///
+  /// for UI identification.
+  ///
+  /// Customer and invoice data are fetched in bulk so that 100 EMI plans
+  /// do not result in 200 additional database requests.
+  Future<List<EmiPlanModel>> _buildPlansWithIdentity(
+    List<Map<String, dynamic>> rows,
+  ) async {
+    if (rows.isEmpty) {
+      return [];
+    }
+
+    // -------------------------------------------------------------------------
+    // Collect relationship IDs
+    // -------------------------------------------------------------------------
+
+    final customerIds = rows
+        .map((row) => row['customer_id'])
+        .whereType<String>()
+        .where((id) => id.isNotEmpty)
+        .toSet()
+        .toList();
+
+    final invoiceIds = rows
+        .map((row) => row['invoice_id'])
+        .whereType<String>()
+        .where((id) => id.isNotEmpty)
+        .toSet()
+        .toList();
+
+    // -------------------------------------------------------------------------
+    // Fetch related records in parallel
+    // -------------------------------------------------------------------------
+
+    final results = await Future.wait([
+      _fetchCustomers(customerIds),
+      _fetchInvoices(invoiceIds),
+    ]);
+
+    final customers = results[0] as Map<String, Map<String, dynamic>>;
+
+    final invoices = results[1] as Map<String, Map<String, dynamic>>;
+
+    // -------------------------------------------------------------------------
+    // Build enriched models
+    // -------------------------------------------------------------------------
+
+    return rows.map((row) {
+      final customerId = row['customer_id'] as String;
+      final invoiceId = row['invoice_id'] as String;
+
+      final customer = customers[customerId];
+      final invoice = invoices[invoiceId];
+
+      final enrichedRow = Map<String, dynamic>.from(row);
+
+      // -----------------------------------------------------------------------
+      // Customer identity
+      // -----------------------------------------------------------------------
+
+      enrichedRow['customer_name'] = customer?['full_name'] as String?;
+
+      enrichedRow['customer_phone'] = customer?['phone_number'] as String?;
+
+      // -----------------------------------------------------------------------
+      // Invoice identity
+      // -----------------------------------------------------------------------
+
+      enrichedRow['invoice_number'] = invoice?['invoice_number'] as String?;
+
+      return EmiPlanModel.fromJson(enrichedRow);
+    }).toList();
+  }
+
+  // ===========================================================================
+  // Customers
+  // ===========================================================================
+
+  Future<Map<String, Map<String, dynamic>>> _fetchCustomers(
+    List<String> customerIds,
+  ) async {
+    if (customerIds.isEmpty) {
+      return {};
+    }
+
+    final response = await _supabase
+        .from('customers')
+        .select('id, full_name, phone_number')
+        .inFilter('id', customerIds);
+
+    final rows = (response as List)
+        .map((json) => Map<String, dynamic>.from(json))
+        .toList();
+
+    return {for (final customer in rows) customer['id'] as String: customer};
+  }
+
+  // ===========================================================================
+  // Invoices
+  // ===========================================================================
+
+  Future<Map<String, Map<String, dynamic>>> _fetchInvoices(
+    List<String> invoiceIds,
+  ) async {
+    if (invoiceIds.isEmpty) {
+      return {};
+    }
+
+    final response = await _supabase
+        .from('invoices')
+        .select('id, invoice_number')
+        .inFilter('id', invoiceIds);
+
+    final rows = (response as List)
+        .map((json) => Map<String, dynamic>.from(json))
+        .toList();
+
+    return {for (final invoice in rows) invoice['id'] as String: invoice};
   }
 
   // ===========================================================================
@@ -63,10 +209,6 @@ class EmiRepositoryImpl implements EmiRepository {
      * - installment rounding
      * - initial paid/remaining amounts
      * - plan status
-     *
-     * Therefore, fetch the complete EMI plan row after
-     * the RPC succeeds instead of constructing the model
-     * from Flutter-side calculations.
      */
 
     if (response == null) {
@@ -83,13 +225,15 @@ class EmiRepositoryImpl implements EmiRepository {
 
     final emiPlanId = response;
 
-    final planResponse = await _supabase
-        .from('emi_plans')
-        .select()
-        .eq('id', emiPlanId)
-        .single();
-
-    return EmiPlanModel.fromJson(Map<String, dynamic>.from(planResponse));
+    /*
+     * Use getEmiPlanById instead of directly constructing the model.
+     *
+     * This ensures the newly created plan also receives:
+     * - customer name
+     * - customer phone
+     * - invoice number
+     */
+    return getEmiPlanById(emiPlanId);
   }
 
   // ===========================================================================
