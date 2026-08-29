@@ -65,7 +65,7 @@ class EmiPaymentHistoryCard extends StatelessWidget {
                 Text(
                   '₹${payment.amount.toStringAsFixed(2)}',
                   style: theme.textTheme.titleMedium?.copyWith(
-                    color: colorScheme.primary,
+                   color: Colors.green.shade600,
                     fontWeight: FontWeight.w800,
                   ),
                 ),

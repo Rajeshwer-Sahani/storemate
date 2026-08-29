@@ -43,11 +43,12 @@ class EmiSummaryCard extends StatelessWidget {
 
     final safeTotalPayable = totalPayable < 0 ? 0.0 : totalPayable;
     final safePaidAmount = paidAmount.clamp(0.0, safeTotalPayable);
-    final remainingAmount =
-        (safeTotalPayable - safePaidAmount).clamp(0.0, double.infinity);
+    final remainingAmount = (safeTotalPayable - safePaidAmount).clamp(
+      0.0,
+      double.infinity,
+    );
 
-    final safeTotalInstallments =
-        totalInstallments < 0 ? 0 : totalInstallments;
+    final safeTotalInstallments = totalInstallments < 0 ? 0 : totalInstallments;
 
     final safePaidInstallments = safeTotalInstallments == 0
         ? 0
@@ -63,11 +64,7 @@ class EmiSummaryCard extends StatelessWidget {
 
     final progressPercentage = (amountProgress * 100).round();
 
-    final statusColor = _statusColor(
-      context,
-      status,
-      remainingAmount,
-    );
+    final statusColor = _statusColor(context, status, remainingAmount);
 
     return Card(
       margin: EdgeInsets.zero,
@@ -105,10 +102,7 @@ class EmiSummaryCard extends StatelessWidget {
 
                 const SizedBox(width: 12),
 
-                _StatusChip(
-                  label: status,
-                  color: statusColor,
-                ),
+                _StatusChip(label: status, color: statusColor),
               ],
             ),
 
@@ -133,7 +127,7 @@ class EmiSummaryCard extends StatelessWidget {
                     label: 'Paid',
                     amount: safePaidAmount,
                     icon: Icons.payments_rounded,
-                    color: colorScheme.tertiary,
+                    color: Colors.green,
                   ),
                 ),
               ],
@@ -165,7 +159,10 @@ class EmiSummaryCard extends StatelessWidget {
                 Text(
                   '$progressPercentage%',
                   style: theme.textTheme.labelLarge?.copyWith(
-                    color: colorScheme.primary,
+                    // color: progressPercentage >= 100
+                    //     ? Colors.green
+                    //     : colorScheme.primary,
+                    color: colorScheme.tertiary,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -179,6 +176,10 @@ class EmiSummaryCard extends StatelessWidget {
               child: LinearProgressIndicator(
                 value: amountProgress,
                 minHeight: 9,
+                // color: amountProgress >= 1.0
+                //     ? Colors.green
+                //     : colorScheme.primary,
+                color: colorScheme.tertiary,
                 backgroundColor: colorScheme.surfaceContainerHighest,
               ),
             ),
@@ -194,9 +195,7 @@ class EmiSummaryCard extends StatelessWidget {
                 color: colorScheme.surfaceContainerLowest,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: colorScheme.outlineVariant.withValues(
-                    alpha: .55,
-                  ),
+                  color: colorScheme.outlineVariant.withValues(alpha: .55),
                 ),
               ),
               child: Row(
@@ -212,16 +211,13 @@ class EmiSummaryCard extends StatelessWidget {
                   Container(
                     width: 1,
                     height: 42,
-                    color: colorScheme.outlineVariant.withValues(
-                      alpha: .55,
-                    ),
+                    color: colorScheme.outlineVariant.withValues(alpha: .55),
                   ),
                   Expanded(
                     child: _InfoItem(
                       icon: Icons.format_list_numbered_rounded,
                       label: 'Installments',
-                      value:
-                          '$safePaidInstallments / $safeTotalInstallments',
+                      value: '$safePaidInstallments / $safeTotalInstallments',
                       color: colorScheme.secondary,
                     ),
                   ),
@@ -271,7 +267,7 @@ class EmiSummaryCard extends StatelessWidget {
     switch (normalizedStatus) {
       case 'completed':
       case 'paid':
-        return colorScheme.tertiary;
+        return Colors.green;
 
       case 'overdue':
       case 'defaulted':
@@ -283,12 +279,10 @@ class EmiSummaryCard extends StatelessWidget {
 
       case 'active':
       case 'ongoing':
-        return colorScheme.primary;
+        return Colors.green;
 
       default:
-        return remainingAmount <= 0
-            ? colorScheme.tertiary
-            : colorScheme.primary;
+        return remainingAmount <= 0 ? Colors.green : colorScheme.primary;
     }
   }
 }
@@ -321,9 +315,7 @@ class _AmountItem extends StatelessWidget {
         color: colorScheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: colorScheme.outlineVariant.withValues(
-            alpha: .55,
-          ),
+          color: colorScheme.outlineVariant.withValues(alpha: .55),
         ),
       ),
       child: Column(
@@ -331,11 +323,7 @@ class _AmountItem extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(
-                icon,
-                size: 18,
-                color: color,
-              ),
+              Icon(icon, size: 18, color: color),
               const SizedBox(width: 7),
               Expanded(
                 child: Text(
@@ -352,6 +340,7 @@ class _AmountItem extends StatelessWidget {
           Text(
             '₹${amount.toStringAsFixed(2)}',
             style: theme.textTheme.titleMedium?.copyWith(
+              color: color,
               fontWeight: FontWeight.w800,
             ),
           ),
@@ -365,34 +354,27 @@ class _AmountItem extends StatelessWidget {
 // Remaining Amount
 // =============================================================================
 
+// ============================================================================= // Remaining Amount // =============================================================================
 class _RemainingAmountCard extends StatelessWidget {
   const _RemainingAmountCard({
     required this.amount,
     required this.colorScheme,
     required this.theme,
   });
-
   final double amount;
   final ColorScheme colorScheme;
   final ThemeData theme;
-
   @override
   Widget build(BuildContext context) {
     final isCompleted = amount <= 0.01;
-
-    final color = isCompleted
-        ? colorScheme.tertiary
-        : colorScheme.primary;
-
+    final color = isCompleted ? colorScheme.tertiary : colorScheme.primary;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: color.withValues(alpha: .08),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: color.withValues(alpha: .22),
-        ),
+        border: Border.all(color: color.withValues(alpha: .22)),
       ),
       child: Row(
         children: [
@@ -410,9 +392,7 @@ class _RemainingAmountCard extends StatelessWidget {
               color: color,
             ),
           ),
-
           const SizedBox(width: 14),
-
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -436,9 +416,7 @@ class _RemainingAmountCard extends StatelessWidget {
               ],
             ),
           ),
-
           const SizedBox(width: 12),
-
           Text(
             '₹${amount.toStringAsFixed(2)}',
             style: theme.textTheme.titleMedium?.copyWith(
@@ -478,11 +456,7 @@ class _InfoItem extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 12),
       child: Column(
         children: [
-          Icon(
-            icon,
-            size: 20,
-            color: color,
-          ),
+          Icon(icon, size: 20, color: color),
           const SizedBox(height: 7),
           Text(
             label,
@@ -510,10 +484,7 @@ class _InfoItem extends StatelessWidget {
 // =============================================================================
 
 class _StatusChip extends StatelessWidget {
-  const _StatusChip({
-    required this.label,
-    required this.color,
-  });
+  const _StatusChip({required this.label, required this.color});
 
   final String label;
   final Color color;
@@ -523,16 +494,11 @@ class _StatusChip extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 11,
-        vertical: 7,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
       decoration: BoxDecoration(
         color: color.withValues(alpha: .10),
         borderRadius: BorderRadius.circular(100),
-        border: Border.all(
-          color: color.withValues(alpha: .20),
-        ),
+        border: Border.all(color: color.withValues(alpha: .20)),
       ),
       child: Text(
         label,

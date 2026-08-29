@@ -1,10 +1,7 @@
 import 'package:flutter/material.dart';
 
 class EmiStatusBadge extends StatelessWidget {
-  const EmiStatusBadge({
-    super.key,
-    required this.status,
-  });
+  const EmiStatusBadge({super.key, required this.status});
 
   final String status;
 
@@ -13,31 +10,19 @@ class EmiStatusBadge extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    final config = _statusConfig(
-      context,
-      status,
-    );
+    final config = _statusConfig(context, status);
 
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 10,
-        vertical: 6,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: config.color.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(
-          color: config.color.withValues(alpha: 0.20),
-        ),
+        border: Border.all(color: config.color.withValues(alpha: 0.20)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            config.icon,
-            size: 14,
-            color: config.color,
-          ),
+          Icon(config.icon, size: 14, color: config.color),
 
           const SizedBox(width: 6),
 
@@ -53,10 +38,7 @@ class EmiStatusBadge extends StatelessWidget {
     );
   }
 
-  _EmiStatusConfig _statusConfig(
-    BuildContext context,
-    String rawStatus,
-  ) {
+  _EmiStatusConfig _statusConfig(BuildContext context, String rawStatus) {
     final colorScheme = Theme.of(context).colorScheme;
     final normalizedStatus = rawStatus.trim().toLowerCase();
 
@@ -68,11 +50,19 @@ class EmiStatusBadge extends StatelessWidget {
           color: colorScheme.primary,
         );
 
+      case 'partially_paid':
+      case 'partially paid':
+        return _EmiStatusConfig(
+          label: 'Partially Paid',
+          icon: Icons.info_outline_rounded,
+          color: Colors.amber.shade700,
+        );
+
       case 'pending':
         return _EmiStatusConfig(
           label: 'Pending',
           icon: Icons.hourglass_top_rounded,
-          color: Colors.orange,
+          color: colorScheme.error,
         );
 
       case 'overdue':

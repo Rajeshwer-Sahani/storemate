@@ -336,11 +336,31 @@ class _EmiPlanDetailsScreenState extends State<EmiPlanDetailsScreen> {
 
     final dueDate = nextInstallment.dueDate.toLocal();
 
+    final normalizedStatus = nextInstallment.status.trim().toLowerCase();
+
     final isOverdue =
         nextInstallment.remainingAmount > 0.01 &&
         dueDate.isBefore(DateTime.now());
 
-    final color = isOverdue ? colorScheme.error : colorScheme.primary;
+    final isPartiallyPaid =
+        normalizedStatus == 'partially_paid' ||
+        normalizedStatus == 'partially paid';
+
+    final isPending =
+        normalizedStatus == 'pending' ||
+        normalizedStatus == 'upcoming' ||
+        normalizedStatus == 'due';
+
+    // ---------------------------------------------------------------------------
+    // Next Due semantic color
+    // ---------------------------------------------------------------------------
+    final color = isOverdue
+        ? colorScheme.error
+        : isPartiallyPaid
+        ? Colors.amber.shade700
+        : isPending
+        ? colorScheme.error
+        : colorScheme.primary;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -390,7 +410,7 @@ class _EmiPlanDetailsScreenState extends State<EmiPlanDetailsScreen> {
                         ? Icons.warning_amber_rounded
                         : Icons.calendar_month_rounded,
                     size: 19,
-                    color: color,
+                    color: isOverdue ? colorScheme.error : colorScheme.primary,
                   ),
 
                   const SizedBox(width: 8),
@@ -521,7 +541,7 @@ class _EmiPlanDetailsScreenState extends State<EmiPlanDetailsScreen> {
               ),
               child: EmiPaymentHistoryCard(
                 payment: payment,
-                paymentNumber: index + 1,
+                paymentNumber: payments.length - index,
               ),
             );
           }),

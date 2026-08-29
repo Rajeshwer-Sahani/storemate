@@ -4,11 +4,7 @@ import 'package:intl/intl.dart';
 import '../../data/models/emi_installment_model.dart';
 
 class EmiInstallmentCard extends StatelessWidget {
-  const EmiInstallmentCard({
-    super.key, 
-    required this.installment,
-    this.onTap
-    });
+  const EmiInstallmentCard({super.key, required this.installment, this.onTap});
 
   final EmiInstallmentModel installment;
 
@@ -35,6 +31,12 @@ class EmiInstallmentCard extends StatelessWidget {
         !isPaid &&
         !isCancelled &&
         installment.remainingAmount > 0.01;
+
+    final paidAmountColor = switch (normalizedStatus) {
+      'paid' => Colors.green.shade600,
+      'partially_paid' || 'partially paid' => Colors.amber.shade700,
+      _ => colorScheme.tertiary,
+    };
 
     return Card(
       margin: EdgeInsets.zero,
@@ -136,7 +138,7 @@ class EmiInstallmentCard extends StatelessWidget {
                     child: _AmountItem(
                       label: 'Paid',
                       amount: installment.paidAmount,
-                      amountColor: colorScheme.tertiary,
+                      amountColor: paidAmountColor,
                       alignment: CrossAxisAlignment.center,
                     ),
                   ),
@@ -250,10 +252,10 @@ class EmiInstallmentCard extends StatelessWidget {
 
       case 'partially_paid':
       case 'partially paid':
-        return colorScheme.tertiary;
+        return Colors.amber.shade700;
 
       case 'paid':
-        return colorScheme.tertiary;
+        return Colors.green.shade600;
 
       case 'overdue':
         return colorScheme.error;
@@ -267,7 +269,6 @@ class EmiInstallmentCard extends StatelessWidget {
     }
   }
 }
-
 // =============================================================================
 // Installment Number
 // =============================================================================
