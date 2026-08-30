@@ -133,9 +133,11 @@ class ReviewEmiPlanScreen extends StatelessWidget {
   // ===========================================================================
 
   Widget _buildInvoiceSection(BuildContext context) {
+    final theme = Theme.of(context);
     return _SectionCard(
       title: 'Invoice',
       icon: Icons.receipt_long_rounded,
+      accentColor: theme.colorScheme.primary,
       child: Column(
         children: [
           if (invoiceNumber != null)
@@ -153,8 +155,9 @@ class ReviewEmiPlanScreen extends StatelessWidget {
           _InfoRow(
             label: 'Outstanding Amount',
             value: _formatCurrency(financedAmount),
-            valueWeight: FontWeight.w700,
-            valueColor: Theme.of(context).colorScheme.primary,
+            valueWeight: FontWeight.w800,
+            valueSize: 17,
+            valueColor: theme.colorScheme.error,
           ),
         ],
       ),
@@ -166,9 +169,11 @@ class ReviewEmiPlanScreen extends StatelessWidget {
   // ===========================================================================
 
   Widget _buildEmiTermsSection(BuildContext context) {
+    final theme = Theme.of(context);
     return _SectionCard(
       title: 'EMI Terms',
       icon: Icons.calendar_month_rounded,
+      accentColor: theme.colorScheme.secondary,
       child: Column(
         children: [
           _InfoRow(
@@ -213,6 +218,7 @@ class ReviewEmiPlanScreen extends StatelessWidget {
     return _SectionCard(
       title: 'Financial Summary',
       icon: Icons.account_balance_wallet_outlined,
+      accentColor: Colors.green,
       child: Column(
         children: [
           _InfoRow(
@@ -239,14 +245,15 @@ class ReviewEmiPlanScreen extends StatelessWidget {
             value: _formatCurrency(preview.totalPayableAmount),
             valueWeight: FontWeight.w800,
             valueSize: 21,
-            valueColor: Theme.of(context).colorScheme.primary,
+            valueColor: Colors.green,
           ),
           const SizedBox(height: 14),
           _InfoRow(
             label: 'Regular Installment',
             value: _formatCurrency(preview.installmentAmount),
-            valueWeight: FontWeight.w700,
-            valueSize: 17,
+            valueWeight: FontWeight.w800,
+            valueSize: 18,
+            valueColor: Colors.amber.shade800,
           ),
         ],
       ),
@@ -261,9 +268,11 @@ class ReviewEmiPlanScreen extends StatelessWidget {
     BuildContext context,
     _FinancialPreview preview,
   ) {
+    final theme = Theme.of(context);
     return _SectionCard(
       title: 'Payment Schedule',
       icon: Icons.event_note_rounded,
+      accentColor: theme.colorScheme.tertiary,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -314,7 +323,7 @@ class ReviewEmiPlanScreen extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: theme.colorScheme.primaryContainer.withValues(alpha: 0.35),
+        color: theme.colorScheme.primaryContainer.withValues(alpha: 0.25),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: theme.colorScheme.primary.withValues(alpha: 0.18),
