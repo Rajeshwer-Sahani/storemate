@@ -300,48 +300,99 @@ class _EmiPlanDetailsScreenState extends State<EmiPlanDetailsScreen> {
 
           const SizedBox(height: 18),
 
-          // ===================================================================
+          // ===========================================================================
           // Plan Metadata
-          // ===================================================================
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          // ===========================================================================
+          Column(
             children: [
-              // -----------------------------------------------------------------
-              // Start Date
-              // -----------------------------------------------------------------
-              Expanded(
-                child: _PlanHeaderInfo(
-                  icon: Icons.calendar_month_outlined,
-                  label: 'Start Date',
-                  value: _formatDate(plan.startDate),
-                  
+              // =======================================================================
+              // Row 1 — Dates
+              // =======================================================================
+              SizedBox(
+                height: 58,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // -----------------------------------------------------------------
+                    // Start Date
+                    // -----------------------------------------------------------------
+                    Expanded(
+                      child: _PlanHeaderInfo(
+                        icon: Icons.calendar_month_outlined,
+                        label: 'Start Date',
+                        value: _formatDate(plan.startDate),
+                      ),
+                    ),
+
+                    // -----------------------------------------------------------------
+                    // Vertical Divider
+                    // -----------------------------------------------------------------
+                    _PlanHeaderDivider(),
+
+                    // -----------------------------------------------------------------
+                    // First Due Date
+                    // -----------------------------------------------------------------
+                    Expanded(
+                      child: _PlanHeaderInfo(
+                        icon: Icons.event_available_rounded,
+                        label: 'First Due',
+                        value: _formatDate(plan.firstDueDate),
+                      ),
+                    ),
+                  ],
                 ),
               ),
 
-              _PlanHeaderDivider(),
+              // =======================================================================
+              // Horizontal Divider
+              // =======================================================================
+              const SizedBox(height: 16),
 
-              // -----------------------------------------------------------------
-              // First Due Date
-              // -----------------------------------------------------------------
-              Expanded(
-                child: _PlanHeaderInfo(
-                  icon: Icons.event_available_rounded,
-                  label: 'First Due',
-                  value: _formatDate(plan.firstDueDate),
-                ),
+              Divider(
+                height: 1,
+                thickness: 1,
+                color: colorScheme.outlineVariant.withValues(alpha: .35),
               ),
 
-              _PlanHeaderDivider(),
+              const SizedBox(height: 16),
 
-              // -----------------------------------------------------------------
-              // Interest
-              // -----------------------------------------------------------------
-              Expanded(
-                child: _PlanHeaderInfo(
-                  icon: Icons.percent_rounded,
-                  label: 'Interest',
-                  value:
-                      '${plan.interestRate.toStringAsFixed(2)}% ${_interestTypeLabel(plan.interestType)}',
+              // =======================================================================
+              // Row 2 — Financial Terms
+              // =======================================================================
+              SizedBox(
+                height: 58,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // -----------------------------------------------------------------
+                    // Interest
+                    // -----------------------------------------------------------------
+                    Expanded(
+                      child: _PlanHeaderInfo(
+                        icon: Icons.percent_rounded,
+                        label: 'Interest',
+                        value:
+                            '${plan.interestRate.toStringAsFixed(2)}% '
+                            '${_interestTypeLabel(plan.interestType)}',
+                      ),
+                    ),
+
+                    // -----------------------------------------------------------------
+                    // Vertical Divider
+                    // -----------------------------------------------------------------
+                    _PlanHeaderDivider(),
+
+                    // -----------------------------------------------------------------
+                    // Processing Fee
+                    // -----------------------------------------------------------------
+                    Expanded(
+                      child: _PlanHeaderInfo(
+                        icon: Icons.payments_outlined,
+                        label: 'Processing Fee',
+                        value: '₹${plan.processingFee.toStringAsFixed(2)}',
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -1031,7 +1082,7 @@ class _PlanHeaderInfo extends StatelessWidget {
                 style: theme.textTheme.labelMedium?.copyWith(
                   color: colorScheme.onSurfaceVariant,
                   fontWeight: FontWeight.w600,
-                  letterSpacing: -0.04
+                  letterSpacing: -0.04,
                 ),
               ),
             ),
@@ -1044,7 +1095,7 @@ class _PlanHeaderInfo extends StatelessWidget {
           overflow: TextOverflow.ellipsis,
           style: theme.textTheme.bodySmall?.copyWith(
             fontWeight: FontWeight.w700,
-            letterSpacing: -0.05
+            letterSpacing: -0.05,
           ),
         ),
       ],
