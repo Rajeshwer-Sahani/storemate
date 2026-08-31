@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:storemate/features/emi/data/models/record_emi_payment_response.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -198,6 +199,7 @@ class EmiRepositoryImpl implements EmiRepository {
       params: request.toRpcParams(),
     );
 
+    debugPrint('CREATE EMI RPC RESPONSE: $response');
     /*
      * The create_emi_plan RPC returns the ID of the newly
      * created EMI plan.
@@ -233,6 +235,8 @@ class EmiRepositoryImpl implements EmiRepository {
      * - customer phone
      * - invoice number
      */
+
+    debugPrint('CREATED EMI PLAN ID: $emiPlanId');
     return getEmiPlanById(emiPlanId);
   }
 

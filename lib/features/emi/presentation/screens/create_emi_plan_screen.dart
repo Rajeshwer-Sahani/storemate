@@ -1148,38 +1148,40 @@ class _CreateEmiPlanScreenState extends State<CreateEmiPlanScreen> {
       MaterialPageRoute(
         builder: (_) => ReviewEmiPlanScreen(
           request: request,
-
-          // The review screen uses the invoice outstanding amount
-          // as the preview financed amount.
           financedAmount: widget.invoice.dueAmount,
-
-          // Display-only information.
           invoiceNumber: widget.invoice.invoiceNumber,
           customerName: widget.invoice.customerName,
-
-          // Actual EMI creation happens here after confirmation.
           onConfirm: () => _confirmAndCreateEmiPlan(request),
         ),
       ),
     );
   }
 
+  // ===========================================================================
+  // Confirm & Create EMI Plan
+  // ===========================================================================
+
   Future<void> _confirmAndCreateEmiPlan(CreateEmiPlanRequest request) async {
+    FocusScope.of(context).unfocus();
+
     final controller = context.read<CreateEmiPlanController>();
 
     final plan = await controller.createEmiPlan(request);
 
-    if (!mounted || plan == null) {
+    if (!mounted) {
       return;
     }
 
-    // Close ReviewEmiPlanScreen.
+    if (plan == null) {
+      throw Exception('Unable to create EMI plan.');
+    }
+
+    // EMI plan was successfully created.
+    // Close ReviewEmiPlanScreen first.
     Navigator.of(context).pop();
 
-    // Tell the previous screen that the EMI plan was created.
-    if (widget.onCreated != null) {
-      widget.onCreated!();
-    }
+    // Refresh the previous screen.
+    widget.onCreated?.call();
   }
 
   // ===========================================================================

@@ -49,7 +49,10 @@ class CreateEmiPlanController extends ChangeNotifier {
       _createdPlan = plan;
 
       return plan;
-    } catch (e) {
+    } catch (e, stackTrace) {
+      debugPrint('CREATE EMI PLAN ERROR: $e');
+      debugPrint('CREATE EMI PLAN STACK TRACE: $stackTrace');
+
       _errorMessage = _mapError(e);
 
       return null;

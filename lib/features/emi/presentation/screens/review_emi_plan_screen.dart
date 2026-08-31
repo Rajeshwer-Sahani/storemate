@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../data/requests/create_emi_plan_request.dart';
 
-class ReviewEmiPlanScreen extends StatelessWidget {
+class ReviewEmiPlanScreen extends StatefulWidget {
   const ReviewEmiPlanScreen({
     super.key,
     required this.request,
@@ -16,13 +16,13 @@ class ReviewEmiPlanScreen extends StatelessWidget {
   // Inputs
   // ===========================================================================
 
-  /// Configuration that will eventually be sent to create_emi_plan RPC.
+  /// Configuration that will be sent to create_emi_plan RPC.
   final CreateEmiPlanRequest request;
 
   /// Current invoice outstanding amount.
   ///
-  /// This is the amount from invoice.due_amount and is used only for preview.
-  /// PostgreSQL will recalculate the authoritative value during creation.
+  /// Used only for preview.
+  /// PostgreSQL recalculates the authoritative value during creation.
   final double financedAmount;
 
   /// Human-readable invoice number for display.
@@ -31,10 +31,58 @@ class ReviewEmiPlanScreen extends StatelessWidget {
   /// Customer name for display.
   final String? customerName;
 
-  /// Called only after the user confirms the review.
-  ///
-  /// The actual database creation should be performed by the parent/controller.
-  final VoidCallback onConfirm;
+  /// Called after the EMI plan has been successfully created.
+  final Future<void> Function() onConfirm;
+
+  @override
+  State<ReviewEmiPlanScreen> createState() => _ReviewEmiPlanScreenState();
+}
+
+class _ReviewEmiPlanScreenState extends State<ReviewEmiPlanScreen> {
+  bool _isCreating = false;
+
+  // ===========================================================================
+  // Confirm & Create EMI Plan
+  // ===========================================================================
+
+  Future<void> _confirmAndCreateEmiPlan() async {
+    if (_isCreating) {
+      return;
+    }
+
+    FocusScope.of(context).unfocus();
+
+    setState(() {
+      _isCreating = true;
+    });
+
+    try {
+      // The parent owns the actual EMI creation operation.
+      await widget.onConfirm();
+
+      if (!mounted) {
+        return;
+      }
+
+      // Creation succeeded. Close the review screen.
+      Navigator.of(context).pop();
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _isCreating = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Unable to create the EMI plan. Please try again.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
 
   // ===========================================================================
   // Build
@@ -50,7 +98,7 @@ class ReviewEmiPlanScreen extends StatelessWidget {
       backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
         leading: IconButton(
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: _isCreating ? null : () => Navigator.of(context).pop(),
           icon: const Icon(Icons.arrow_back_rounded),
         ),
         title: const Text('Review EMI Plan'),
@@ -101,9 +149,6 @@ class ReviewEmiPlanScreen extends StatelessWidget {
   }
 
   // ===========================================================================
-  // Header
-  // ===========================================================================
-
   Widget _buildHeader(BuildContext context) {
     final theme = Theme.of(context);
 
@@ -129,9 +174,6 @@ class ReviewEmiPlanScreen extends StatelessWidget {
   }
 
   // ===========================================================================
-  // Invoice
-  // ===========================================================================
-
   Widget _buildInvoiceSection(BuildContext context) {
     final theme = Theme.of(context);
     return _SectionCard(
@@ -140,21 +182,21 @@ class ReviewEmiPlanScreen extends StatelessWidget {
       accentColor: theme.colorScheme.primary,
       child: Column(
         children: [
-          if (invoiceNumber != null)
-            _InfoRow(label: 'Invoice', value: invoiceNumber!),
+          if (widget.invoiceNumber != null)
+            _InfoRow(label: 'Invoice', value: widget.invoiceNumber!),
 
-          if (invoiceNumber != null && customerName != null)
+          if (widget.invoiceNumber != null && widget.customerName != null)
             const SizedBox(height: 14),
 
-          if (customerName != null)
-            _InfoRow(label: 'Customer', value: customerName!),
+          if (widget.customerName != null)
+            _InfoRow(label: 'Customer', value: widget.customerName!),
 
-          if (invoiceNumber != null || customerName != null)
+          if (widget.invoiceNumber != null || widget.customerName != null)
             const SizedBox(height: 14),
 
           _InfoRow(
             label: 'Outstanding Amount',
-            value: _formatCurrency(financedAmount),
+            value: _formatCurrency(widget.financedAmount),
             valueWeight: FontWeight.w800,
             valueSize: 17,
             valueColor: theme.colorScheme.error,
@@ -165,9 +207,6 @@ class ReviewEmiPlanScreen extends StatelessWidget {
   }
 
   // ===========================================================================
-  // EMI Terms
-  // ===========================================================================
-
   Widget _buildEmiTermsSection(BuildContext context) {
     final theme = Theme.of(context);
     return _SectionCard(
@@ -178,27 +217,27 @@ class ReviewEmiPlanScreen extends StatelessWidget {
         children: [
           _InfoRow(
             label: 'Frequency',
-            value: _formatFrequency(request.frequency),
+            value: _formatFrequency(widget.request.frequency),
           ),
           const SizedBox(height: 14),
           _InfoRow(
             label: 'Tenure',
-            value: '${request.tenureMonths} installments',
+            value: '${widget.request.tenureMonths} installments',
           ),
           const SizedBox(height: 14),
           _InfoRow(
             label: 'First Due Date',
-            value: _formatDate(request.firstDueDate),
+            value: _formatDate(widget.request.firstDueDate),
           ),
           const SizedBox(height: 14),
           _InfoRow(
             label: 'Interest Rate',
-            value: '${_formatNumber(request.interestRate)}%',
+            value: '${_formatNumber(widget.request.interestRate)}%',
           ),
           const SizedBox(height: 14),
           _InfoRow(
             label: 'Processing Fee',
-            value: _formatCurrency(request.processingFee),
+            value: _formatCurrency(widget.request.processingFee),
           ),
         ],
       ),
@@ -206,9 +245,6 @@ class ReviewEmiPlanScreen extends StatelessWidget {
   }
 
   // ===========================================================================
-  // Financial Summary
-  // ===========================================================================
-
   Widget _buildFinancialSummary(
     BuildContext context,
     _FinancialPreview preview,
@@ -230,7 +266,7 @@ class ReviewEmiPlanScreen extends StatelessWidget {
             label: 'Interest',
             value:
                 '${_formatCurrency(preview.interestAmount)} '
-                '(${_formatNumber(request.interestRate)}%)',
+                '(${_formatNumber(widget.request.interestRate)}%)',
           ),
           const SizedBox(height: 14),
           _InfoRow(
@@ -261,9 +297,6 @@ class ReviewEmiPlanScreen extends StatelessWidget {
   }
 
   // ===========================================================================
-  // Installment Schedule
-  // ===========================================================================
-
   Widget _buildScheduleSection(
     BuildContext context,
     _FinancialPreview preview,
@@ -277,7 +310,7 @@ class ReviewEmiPlanScreen extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '${request.tenureMonths} monthly installments',
+            '${widget.request.tenureMonths} monthly installments',
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
@@ -291,7 +324,7 @@ class ReviewEmiPlanScreen extends StatelessWidget {
                 number: installment.number,
                 dueDate: installment.dueDate,
                 amount: installment.amount,
-                isFinal: installment.number == request.tenureMonths,
+                isFinal: installment.number == widget.request.tenureMonths,
               ),
             ),
           ),
@@ -313,9 +346,6 @@ class ReviewEmiPlanScreen extends StatelessWidget {
   }
 
   // ===========================================================================
-  // Notice
-  // ===========================================================================
-
   Widget _buildImportantNotice(BuildContext context) {
     final theme = Theme.of(context);
 
@@ -367,45 +397,57 @@ class ReviewEmiPlanScreen extends StatelessWidget {
         width: double.infinity,
         height: 56,
         child: FilledButton.icon(
-          onPressed: onConfirm,
-          icon: const Icon(Icons.check_circle_outline_rounded),
-          label: const Text('Confirm & Create EMI Plan'),
+          onPressed: _isCreating ? null : _confirmAndCreateEmiPlan,
+          icon: _isCreating
+              ? SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.2,
+                    color: theme.colorScheme.onPrimary,
+                  ),
+                )
+              : const Icon(Icons.check_circle_outline_rounded),
+          label: Text(
+            _isCreating ? 'Creating EMI Plan...' : 'Confirm & Create EMI Plan',
+          ),
         ),
       ),
     );
   }
 
   // ===========================================================================
-  // Financial Calculation — PREVIEW ONLY
-  // ===========================================================================
-
   _FinancialPreview _calculateFinancialPreview() {
-    final normalizedFinancedAmount = _roundCurrency(financedAmount);
+    final normalizedFinancedAmount = _roundCurrency(widget.financedAmount);
 
     final interestAmount = _roundCurrency(
-      normalizedFinancedAmount * request.interestRate / 100,
+      normalizedFinancedAmount * widget.request.interestRate / 100,
     );
 
-    final processingFee = _roundCurrency(request.processingFee);
+    final processingFee = _roundCurrency(widget.request.processingFee);
 
     final totalPayableAmount = _roundCurrency(
       normalizedFinancedAmount + interestAmount + processingFee,
     );
 
     final installmentAmount = _roundCurrency(
-      totalPayableAmount / request.tenureMonths,
+      totalPayableAmount / widget.request.tenureMonths,
     );
 
     final finalInstallmentAmount = _roundCurrency(
-      totalPayableAmount - (installmentAmount * (request.tenureMonths - 1)),
+      totalPayableAmount -
+          (installmentAmount * (widget.request.tenureMonths - 1)),
     );
 
     final installments = <_InstallmentPreview>[];
 
-    for (var i = 1; i <= request.tenureMonths; i++) {
-      final dueDate = _calculateMonthlyDueDate(request.firstDueDate, i - 1);
+    for (var i = 1; i <= widget.request.tenureMonths; i++) {
+      final dueDate = _calculateMonthlyDueDate(
+        widget.request.firstDueDate,
+        i - 1,
+      );
 
-      final amount = i == request.tenureMonths
+      final amount = i == widget.request.tenureMonths
           ? finalInstallmentAmount
           : installmentAmount;
 
@@ -427,22 +469,6 @@ class ReviewEmiPlanScreen extends StatelessWidget {
   }
 
   // ===========================================================================
-  // Monthly Date Calculation
-  // ===========================================================================
-  //
-  // This mirrors the database logic:
-  //
-  // Jan 31
-  //   ↓
-  // Feb 28/29
-  //   ↓
-  // Mar 31
-  //   ↓
-  // Apr 30
-  //
-  // It does NOT permanently drift to the 28th.
-  // ===========================================================================
-
   DateTime _calculateMonthlyDueDate(DateTime firstDueDate, int monthOffset) {
     final firstDate = DateTime(
       firstDueDate.year,
@@ -470,9 +496,6 @@ class ReviewEmiPlanScreen extends StatelessWidget {
   }
 
   // ===========================================================================
-  // Formatting
-  // ===========================================================================
-
   String _formatCurrency(double amount) {
     return '₹${amount.toStringAsFixed(2)}';
   }
@@ -747,6 +770,7 @@ class _InstallmentRow extends StatelessWidget {
                 '₹${amount.toStringAsFixed(2)}',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   fontWeight: FontWeight.w800,
+                  // color: Colors.amber.shade800,
                 ),
               ),
 
