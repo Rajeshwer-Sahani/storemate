@@ -74,7 +74,7 @@ class _BillingFilterSheetState extends State<BillingFilterSheet> {
               //------------------------------------------------------------------
               AppFilterSection(
                 title: 'Invoice Status',
-                subtitle: 'Filter invoices by payment status.',
+                subtitle: 'Filter invoices by status.',
                 child: AppFilterChoiceGroup<InvoiceStatusFilter>(
                   options: InvoiceStatusFilter.values,
 

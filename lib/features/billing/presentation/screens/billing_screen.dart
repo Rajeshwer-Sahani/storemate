@@ -349,29 +349,62 @@ class _BillingScreenState extends State<BillingScreen> {
     // Invoice Status
     //---------------------------------------------------------------------------
 
+    //---------------------------------------------------------------------------
+    // Invoice Status
+    //---------------------------------------------------------------------------
+
     switch (_filter.invoiceStatus) {
       case InvoiceStatusFilter.all:
         break;
 
       case InvoiceStatusFilter.paid:
         filtered = filtered.where((invoice) {
+          // Returned invoices have their own invoice status and
+          // should not appear under Paid.
+          if (invoice.hasReturn) {
+            return false;
+          }
+
           return invoice.dueAmount <= 0;
         }).toList();
         break;
 
       case InvoiceStatusFilter.partial:
         filtered = filtered.where((invoice) {
+          // Returned invoices have their own invoice status and
+          // should not appear under Partial.
+          if (invoice.hasReturn) {
+            return false;
+          }
+
           return invoice.paidAmount > 0 && invoice.dueAmount > 0;
         }).toList();
         break;
 
       case InvoiceStatusFilter.due:
         filtered = filtered.where((invoice) {
+          // Returned invoices have their own invoice status and
+          // should not appear under Due.
+          if (invoice.hasReturn) {
+            return false;
+          }
+
           return invoice.dueAmount > 0;
         }).toList();
         break;
-    }
 
+      case InvoiceStatusFilter.partiallyReturned:
+        filtered = filtered.where((invoice) {
+          return invoice.isPartiallyReturned;
+        }).toList();
+        break;
+
+      case InvoiceStatusFilter.returned:
+        filtered = filtered.where((invoice) {
+          return invoice.isFullyReturned;
+        }).toList();
+        break;
+    }
     //---------------------------------------------------------------------------
     // Payment Method
     //---------------------------------------------------------------------------
@@ -407,6 +440,12 @@ class _BillingScreenState extends State<BillingScreen> {
       case PaymentMethodFilter.cheque:
         filtered = filtered.where((invoice) {
           return invoice.paymentMethod.toLowerCase() == 'cheque';
+        }).toList();
+        break;
+
+      case PaymentMethodFilter.emi:
+        filtered = filtered.where((invoice) {
+          return invoice.hasEmiPlan;
         }).toList();
         break;
     }

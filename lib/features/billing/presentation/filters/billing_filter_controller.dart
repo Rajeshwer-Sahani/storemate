@@ -3,9 +3,8 @@ import 'package:flutter/foundation.dart';
 import 'package:storemate/features/billing/presentation/filters/billing_filter_models.dart';
 
 class BillingFilterController extends ChangeNotifier {
-  BillingFilterController({
-    BillingFilter? initialFilter,
-  }) : _filter = initialFilter ?? const BillingFilter();
+  BillingFilterController({BillingFilter? initialFilter})
+    : _filter = initialFilter ?? const BillingFilter();
 
   BillingFilter _filter;
 
@@ -31,9 +30,7 @@ class BillingFilterController extends ChangeNotifier {
   void updateInvoiceStatus(InvoiceStatusFilter value) {
     if (value == _filter.invoiceStatus) return;
 
-    _filter = _filter.copyWith(
-      invoiceStatus: value,
-    );
+    _filter = _filter.copyWith(invoiceStatus: value);
 
     notifyListeners();
   }
@@ -41,9 +38,7 @@ class BillingFilterController extends ChangeNotifier {
   void updatePaymentMethod(PaymentMethodFilter value) {
     if (value == _filter.paymentMethod) return;
 
-    _filter = _filter.copyWith(
-      paymentMethod: value,
-    );
+    _filter = _filter.copyWith(paymentMethod: value);
 
     notifyListeners();
   }
@@ -51,9 +46,7 @@ class BillingFilterController extends ChangeNotifier {
   void updateSortOption(InvoiceSortOption value) {
     if (value == _filter.sortOption) return;
 
-    _filter = _filter.copyWith(
-      sortOption: value,
-    );
+    _filter = _filter.copyWith(sortOption: value);
 
     notifyListeners();
   }

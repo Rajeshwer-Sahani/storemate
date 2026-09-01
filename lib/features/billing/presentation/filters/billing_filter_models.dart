@@ -5,32 +5,25 @@ import 'package:flutter/material.dart';
 /// ===========================================================================
 
 enum InvoiceStatusFilter {
-  all(
-    label: 'All',
-    description: 'Show all invoices',
+  all(label: 'All', description: 'Show all invoices'),
+
+  paid(label: 'Paid', description: 'Invoices paid in full'),
+
+  partial(label: 'Partial', description: 'Invoices with partial payment'),
+
+  due(label: 'Due', description: 'Invoices with outstanding balance'),
+
+  partiallyReturned(
+    label: 'Partially Returned',
+    description: 'Invoices with partially returned items',
   ),
 
-  paid(
-    label: 'Paid',
-    description: 'Invoices paid in full',
-  ),
+  returned(label: 'Returned', description: 'Invoices with all items returned');
 
-  partial(
-    label: 'Partial',
-    description: 'Invoices with partial payment',
-  ),
-
-  due(
-    label: 'Due',
-    description: 'Invoices with outstanding balance',
-  );
-
-  const InvoiceStatusFilter({
-    required this.label,
-    required this.description,
-  });
+  const InvoiceStatusFilter({required this.label, required this.description});
 
   final String label;
+
   final String description;
 }
 
@@ -39,42 +32,24 @@ enum InvoiceStatusFilter {
 /// ===========================================================================
 
 enum PaymentMethodFilter {
-  all(
-    label: 'All',
-    description: 'All payment methods',
-  ),
+  all(label: 'All', description: 'All payment methods'),
 
-  cash(
-    label: 'Cash',
-    description: 'Cash payments',
-  ),
+  cash(label: 'Cash', description: 'Cash payments'),
 
-  upi(
-    label: 'UPI',
-    description: 'UPI payments',
-  ),
+  upi(label: 'UPI', description: 'UPI payments'),
 
-  card(
-    label: 'Card',
-    description: 'Debit/Credit cards',
-  ),
+  card(label: 'Card', description: 'Debit/Credit cards'),
 
-  bankTransfer(
-    label: 'Bank',
-    description: 'Bank transfers',
-  ),
+  bankTransfer(label: 'Bank', description: 'Bank transfers'),
 
-  cheque(
-    label: 'Cheque',
-    description: 'Cheque payments',
-  );
+  cheque(label: 'Cheque', description: 'Cheque payments'),
 
-  const PaymentMethodFilter({
-    required this.label,
-    required this.description,
-  });
+  emi(label: 'EMI', description: 'EMI payment plans');
+
+  const PaymentMethodFilter({required this.label, required this.description});
 
   final String label;
+
   final String description;
 }
 
@@ -126,7 +101,9 @@ enum InvoiceSortOption {
   });
 
   final String label;
+
   final String description;
+
   final IconData icon;
 }
 
@@ -143,7 +120,9 @@ class BillingFilter {
   });
 
   final InvoiceStatusFilter invoiceStatus;
+
   final PaymentMethodFilter paymentMethod;
+
   final InvoiceSortOption sortOption;
 
   BillingFilter copyWith({
