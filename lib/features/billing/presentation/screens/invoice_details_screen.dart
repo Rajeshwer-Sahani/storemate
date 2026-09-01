@@ -32,6 +32,9 @@ import 'package:storemate/features/billing/presentation/widgets/invoice_payment_
 import 'package:storemate/features/billing/presentation/widgets/invoice_summary_card.dart';
 import 'package:storemate/features/billing/presentation/widgets/invoice_timeline_card.dart';
 import 'package:storemate/features/billing/presentation/widgets/receive_payment_bottom_sheet.dart';
+import 'package:storemate/features/emi/data/repositories/emi_repository_impl.dart';
+import 'package:storemate/features/emi/presentation/controllers/emi_controller.dart';
+import 'package:storemate/features/emi/presentation/screens/emi_plan_details_screen.dart';
 
 class InvoiceDetailsScreen extends StatefulWidget {
   const InvoiceDetailsScreen({super.key, required this.invoiceId});
@@ -147,6 +150,10 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
         _openTimeline();
         break;
 
+      case InvoiceAction.viewEmiPlan:
+        _openEmiPlan();
+        break;
+
       case InvoiceAction.edit:
         _editInvoice();
         break;
@@ -159,10 +166,6 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
         _returnInvoice();
         break;
 
-      case InvoiceAction.viewEmiPlan:
-        _openEmiPlan();
-        break;
-
       case InvoiceAction.delete:
         _deleteInvoice();
         break;
@@ -173,10 +176,53 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
   // Open EMI Plan
   //---------------------------------------------------------------------------
 
-  void _openEmiPlan() {
-    if (_invoice == null) return;
+  //---------------------------------------------------------------------------
+  // Open EMI Plan
+  //---------------------------------------------------------------------------
 
-    // TODO: Navigate to the existing EMI plan details screen.
+  Future<void> _openEmiPlan() async {
+    final invoice = _invoice;
+
+    if (invoice == null || !invoice.hasEmiPlan) {
+      return;
+    }
+
+    final emiPlanId = invoice.emiPlanId!;
+
+    // -------------------------------------------------------------------------
+    // Create the EMI dependency chain for this screen.
+    // -------------------------------------------------------------------------
+
+    final emiController = EmiController(repository: EmiRepositoryImpl());
+
+    try {
+      final result = await Navigator.of(context).push<bool>(
+        MaterialPageRoute(
+          builder: (_) => EmiPlanDetailsScreen(
+            controller: emiController,
+            emiPlanId: emiPlanId,
+          ),
+        ),
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      // -----------------------------------------------------------------------
+      // If something changed inside the EMI screen, reload the invoice.
+      // -----------------------------------------------------------------------
+
+      if (result == true) {
+        await _loadInvoice();
+      }
+    } finally {
+      // -------------------------------------------------------------------------
+      // This screen owns the controller, so dispose it after navigation ends.
+      // -------------------------------------------------------------------------
+
+      emiController.dispose();
+    }
   }
 
   //---------------------------------------------------------------------------
@@ -1171,9 +1217,7 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
                 Align(
                   alignment: Alignment.centerRight,
                   child: TextButton.icon(
-                    onPressed: () {
-                      // TODO: Open EMI plan details.
-                    },
+                    onPressed: _openEmiPlan,
                     icon: const Icon(Icons.arrow_forward_rounded, size: 18),
                     label: const Text('View Plan'),
                   ),
