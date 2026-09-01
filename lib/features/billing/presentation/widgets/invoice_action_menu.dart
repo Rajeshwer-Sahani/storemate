@@ -13,6 +13,7 @@ enum InvoiceAction {
   edit,
   receivePayment,
   returnInvoice,
+  viewEmiPlan,
   delete,
 }
 
@@ -39,13 +40,11 @@ class InvoiceActionMenu extends StatelessWidget {
       tooltip: 'More actions',
       icon: const Icon(Icons.more_vert_rounded),
       constraints: const BoxConstraints(minWidth: 220, maxWidth: 220),
-
       onSelected: onSelected,
-
       itemBuilder: (context) => [
-        //---------------------------------------------------------------------------
+        //---------------------------------------------------------------------
         // Print Invoice
-        //---------------------------------------------------------------------------
+        //---------------------------------------------------------------------
         _buildMenuItem(
           context: context,
           value: InvoiceAction.print,
@@ -53,9 +52,9 @@ class InvoiceActionMenu extends StatelessWidget {
           title: 'Print Invoice',
         ),
 
-        //---------------------------------------------------------------------------
+        //---------------------------------------------------------------------
         // Download PDF
-        //---------------------------------------------------------------------------
+        //---------------------------------------------------------------------
         _buildMenuItem(
           context: context,
           value: InvoiceAction.downloadPdf,
@@ -63,9 +62,9 @@ class InvoiceActionMenu extends StatelessWidget {
           title: 'Download PDF',
         ),
 
-        //---------------------------------------------------------------------------
+        //---------------------------------------------------------------------
         // Invoice Timeline
-        //---------------------------------------------------------------------------
+        //---------------------------------------------------------------------
         _buildMenuItem(
           context: context,
           value: InvoiceAction.timeline,
@@ -75,49 +74,71 @@ class InvoiceActionMenu extends StatelessWidget {
 
         const PopupMenuDivider(height: 1),
 
-        //---------------------------------------------------------------------------
-        // Edit Invoice
-        //---------------------------------------------------------------------------
-        // An invoice cannot be edited once any return exists.
-        if (invoice.returnedAmount <= 0)
+        //---------------------------------------------------------------------
+        // EMI Invoice
+        //---------------------------------------------------------------------
+        //
+        // EMI invoices are managed through their EMI plan.
+        //
+        // Therefore:
+        // - Edit Invoice       -> hidden
+        // - Receive Payment    -> hidden
+        // - Return Invoice     -> hidden
+        // - View EMI Plan      -> shown
+        //
+        if (invoice.hasEmiPlan)
           _buildMenuItem(
             context: context,
-            value: InvoiceAction.edit,
-            icon: Icons.edit_outlined,
-            title: 'Edit Invoice',
+            value: InvoiceAction.viewEmiPlan,
+            icon: Icons.event_repeat_rounded,
+            title: 'View EMI Plan',
           ),
 
-        //--------------------------------------------------------------------------
-        // Receive Payment
-        //--------------------------------------------------------------------------
-        if (invoice.dueAmount > 0)
-          _buildMenuItem(
-            context: context,
-            value: InvoiceAction.receivePayment,
-            icon: Icons.payments_outlined,
-            title: 'Receive Payment',
-          ),
+        //---------------------------------------------------------------------
+        // Normal Invoice Actions
+        //---------------------------------------------------------------------
+        if (!invoice.hasEmiPlan) ...[
+          // Edit Invoice
+          //
+          // An invoice cannot be edited once any return exists.
+          if (invoice.returnedAmount <= 0)
+            _buildMenuItem(
+              context: context,
+              value: InvoiceAction.edit,
+              icon: Icons.edit_outlined,
+              title: 'Edit Invoice',
+            ),
 
-        /// TODO(StoreMate):
-        /// Replace `true` with `!invoice.isReturned`
-        /// after the invoice status system is implemented.
+          // Receive Payment
+          if (invoice.dueAmount > 0)
+            _buildMenuItem(
+              context: context,
+              value: InvoiceAction.receivePayment,
+              icon: Icons.payments_outlined,
+              title: 'Receive Payment',
+            ),
 
-        //---------------------------------------------------------------------------
-        // Return Invoice
-        //---------------------------------------------------------------------------
-        // A return can only be initiated while there is still a returnable amount.
-        if (invoice.returnedAmount < invoice.grandTotal)
-          _buildMenuItem(
-            context: context,
-            value: InvoiceAction.returnInvoice,
-            icon: Icons.assignment_return_outlined,
-            title: 'Return Invoice',
-          ),
+          // Return Invoice
+          //
+          // A return can only be initiated while there is still
+          // a returnable amount.
+          if (invoice.returnedAmount < invoice.grandTotal)
+            _buildMenuItem(
+              context: context,
+              value: InvoiceAction.returnInvoice,
+              icon: Icons.assignment_return_outlined,
+              title: 'Return Invoice',
+            ),
+        ],
+
+        //---------------------------------------------------------------------
+        // Delete Invoice
+        //---------------------------------------------------------------------
+        //
+        // Delete remains available for both normal and EMI invoices.
+        //
         const PopupMenuDivider(height: 1),
 
-        //////////////////////////////////////////////////////////////////////////////
-        // Delete Invoice
-        //////////////////////////////////////////////////////////////////////////////
         _buildMenuItem(
           context: context,
           value: InvoiceAction.delete,
@@ -136,6 +157,8 @@ class InvoiceActionMenu extends StatelessWidget {
     required String title,
     Color? color,
   }) {
+    final theme = Theme.of(context);
+
     return PopupMenuItem<InvoiceAction>(
       value: value,
       height: 52,
@@ -144,7 +167,7 @@ class InvoiceActionMenu extends StatelessWidget {
           Icon(
             icon,
             size: 20,
-            color: color ?? Theme.of(context).colorScheme.onSurfaceVariant,
+            color: color ?? theme.colorScheme.onSurfaceVariant,
           ),
 
           const SizedBox(width: 14),
@@ -152,7 +175,7 @@ class InvoiceActionMenu extends StatelessWidget {
           Expanded(
             child: Text(
               title,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              style: theme.textTheme.bodyMedium?.copyWith(
                 color: color,
                 fontWeight: FontWeight.w500,
               ),

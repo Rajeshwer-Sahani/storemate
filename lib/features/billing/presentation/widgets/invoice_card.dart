@@ -112,7 +112,9 @@ class _InvoiceHeader extends StatelessWidget {
         Icon(
           Icons.arrow_forward_ios_rounded,
           size: 18,
-          color: theme.colorScheme.primary,
+          color: isEmi
+              ? theme.colorScheme.secondary
+              : theme.colorScheme.primary,
         ),
       ],
     );
@@ -129,11 +131,12 @@ class _EmiPlanAction extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     return Text(
-      'EMI PLAN >',
+      'EMI PLAN',
       style: theme.textTheme.labelMedium?.copyWith(
-        color: theme.colorScheme.primary,
+        color: colorScheme.secondary,
         fontWeight: FontWeight.w700,
         letterSpacing: .5,
       ),

@@ -159,10 +159,24 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
         _returnInvoice();
         break;
 
+      case InvoiceAction.viewEmiPlan:
+        _openEmiPlan();
+        break;
+
       case InvoiceAction.delete:
         _deleteInvoice();
         break;
     }
+  }
+
+  //---------------------------------------------------------------------------
+  // Open EMI Plan
+  //---------------------------------------------------------------------------
+
+  void _openEmiPlan() {
+    if (_invoice == null) return;
+
+    // TODO: Navigate to the existing EMI plan details screen.
   }
 
   //---------------------------------------------------------------------------
