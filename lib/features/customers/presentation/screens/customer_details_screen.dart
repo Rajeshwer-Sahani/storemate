@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:storemate/core/widgets/app_snackbar.dart';
+import 'package:storemate/features/customers/data/models/customer_activity_model.dart';
+import 'package:storemate/features/customers/data/models/customer_summary_model.dart';
 import 'package:storemate/features/customers/presentation/screens/edit_customer_screen.dart';
 import 'package:storemate/features/customers/presentation/widgets/archive_customer_dialog.dart';
 import '../widgets/customer_avatar.dart';
@@ -17,6 +19,130 @@ class CustomerDetailsScreen extends StatefulWidget {
 
 class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
   final CustomerService _customerService = CustomerService();
+
+  // ===========================================================================
+  // Customer Summary
+  // ===========================================================================
+
+  late Future<CustomerSummaryModel> _summaryFuture;
+
+  late Future<List<CustomerActivityModel>> _activityFuture;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _summaryFuture = _loadCustomerSummary();
+    _activityFuture = _loadRecentActivity();
+  }
+
+  Future<CustomerSummaryModel> _loadCustomerSummary() {
+    return _customerService.getCustomerSummary(widget.customer.id);
+  }
+
+  Future<List<CustomerActivityModel>> _loadRecentActivity() {
+    return _customerService.getCustomerRecentActivity(widget.customer.id);
+  }
+
+  Widget _buildSummaryError(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Column(
+      children: [
+        Icon(Icons.error_outline_rounded, size: 32, color: colorScheme.error),
+
+        const SizedBox(height: 8),
+
+        Text(
+          'Unable to load customer summary.',
+          textAlign: TextAlign.center,
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
+        ),
+
+        const SizedBox(height: 12),
+
+        TextButton.icon(
+          onPressed: () {
+            setState(() {
+              _summaryFuture = _loadCustomerSummary();
+            });
+          },
+          icon: const Icon(Icons.refresh_rounded),
+          label: const Text('Try Again'),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActivityError(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Column(
+      children: [
+        Icon(Icons.error_outline_rounded, size: 32, color: colorScheme.error),
+
+        const SizedBox(height: 8),
+
+        Text(
+          'Unable to load recent activity.',
+          textAlign: TextAlign.center,
+          style: Theme.of(
+            context,
+          ).textTheme.bodyMedium?.copyWith(color: colorScheme.onSurfaceVariant),
+        ),
+
+        const SizedBox(height: 12),
+
+        TextButton.icon(
+          onPressed: () {
+            setState(() {
+              _activityFuture = _loadRecentActivity();
+            });
+          },
+          icon: const Icon(Icons.refresh_rounded),
+          label: const Text('Try Again'),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEmptyActivity(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 20),
+      child: Column(
+        children: [
+          Icon(
+            Icons.history_rounded,
+            size: 44,
+            color: theme.colorScheme.primary,
+          ),
+
+          const SizedBox(height: 12),
+
+          Text(
+            'No recent activity',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+
+          const SizedBox(height: 8),
+
+          Text(
+            'Invoices and payments will appear here as activity is recorded.',
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   // void _showComingSoon(BuildContext context, String feature) {
   //   ScaffoldMessenger.of(
@@ -209,7 +335,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
 
               Card(
                 child: Padding(
-                  padding: const EdgeInsets.all(20),
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -220,7 +346,7 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                         ),
                       ),
 
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 16),
 
                       if (widget.customer.email != null &&
                           widget.customer.email!.trim().isNotEmpty)
@@ -271,104 +397,148 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
 
               const SizedBox(height: 20),
 
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Customer Summary',
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-
-                      const SizedBox(height: 20),
-
-                      Wrap(
-                        spacing: 16,
-                        runSpacing: 16,
+              FutureBuilder<CustomerSummaryModel>(
+                future: _summaryFuture,
+                builder: (context, snapshot) {
+                  return Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          SizedBox(
-                            width: (MediaQuery.of(context).size.width - 88) / 2,
-                            child: const _SummaryItem(
-                              title: 'Purchases',
-                              value: '₹0',
+                          Text(
+                            'Customer Summary',
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
-                          SizedBox(
-                            width: (MediaQuery.of(context).size.width - 88) / 2,
-                            child: const _SummaryItem(
-                              title: 'EMIs',
-                              value: '0',
+
+                          const SizedBox(height: 20),
+
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting)
+                            const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 32),
+                              child: Center(child: CircularProgressIndicator()),
+                            )
+                          else if (snapshot.hasError)
+                            _buildSummaryError(context)
+                          else
+                            Column(
+                              children: [
+                                // ------------------------------------------------------------
+                                // Row 1
+                                // ------------------------------------------------------------
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: _SummaryItem(
+                                        title: 'Purchases',
+                                        value: _formatCurrency(
+                                          snapshot.data!.purchaseAmount,
+                                        ),
+                                      ),
+                                    ),
+
+                                    const SizedBox(width: 16),
+
+                                    Expanded(
+                                      child: _SummaryItem(
+                                        title: 'EMIs',
+                                        value: '${snapshot.data!.emiCount}',
+                                      ),
+                                    ),
+                                  ],
+                                ),
+
+                                const SizedBox(height: 16),
+
+                                // ------------------------------------------------------------
+                                // Row 2
+                                // ------------------------------------------------------------
+                                Row(
+                                  children: [
+                                    const Expanded(
+                                      child: _SummaryItem(
+                                        title: 'Warranty',
+                                        value: '0',
+                                      ),
+                                    ),
+
+                                    const SizedBox(width: 16),
+
+                                    const Expanded(
+                                      child: _SummaryItem(
+                                        title: 'Repairs',
+                                        value: '0',
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
                             ),
-                          ),
-                          SizedBox(
-                            width: (MediaQuery.of(context).size.width - 88) / 2,
-                            child: const _SummaryItem(
-                              title: 'Warranty',
-                              value: '0',
-                            ),
-                          ),
-                          SizedBox(
-                            width: (MediaQuery.of(context).size.width - 88) / 2,
-                            child: const _SummaryItem(
-                              title: 'Repairs',
-                              value: '0',
-                            ),
-                          ),
                         ],
                       ),
-                    ],
-                  ),
-                ),
+                    ),
+                  );
+                },
               ),
 
               const SizedBox(height: 20),
 
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Recent Activity',
-                        style: theme.textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+              FutureBuilder<List<CustomerActivityModel>>(
+                future: _activityFuture,
+                builder: (context, snapshot) {
+                  return Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Recent Activity',
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+
+                          const SizedBox(height: 20),
+
+                          if (snapshot.connectionState ==
+                              ConnectionState.waiting)
+                            const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 32),
+                              child: Center(child: CircularProgressIndicator()),
+                            )
+                          else if (snapshot.hasError)
+                            _buildActivityError(context)
+                          else if (!snapshot.hasData || snapshot.data!.isEmpty)
+                            _buildEmptyActivity(context)
+                          else
+                            Column(
+                              children: [
+                                for (
+                                  int index = 0;
+                                  index < snapshot.data!.length;
+                                  index++
+                                ) ...[
+                                  _CustomerActivityTile(
+                                    activity: snapshot.data![index],
+                                  ),
+
+                                  if (index != snapshot.data!.length - 1)
+                                    Divider(
+                                      height: 24,
+                                      color: theme.colorScheme.outlineVariant,
+                                    ),
+                                ],
+                              ],
+                            ),
+                        ],
                       ),
-
-                      const SizedBox(height: 20),
-
-                      Icon(
-                        Icons.history,
-                        size: 42,
-                        color: theme.colorScheme.primary,
-                      ),
-
-                      const SizedBox(height: 12),
-
-                      Text(
-                        'No recent activity',
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-
-                      const SizedBox(height: 8),
-
-                      Text(
-                        'Customer invoices, EMI payments, warranty registrations and repairs will appear here.',
-                        textAlign: TextAlign.center,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                    ),
+                  );
+                },
               ),
             ],
           ),
@@ -401,6 +571,23 @@ String _formatMonthYear(DateTime date) {
   return '${months[date.month - 1]} ${date.year}';
 }
 
+String _formatCurrency(double amount) {
+  final roundedAmount = amount.round();
+
+  final digits = roundedAmount.toString();
+  final buffer = StringBuffer();
+
+  for (int i = 0; i < digits.length; i++) {
+    if (i > 0 && (digits.length - i) % 3 == 0) {
+      buffer.write(',');
+    }
+
+    buffer.write(digits[i]);
+  }
+
+  return '₹${buffer.toString()}';
+}
+
 // -----------------------------------------------------------------------------
 // Summary Item Widget
 // -----------------------------------------------------------------------------
@@ -414,31 +601,342 @@ class _SummaryItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Card(
-      elevation: 0,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
-        child: Column(
-          children: [
-            Text(
-              value,
-              style: theme.textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.bold,
+    return SizedBox(
+      height: 116,
+      child: Card(
+        elevation: 0,
+        margin: EdgeInsets.zero,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  value,
+                  maxLines: 1,
+                  style: theme.textTheme.headlineMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
-            ),
 
-            const SizedBox(height: 10),
+              const SizedBox(height: 10),
 
-            Text(
-              title,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+              Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
               ),
-              textAlign: TextAlign.center,
-            ),
-          ],
+            ],
+          ),
         ),
       ),
+    );
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Customer Activity Tile
+// -----------------------------------------------------------------------------
+
+// -----------------------------------------------------------------------------
+// Customer Activity Tile
+// -----------------------------------------------------------------------------
+
+class _CustomerActivityTile extends StatelessWidget {
+  const _CustomerActivityTile({required this.activity});
+
+  final CustomerActivityModel activity;
+
+  // ===========================================================================
+  // Activity Icon
+  // ===========================================================================
+
+  IconData _getIcon() {
+    switch (activity.type) {
+      case CustomerActivityType.invoice:
+        return Icons.receipt_long_outlined;
+
+      case CustomerActivityType.invoicePayment:
+        return Icons.payments_outlined;
+
+      case CustomerActivityType.emiPayment:
+        return Icons.account_balance_wallet_outlined;
+    }
+  }
+
+  // ===========================================================================
+  // Activity Color
+  // ===========================================================================
+
+  Color _getIconColor(ColorScheme colorScheme) {
+    switch (activity.type) {
+      case CustomerActivityType.invoice:
+        return colorScheme.primary;
+
+      case CustomerActivityType.invoicePayment:
+        return colorScheme.tertiary;
+
+      case CustomerActivityType.emiPayment:
+        return colorScheme.secondary;
+    }
+  }
+
+  // ===========================================================================
+  // Activity Date
+  // ===========================================================================
+
+  String _formatActivityDate(DateTime dateTime) {
+    final now = DateTime.now();
+
+    final localDate = dateTime.toLocal();
+
+    final today = DateTime(now.year, now.month, now.day);
+
+    final activityDate = DateTime(
+      localDate.year,
+      localDate.month,
+      localDate.day,
+    );
+
+    final difference = today.difference(activityDate).inDays;
+
+    // -------------------------------------------------------------------------
+    // Today
+    // -------------------------------------------------------------------------
+
+    if (difference == 0) {
+      return 'Today';
+    }
+
+    // -------------------------------------------------------------------------
+    // Yesterday
+    // -------------------------------------------------------------------------
+
+    if (difference == 1) {
+      return 'Yesterday';
+    }
+
+    // -------------------------------------------------------------------------
+    // Older activity
+    // -------------------------------------------------------------------------
+
+    return '${localDate.day}/${localDate.month}/${localDate.year}';
+  }
+
+  // ===========================================================================
+  // Amount
+  // ===========================================================================
+
+  String? _formatAmount(double? amount) {
+    if (amount == null) {
+      return null;
+    }
+
+    final roundedAmount = amount.round();
+
+    final digits = roundedAmount.toString();
+
+    final buffer = StringBuffer();
+
+    for (int i = 0; i < digits.length; i++) {
+      if (i > 0 && (digits.length - i) % 3 == 0) {
+        buffer.write(',');
+      }
+
+      buffer.write(digits[i]);
+    }
+
+    return '₹$buffer';
+  }
+
+  // ===========================================================================
+  // Payment Method
+  // ===========================================================================
+
+  String _formatPaymentMethod(String paymentMethod) {
+    final normalized = paymentMethod.trim().toLowerCase();
+
+    switch (normalized) {
+      case 'upi':
+        return 'UPI';
+
+      case 'cash':
+        return 'Cash';
+
+      case 'card':
+        return 'Card';
+
+      case 'bank_transfer':
+      case 'bank transfer':
+        return 'Bank Transfer';
+
+      default:
+        if (paymentMethod.trim().isEmpty) {
+          return '';
+        }
+
+        return paymentMethod.trim();
+    }
+  }
+
+  // ===========================================================================
+  // Build
+  // ===========================================================================
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    final iconColor = _getIconColor(colorScheme);
+    final amountText = _formatAmount(activity.amount);
+
+    final hasPaymentMethod =
+        activity.paymentMethod != null &&
+        activity.paymentMethod!.trim().isNotEmpty;
+
+    final hasInvoice =
+        activity.invoiceNumber != null &&
+        activity.invoiceNumber!.trim().isNotEmpty;
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // =====================================================================
+        // Activity Icon
+        // =====================================================================
+        Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: iconColor.withValues(alpha: 0.12),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(_getIcon(), size: 21, color: iconColor),
+        ),
+
+        const SizedBox(width: 14),
+
+        // =====================================================================
+        // Activity Content
+        // =====================================================================
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // -----------------------------------------------------------------
+              // Title
+              // -----------------------------------------------------------------
+              Text(
+                activity.title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+
+              const SizedBox(height: 4),
+
+              // -----------------------------------------------------------------
+              // Description
+              // -----------------------------------------------------------------
+              Text(
+                activity.description,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                  height: 1.35,
+                ),
+              ),
+
+              const SizedBox(height: 7),
+
+              // -----------------------------------------------------------------
+              // Metadata
+              // -----------------------------------------------------------------
+              Wrap(
+                spacing: 7,
+                runSpacing: 4,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: [
+                  if (amountText != null)
+                    Text(
+                      amountText,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+
+                  if (amountText != null && hasPaymentMethod)
+                    Text(
+                      '•',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.outline,
+                      ),
+                    ),
+
+                  if (hasPaymentMethod)
+                    Text(
+                      _formatPaymentMethod(activity.paymentMethod!),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+
+                  if ((amountText != null || hasPaymentMethod))
+                    Text(
+                      '•',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.outline,
+                      ),
+                    ),
+
+                  Text(
+                    _formatActivityDate(activity.dateTime),
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+
+              // -----------------------------------------------------------------
+              // Invoice Reference
+              // -----------------------------------------------------------------
+              if (hasInvoice) ...[
+                const SizedBox(height: 7),
+
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 9,
+                    vertical: 5,
+                  ),
+                  decoration: BoxDecoration(
+                    color: colorScheme.primaryContainer.withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(7),
+                  ),
+                  child: Text(
+                    activity.invoiceNumber!,
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: colorScheme.primary,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
