@@ -20,6 +20,7 @@ class InvoiceModel {
     required this.paymentStatus,
     required this.invoiceStatus,
     required this.paymentMethod,
+    this.emiPlanId,
     this.notes,
     required this.createdAt,
     required this.updatedAt,
@@ -54,7 +55,6 @@ class InvoiceModel {
 
   final double paidAmount;
   final double dueAmount;
-  
 
   // ===========================================================================
   // Items & Returns
@@ -82,6 +82,18 @@ class InvoiceModel {
   final String paymentStatus;
   final String invoiceStatus;
   final String paymentMethod;
+
+  // ===========================================================================
+  // EMI
+  // ===========================================================================
+
+  /// ID of the EMI plan associated with this invoice.
+  ///
+  /// Null when the invoice does not have an EMI plan.
+  final String? emiPlanId;
+
+  /// Whether this invoice has an associated EMI plan.
+  bool get hasEmiPlan => emiPlanId != null && emiPlanId!.isNotEmpty;
 
   // ===========================================================================
   // Additional Information
@@ -141,14 +153,11 @@ class InvoiceModel {
 
       invoiceNumber: json['invoice_number'] as String,
 
-      invoiceDate: DateTime.parse(
-        json['invoice_date'] as String,
-      ),
+      invoiceDate: DateTime.parse(json['invoice_date'] as String),
 
       // -----------------------------------------------------------------------
       // Amounts
       // -----------------------------------------------------------------------
-
       subtotal: (json['subtotal'] as num).toDouble(),
 
       discount: (json['discount'] as num).toDouble(),
@@ -160,7 +169,6 @@ class InvoiceModel {
       // -----------------------------------------------------------------------
       // Payment
       // -----------------------------------------------------------------------
-
       paidAmount: (json['paid_amount'] as num).toDouble(),
 
       dueAmount: (json['due_amount'] as num).toDouble(),
@@ -168,26 +176,21 @@ class InvoiceModel {
       // -----------------------------------------------------------------------
       // Items & Returns
       // -----------------------------------------------------------------------
-
-      totalItemQuantity:
-          (json['total_item_quantity'] as num?)?.toInt() ?? 0,
+      totalItemQuantity: (json['total_item_quantity'] as num?)?.toInt() ?? 0,
 
       returnedItemQuantity:
           (json['returned_item_quantity'] as num?)?.toInt() ?? 0,
 
-      returnedAmount:
-          (json['returned_amount'] as num?)?.toDouble() ?? 0.0,
+      returnedAmount: (json['returned_amount'] as num?)?.toDouble() ?? 0.0,
 
       // -----------------------------------------------------------------------
       // Profit
       // -----------------------------------------------------------------------
-
       totalProfit: (json['total_profit'] as num).toDouble(),
 
       // -----------------------------------------------------------------------
       // Status
       // -----------------------------------------------------------------------
-
       paymentStatus: json['payment_status'] as String,
 
       invoiceStatus: json['invoice_status'] as String,
@@ -195,18 +198,18 @@ class InvoiceModel {
       paymentMethod: json['payment_method'] as String,
 
       // -----------------------------------------------------------------------
+      // EMI
+      // -----------------------------------------------------------------------
+      emiPlanId: json['emi_plan_id'] as String?,
+
+      // -----------------------------------------------------------------------
       // Additional Information
       // -----------------------------------------------------------------------
-
       notes: json['notes'] as String?,
 
-      createdAt: DateTime.parse(
-        json['created_at'] as String,
-      ),
+      createdAt: DateTime.parse(json['created_at'] as String),
 
-      updatedAt: DateTime.parse(
-        json['updated_at'] as String,
-      ),
+      updatedAt: DateTime.parse(json['updated_at'] as String),
     );
   }
 
@@ -242,6 +245,8 @@ class InvoiceModel {
       'invoice_status': invoiceStatus,
       'payment_method': paymentMethod,
 
+      'emi_plan_id': emiPlanId,
+
       'notes': notes,
 
       'created_at': createdAt.toIso8601String(),
@@ -274,6 +279,7 @@ class InvoiceModel {
     String? paymentStatus,
     String? invoiceStatus,
     String? paymentMethod,
+    String? emiPlanId,
     String? notes,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -307,11 +313,9 @@ class InvoiceModel {
 
       totalItemQuantity: totalItemQuantity ?? this.totalItemQuantity,
 
-      returnedItemQuantity:
-          returnedItemQuantity ?? this.returnedItemQuantity,
+      returnedItemQuantity: returnedItemQuantity ?? this.returnedItemQuantity,
 
-      returnedAmount:
-          returnedAmount ?? this.returnedAmount,
+      returnedAmount: returnedAmount ?? this.returnedAmount,
 
       totalProfit: totalProfit ?? this.totalProfit,
 
@@ -320,6 +324,8 @@ class InvoiceModel {
       invoiceStatus: invoiceStatus ?? this.invoiceStatus,
 
       paymentMethod: paymentMethod ?? this.paymentMethod,
+
+      emiPlanId: emiPlanId ?? this.emiPlanId,
 
       notes: notes ?? this.notes,
 

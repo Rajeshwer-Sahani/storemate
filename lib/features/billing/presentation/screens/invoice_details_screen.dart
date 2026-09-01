@@ -89,7 +89,10 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
       _invoice = invoice;
       _items = items;
 
-      await Future.wait([_loadPaymentHistory(), _loadTimeline()]);
+      await Future.wait([
+        if (!invoice.hasEmiPlan) _loadPaymentHistory(),
+        _loadTimeline(),
+      ]);
 
       if (!mounted) return;
 
@@ -315,6 +318,20 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
 
   Future<void> _receivePayment() async {
     if (_invoice == null) return;
+
+    // EMI invoices are paid through the EMI plan.
+    if (_invoice!.hasEmiPlan) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Payments for this invoice are managed through the EMI plan.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    // Don't allow payment if already fully paid.
 
     // Don't allow payment if already fully paid.
     if (_invoice!.paymentStatus.toLowerCase() == 'paid') {
@@ -677,11 +694,14 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
 
                 _buildSummarySection(),
 
-                _buildPaymentSection(),
+                if (_invoice!.hasEmiPlan)
+                  _buildEmiPlanSection()
+                else ...[
+                  _buildPaymentSection(),
+                  _buildPaymentHistorySection(),
+                ],
 
-                _buildPaymentHistorySection(),
-
-                //_buildTimelineSection(),
+                // _buildTimelineSection(),
                 _buildNotesSection(),
               ],
             ),
@@ -831,7 +851,7 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
               Expanded(
                 child: _buildHeaderItem(
                   title: 'Payment',
-                  value: _invoice!.paymentMethod,
+                  value: _invoice!.hasEmiPlan ? 'EMI' : _invoice!.paymentMethod,
                 ),
               ),
             ],
@@ -842,68 +862,69 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
           //-------------------------------------------------------------
           // Payment Status
           //-------------------------------------------------------------
-          Builder(
-            builder: (_) {
-              final financial = _financialSummary!;
-              final bool hasDue = financial.amountDue > 0;
+          if (!_invoice!.hasEmiPlan)
+            Builder(
+              builder: (_) {
+                final financial = _financialSummary!;
+                final bool hasDue = financial.amountDue > 0;
 
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Payment Status',
-                    style: theme.textTheme.labelMedium?.copyWith(
-                      color: Colors.white70,
-                    ),
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 10,
-                    ),
-                    decoration: BoxDecoration(
-                      color: hasDue
-                          ? Colors.orange.withValues(alpha: .22)
-                          : Colors.green.withValues(alpha: .22),
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: hasDue
-                            ? Colors.orange.withValues(alpha: .45)
-                            : Colors.green.withValues(alpha: .45),
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Payment Status',
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: Colors.white70,
                       ),
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          hasDue
-                              ? Icons.warning_amber_rounded
-                              : Icons.check_circle_rounded,
-                          size: 18,
-                          color: Colors.white,
+
+                    const SizedBox(height: 8),
+
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color: hasDue
+                            ? Colors.orange.withValues(alpha: .22)
+                            : Colors.green.withValues(alpha: .22),
+                        borderRadius: BorderRadius.circular(14),
+                        border: Border.all(
+                          color: hasDue
+                              ? Colors.orange.withValues(alpha: .45)
+                              : Colors.green.withValues(alpha: .45),
                         ),
-
-                        const SizedBox(width: 8),
-
-                        Text(
-                          hasDue
-                              ? 'Due: ${formatCurrency(financial.amountDue)}'
-                              : 'Fully Paid',
-                          style: theme.textTheme.titleSmall?.copyWith(
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            hasDue
+                                ? Icons.warning_amber_rounded
+                                : Icons.check_circle_rounded,
+                            size: 18,
                             color: Colors.white,
-                            fontWeight: FontWeight.w700,
                           ),
-                        ),
-                      ],
+
+                          const SizedBox(width: 8),
+
+                          Text(
+                            hasDue
+                                ? 'Due: ${formatCurrency(financial.amountDue)}'
+                                : 'Fully Paid',
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
-              );
-            },
-          ),
+                  ],
+                );
+              },
+            ),
         ],
       ),
     );
@@ -1059,6 +1080,97 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
       returnedAmount: returnedAmount,
       paidAmount: _invoice!.paidAmount,
       refundedAmount: 0, // temporary until refund source is connected
+    );
+  }
+
+  //-----------------------------------------------------------------------------
+  // EMI Plan
+  //-----------------------------------------------------------------------------
+
+  //-----------------------------------------------------------------------------
+  // EMI Plan
+  //-----------------------------------------------------------------------------
+
+  Widget _buildEmiPlanSection() {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const AppSectionHeader(title: 'EMI Plan'),
+
+        const SizedBox(height: 12),
+
+        Card(
+          margin: EdgeInsets.zero,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+            side: BorderSide(color: colorScheme.outlineVariant),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        color: colorScheme.primary.withValues(alpha: .10),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(
+                        Icons.event_repeat_rounded,
+                        color: colorScheme.primary,
+                        size: 22,
+                      ),
+                    ),
+
+                    const SizedBox(width: 12),
+
+                    Expanded(
+                      child: Text(
+                        'This invoice has an EMI plan.',
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 10),
+
+                Text(
+                  'Payments are managed through the EMI plan.',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton.icon(
+                    onPressed: () {
+                      // TODO: Open EMI plan details.
+                    },
+                    icon: const Icon(Icons.arrow_forward_rounded, size: 18),
+                    label: const Text('View Plan'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+
+        const SizedBox(height: 18),
+      ],
     );
   }
 

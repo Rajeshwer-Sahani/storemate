@@ -10,6 +10,7 @@ import 'package:storemate/features/billing/presentation/filters/billing_filter_m
 import 'package:storemate/features/billing/presentation/filters/billing_filter_sheet.dart';
 import 'package:storemate/features/billing/presentation/screens/create_invoice_screen.dart';
 import 'package:storemate/features/billing/presentation/screens/invoice_details_screen.dart';
+import 'package:storemate/features/billing/presentation/utils/invoice_financial_calculator.dart';
 import 'package:storemate/features/billing/presentation/widgets/billing_summary_carousel.dart';
 import 'package:storemate/features/billing/presentation/widgets/invoice_list_section.dart';
 
@@ -252,8 +253,21 @@ class _BillingScreenState extends State<BillingScreen> {
       int todayInvoices = 0;
 
       for (final invoice in invoices) {
-        pendingDue += invoice.dueAmount;
+        final financial = InvoiceFinancialCalculator.calculate(
+          originalAmount: invoice.grandTotal,
+          returnedAmount: invoice.returnedAmount,
+          paidAmount: invoice.paidAmount,
+          refundedAmount: 0,
+        );
 
+        // -----------------------------------------------------------------------
+        // Current outstanding amount after returns
+        // -----------------------------------------------------------------------
+        pendingDue += financial.amountDue;
+
+        // -----------------------------------------------------------------------
+        // Today's invoice statistics
+        // -----------------------------------------------------------------------
         final isToday =
             invoice.invoiceDate.year == today.year &&
             invoice.invoiceDate.month == today.month &&
@@ -261,7 +275,10 @@ class _BillingScreenState extends State<BillingScreen> {
 
         if (isToday) {
           todayInvoices++;
-          todaySales += invoice.grandTotal;
+
+          // Sales should represent the current/net invoice value,
+          // not the original invoice total.
+          todaySales += financial.netInvoiceAmount;
         }
       }
 
@@ -269,7 +286,6 @@ class _BillingScreenState extends State<BillingScreen> {
 
       setState(() {
         _invoices = invoices;
-        _filteredInvoices = invoices;
 
         _todaySales = todaySales;
         _todayInvoices = todayInvoices;
@@ -277,14 +293,15 @@ class _BillingScreenState extends State<BillingScreen> {
 
         _isLoading = false;
       });
+
+      // Re-apply current search/filter/sort after refreshing data.
+      _applyFilters();
     } catch (e) {
       if (!mounted) return;
 
       setState(() {
         _isLoading = false;
       });
-
-      _applyFilters();
 
       ScaffoldMessenger.of(
         context,
@@ -408,11 +425,47 @@ class _BillingScreenState extends State<BillingScreen> {
         break;
 
       case InvoiceSortOption.highestAmount:
-        filtered.sort((a, b) => b.grandTotal.compareTo(a.grandTotal));
+        filtered.sort((a, b) {
+          final financialA = InvoiceFinancialCalculator.calculate(
+            originalAmount: a.grandTotal,
+            returnedAmount: a.returnedAmount,
+            paidAmount: a.paidAmount,
+            refundedAmount: 0,
+          );
+
+          final financialB = InvoiceFinancialCalculator.calculate(
+            originalAmount: b.grandTotal,
+            returnedAmount: b.returnedAmount,
+            paidAmount: b.paidAmount,
+            refundedAmount: 0,
+          );
+
+          return financialB.netInvoiceAmount.compareTo(
+            financialA.netInvoiceAmount,
+          );
+        });
         break;
 
       case InvoiceSortOption.lowestAmount:
-        filtered.sort((a, b) => a.grandTotal.compareTo(b.grandTotal));
+        filtered.sort((a, b) {
+          final financialA = InvoiceFinancialCalculator.calculate(
+            originalAmount: a.grandTotal,
+            returnedAmount: a.returnedAmount,
+            paidAmount: a.paidAmount,
+            refundedAmount: 0,
+          );
+
+          final financialB = InvoiceFinancialCalculator.calculate(
+            originalAmount: b.grandTotal,
+            returnedAmount: b.returnedAmount,
+            paidAmount: b.paidAmount,
+            refundedAmount: 0,
+          );
+
+          return financialA.netInvoiceAmount.compareTo(
+            financialB.netInvoiceAmount,
+          );
+        });
         break;
 
       case InvoiceSortOption.customerAZ:
@@ -434,24 +487,7 @@ class _BillingScreenState extends State<BillingScreen> {
   }
 
   void _onSearchChanged(String value) {
-    final query = value.trim().toLowerCase();
-
-    if (query.isEmpty) {
-      setState(() {
-        _filteredInvoices = _invoices;
-      });
-      return;
-    }
-
-    final filtered = _invoices.where((invoice) {
-      return invoice.invoiceNumber.toLowerCase().contains(query) ||
-          invoice.customerName.toLowerCase().contains(query) ||
-          (invoice.customerPhone?.toLowerCase().contains(query) ?? false);
-    }).toList();
-
-    setState(() {
-      _filteredInvoices = filtered;
-    });
+    _applyFilters();
   }
 
   void _openCreateInvoice() {

@@ -149,12 +149,21 @@ class BillingService {
         invoice_return_items (
           quantity
         )
+      ),
+      emi_plans (
+        id
       )
     ''')
           .eq('id', invoiceId)
           .single();
 
       final invoiceJson = Map<String, dynamic>.from(response);
+
+      final emiPlans = (response['emi_plans'] as List?) ?? const [];
+
+      invoiceJson['emi_plan_id'] = emiPlans.isNotEmpty
+          ? emiPlans.first['id'] as String?
+          : null;
 
       int totalItemQuantity = 0;
       int returnedItemQuantity = 0;
@@ -211,20 +220,29 @@ class BillingService {
       final response = await _supabase
           .from(_invoiceTable)
           .select('''
-          *,
-          invoice_items (
-            quantity,
-            invoice_return_items (
-              quantity
-            )
-          )
-        ''')
+      *,
+      invoice_items (
+        quantity,
+        invoice_return_items (
+          quantity
+        )
+      ),
+      emi_plans (
+        id
+      )
+    ''')
           .eq('store_id', storeId)
           .order('invoice_date', ascending: false);
 
       return (response as List).map<InvoiceModel>((json) {
         try {
           final invoiceJson = Map<String, dynamic>.from(json);
+
+          final emiPlans = (json['emi_plans'] as List?) ?? const [];
+
+          invoiceJson['emi_plan_id'] = emiPlans.isNotEmpty
+              ? emiPlans.first['id'] as String?
+              : null;
 
           int totalItemQuantity = 0;
           int returnedItemQuantity = 0;
@@ -272,18 +290,27 @@ class BillingService {
       final response = await _supabase
           .from(_invoiceTable)
           .select('''
-          *,
-          invoice_items (
-            quantity,
-            invoice_return_items (
-              quantity
-            )
-          )
-        ''')
+      *,
+      invoice_items (
+        quantity,
+        invoice_return_items (
+          quantity
+        )
+      ),
+      emi_plans (
+        id
+      )
+    ''')
           .eq('id', invoiceId)
           .single();
 
       final invoiceJson = Map<String, dynamic>.from(response);
+
+      final emiPlans = (response['emi_plans'] as List?) ?? const [];
+
+      invoiceJson['emi_plan_id'] = emiPlans.isNotEmpty
+          ? emiPlans.first['id'] as String?
+          : null;
 
       int totalItemQuantity = 0;
       int returnedItemQuantity = 0;

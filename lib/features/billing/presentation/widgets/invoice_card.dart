@@ -10,6 +10,10 @@ class InvoiceCard extends StatelessWidget {
   final InvoiceModel invoice;
   final VoidCallback onTap;
 
+  // An invoice is treated as an EMI invoice only when
+  // an actual EMI plan is associated with it.
+  bool get isEmi => invoice.hasEmiPlan;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -30,7 +34,7 @@ class InvoiceCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _InvoiceHeader(invoice: invoice),
+              _InvoiceHeader(invoice: invoice, isEmi: isEmi),
 
               const SizedBox(height: 14),
 
@@ -58,7 +62,7 @@ class InvoiceCard extends StatelessWidget {
 
               const SizedBox(height: 16),
 
-              _InvoiceAmount(invoice: invoice),
+              _InvoiceAmount(invoice: invoice, isEmi: isEmi),
             ],
           ),
         ),
@@ -72,16 +76,17 @@ class InvoiceCard extends StatelessWidget {
 /// ===========================================================================
 
 class _InvoiceHeader extends StatelessWidget {
-  const _InvoiceHeader({required this.invoice});
+  const _InvoiceHeader({required this.invoice, required this.isEmi});
 
   final InvoiceModel invoice;
+  final bool isEmi;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Expanded(
           child: Text(
@@ -97,7 +102,10 @@ class _InvoiceHeader extends StatelessWidget {
 
         const SizedBox(width: 12),
 
-        _PaymentStatusChip(status: invoice.displayStatus),
+        if (isEmi)
+          const _EmiPlanAction()
+        else
+          _PaymentStatusChip(status: invoice.displayStatus),
 
         const SizedBox(width: 8),
 
@@ -107,6 +115,28 @@ class _InvoiceHeader extends StatelessWidget {
           color: theme.colorScheme.primary,
         ),
       ],
+    );
+  }
+}
+
+/// ===========================================================================
+/// EMI Plan Action
+/// ===========================================================================
+
+class _EmiPlanAction extends StatelessWidget {
+  const _EmiPlanAction();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Text(
+      'EMI PLAN >',
+      style: theme.textTheme.labelMedium?.copyWith(
+        color: theme.colorScheme.primary,
+        fontWeight: FontWeight.w700,
+        letterSpacing: .5,
+      ),
     );
   }
 }
@@ -228,9 +258,10 @@ class _InvoiceMeta extends StatelessWidget {
 /// ===========================================================================
 
 class _InvoiceAmount extends StatelessWidget {
-  const _InvoiceAmount({required this.invoice});
+  const _InvoiceAmount({required this.invoice, required this.isEmi});
 
   final InvoiceModel invoice;
+  final bool isEmi;
 
   @override
   Widget build(BuildContext context) {
@@ -240,16 +271,9 @@ class _InvoiceAmount extends StatelessWidget {
     // Financial calculation
     // -------------------------------------------------------------------------
     //
-    // Billing card must display the current financial value after returns.
+    // Keep the existing return-aware financial calculation.
     //
-    // Original invoice:
-    //     grandTotal
-    //
-    // Returned:
-    //     returnedAmount
-    //
-    // Net invoice:
-    //     grandTotal - returnedAmount
+    // This is still the invoice's financial value.
     //
     final financial = InvoiceFinancialCalculator.calculate(
       originalAmount: invoice.grandTotal,
@@ -257,6 +281,48 @@ class _InvoiceAmount extends StatelessWidget {
       paidAmount: invoice.paidAmount,
       refundedAmount: 0,
     );
+
+    // -------------------------------------------------------------------------
+    // EMI Invoice
+    // -------------------------------------------------------------------------
+    //
+    // EMI payments are managed through the EMI plan.
+    //
+    // Therefore the billing card must NOT show:
+    // - Paid
+    // - Due
+    // - normal invoice payment status
+    //
+    // It only displays the invoice amount.
+    // -------------------------------------------------------------------------
+
+    if (isEmi) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            _formatCurrency(financial.netInvoiceAmount),
+            style: theme.textTheme.headlineSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+
+          const SizedBox(height: 4),
+
+          Text(
+            'Total Amount',
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      );
+    }
+
+    // -------------------------------------------------------------------------
+    // Normal Invoice
+    // -------------------------------------------------------------------------
 
     final status = invoice.displayStatus;
 
@@ -295,10 +361,7 @@ class _InvoiceAmount extends StatelessWidget {
             ),
           ),
 
-          _StatusAmountBadge(
-            label: 'Returned',
-            color: AppColors.primary,
-          ),
+          const _StatusAmountBadge(label: 'Returned', color: AppColors.primary),
         ],
       );
     }
@@ -335,7 +398,7 @@ class _InvoiceAmount extends StatelessWidget {
             ),
           ),
 
-          _StatusAmountBadge(
+          const _StatusAmountBadge(
             label: 'Partially Returned',
             color: AppColors.warning,
           ),
@@ -382,14 +445,15 @@ class _InvoiceAmount extends StatelessWidget {
             color: AppColors.error,
           )
         else
-          _StatusAmountBadge(
-            label: 'Paid',
-            color: AppColors.success,
-          ),
+          const _StatusAmountBadge(label: 'Paid', color: AppColors.success),
       ],
     );
   }
 }
+
+/// ===========================================================================
+/// Status Amount Badge
+/// ===========================================================================
 
 class _StatusAmountBadge extends StatelessWidget {
   const _StatusAmountBadge({required this.label, required this.color});
@@ -416,6 +480,10 @@ class _StatusAmountBadge extends StatelessWidget {
     );
   }
 }
+
+/// ===========================================================================
+/// Payment Status Chip
+/// ===========================================================================
 
 class _PaymentStatusChip extends StatelessWidget {
   const _PaymentStatusChip({required this.status});
@@ -446,6 +514,10 @@ class _PaymentStatusChip extends StatelessWidget {
   }
 }
 
+/// ===========================================================================
+/// Formatting
+/// ===========================================================================
+
 String _formatCurrency(double amount) {
   final formatter = NumberFormat.currency(
     locale: 'en_IN',
@@ -475,6 +547,10 @@ String _formatDate(DateTime date) {
 
   return DateFormat('dd MMM yyyy').format(date);
 }
+
+/// ===========================================================================
+/// Payment Status Colors
+/// ===========================================================================
 
 Color _paymentStatusColor(String status) {
   switch (status.toLowerCase()) {
@@ -520,6 +596,10 @@ Color _paymentStatusBackgroundColor(String status) {
   }
 }
 
+/// ===========================================================================
+/// Payment Method
+/// ===========================================================================
+
 IconData _paymentMethodIcon(String method) {
   switch (method.toLowerCase()) {
     case 'cash':
@@ -536,6 +616,9 @@ IconData _paymentMethodIcon(String method) {
 
     case 'cheque':
       return Icons.receipt_long_rounded;
+
+    case 'emi':
+      return Icons.event_repeat_rounded;
 
     default:
       return Icons.wallet_rounded;
@@ -558,6 +641,9 @@ String _paymentMethodLabel(String method) {
 
     case 'cheque':
       return 'Cheque';
+
+    case 'emi':
+      return 'EMI';
 
     default:
       return method;
