@@ -1,178 +1,235 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:provider/provider.dart';
 
-class DashboardScreen extends StatefulWidget {
+import 'package:storemate/features/dashboard/data/models/dashboard_data_model.dart';
+import 'package:storemate/features/dashboard/data/repositories/dashboard_repository_impl.dart';
+import 'package:storemate/features/dashboard/data/services/dashboard_service.dart';
+import '../providers/dashboard_provider.dart';
+
+class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
 
   @override
-  State<DashboardScreen> createState() {
-    return _DashboardScreenState();
+  Widget build(BuildContext context) {
+    return ChangeNotifierProvider(
+      create: (_) => DashboardProvider(
+        service: DashboardService(repository: DashboardRepositoryImpl()),
+      )..loadDashboard(),
+      child: const _DashboardView(),
+    );
   }
 }
 
-class _DashboardScreenState extends State<DashboardScreen> {
-  String _storeName = 'Your Store';
-  bool _isLoadingStore = true;
+// =============================================================================
+// Dashboard View
+// =============================================================================
 
-  @override
-  void initState() {
-    super.initState();
-
-    _fetchStoreDetails();
-  }
-
-  Future<void> _fetchStoreDetails() async {
-    try {
-      // Get the currently logged-in StoreMate user.
-      final currentUser = Supabase.instance.client.auth.currentUser;
-
-      if (currentUser == null) {
-        if (!mounted) return;
-
-        setState(() {
-          _isLoadingStore = false;
-        });
-
-        return;
-      }
-
-      // Fetch the store belonging to the logged-in owner.
-      final storeData = await Supabase.instance.client
-          .from('stores')
-          .select('store_name')
-          .eq('owner_id', currentUser.id)
-          .maybeSingle();
-
-      if (!mounted) return;
-
-      final fetchedStoreName = storeData?['store_name']?.toString().trim();
-
-      setState(() {
-        if (fetchedStoreName != null && fetchedStoreName.isNotEmpty) {
-          _storeName = fetchedStoreName;
-        }
-
-        _isLoadingStore = false;
-      });
-    } on PostgrestException catch (error) {
-      debugPrint('Failed to fetch store details: ${error.message}');
-
-      if (!mounted) return;
-
-      setState(() {
-        _isLoadingStore = false;
-      });
-    } catch (error) {
-      debugPrint('Unexpected dashboard error: $error');
-
-      if (!mounted) return;
-
-      setState(() {
-        _isLoadingStore = false;
-      });
-    }
-  }
+class _DashboardView extends StatelessWidget {
+  const _DashboardView();
 
   @override
   Widget build(BuildContext context) {
+    final provider = context.watch<DashboardProvider>();
+
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+
+    // -------------------------------------------------------------------------
+    // Loading
+    // -------------------------------------------------------------------------
+
+    if (provider.isLoading && !provider.hasData) {
+      return Scaffold(
+        backgroundColor: colorScheme.surface,
+        body: const SafeArea(child: Center(child: CircularProgressIndicator())),
+      );
+    }
+
+    // -------------------------------------------------------------------------
+    // Error without existing data
+    // -------------------------------------------------------------------------
+
+    if (provider.hasError && !provider.hasData) {
+      return Scaffold(
+        backgroundColor: colorScheme.surface,
+        body: SafeArea(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.error_outline_rounded,
+                    size: 48,
+                    color: colorScheme.error,
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  Text(
+                    'Unable to load dashboard',
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  Text(
+                    provider.errorMessage ??
+                        'Something went wrong. Please try again.',
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  FilledButton.icon(
+                    onPressed: provider.loadDashboard,
+                    icon: const Icon(Icons.refresh_rounded),
+                    label: const Text('Try Again'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    final data = provider.dashboardData;
+
+    if (data == null) {
+      return const Scaffold(
+        body: SafeArea(
+          child: Center(child: Text('No dashboard data available.')),
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
       body: SafeArea(
-        child: CustomScrollView(
-          physics: const BouncingScrollPhysics(),
-          slivers: [
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
-              sliver: SliverList(
-                delegate: SliverChildListDelegate([
-                  // Dynamic Dashboard header
-                  _DashboardHeader(
-                    storeName: _storeName,
-                    isLoading: _isLoadingStore,
-                  ),
-
-                  const SizedBox(height: 24),
-
-                  // Today's sales card
-                  const _SalesOverviewCard(),
-
-                  const SizedBox(height: 28),
-
-                  // Business overview title
-                  const _SectionHeader(
-                    title: 'Business Overview',
-                    subtitle: 'Your store at a glance',
-                  ),
-
-                  const SizedBox(height: 14),
-
-                  // Business statistics
-                  const _BusinessOverviewGrid(),
-
-                  const SizedBox(height: 28),
-
-                  // Quick actions title
-                  const _SectionHeader(
-                    title: 'Quick Actions',
-                    subtitle: 'Manage your store faster',
-                  ),
-
-                  const SizedBox(height: 14),
-
-                  // Quick actions
-                  const _QuickActionsGrid(),
-
-                  const SizedBox(height: 28),
-
-                  // Recent sales title
-                  _SectionHeader(
-                    title: 'Recent Sales',
-                    subtitle: 'Your latest billing activity',
-                    actionLabel: 'View all',
-                    onActionPressed: () {
-                      // Billing navigation will be added later.
-                    },
-                  ),
-
-                  const SizedBox(height: 14),
-
-                  // Recent sales empty state
-                  const _RecentSalesEmptyCard(),
-
-                  const SizedBox(height: 28),
-
-                  // Inventory alert title
-                  const _SectionHeader(
-                    title: 'Inventory Alerts',
-                    subtitle: 'Products requiring attention',
-                  ),
-
-                  const SizedBox(height: 14),
-
-                  // Inventory status
-                  const _InventoryStatusCard(),
-                ]),
-              ),
+        child: RefreshIndicator(
+          onRefresh: provider.refreshDashboard,
+          child: CustomScrollView(
+            physics: const AlwaysScrollableScrollPhysics(
+              parent: BouncingScrollPhysics(),
             ),
-          ],
+            slivers: [
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate([
+                    // ---------------------------------------------------------
+                    // Header
+                    // ---------------------------------------------------------
+                    _DashboardHeader(storeName: data.storeName),
+
+                    const SizedBox(height: 24),
+
+                    // ---------------------------------------------------------
+                    // Today's Sales
+                    // ---------------------------------------------------------
+                    _SalesOverviewCard(
+                      todaySales: data.todaySales,
+                      todayBillCount: data.todayBillCount,
+                      yesterdaySales: data.yesterdaySales,
+                    ),
+
+                    const SizedBox(height: 28),
+
+                    // ---------------------------------------------------------
+                    // Business Overview
+                    // ---------------------------------------------------------
+                    const _SectionHeader(
+                      title: 'Business Overview',
+                      subtitle: 'Your store at a glance',
+                    ),
+
+                    const SizedBox(height: 14),
+
+                    _BusinessOverviewGrid(
+                      customerCount: data.customerCount,
+                      productCount: data.productCount,
+                      lowStockCount: data.lowStockCount,
+                      pendingEmiAmount: data.pendingEmiAmount,
+                    ),
+
+                    const SizedBox(height: 28),
+
+                    // ---------------------------------------------------------
+                    // Quick Actions
+                    // ---------------------------------------------------------
+                    const _SectionHeader(
+                      title: 'Quick Actions',
+                      subtitle: 'Manage your store faster',
+                    ),
+
+                    const SizedBox(height: 14),
+
+                    const _QuickActionsGrid(),
+
+                    const SizedBox(height: 28),
+
+                    // ---------------------------------------------------------
+                    // Recent Sales
+                    // ---------------------------------------------------------
+                    _SectionHeader(
+                      title: 'Recent Sales',
+                      subtitle: 'Your latest billing activity',
+                      actionLabel: 'View all',
+                      onActionPressed: () {
+                        // Billing navigation will be connected later.
+                      },
+                    ),
+
+                    const SizedBox(height: 14),
+
+                    if (data.recentSales.isEmpty)
+                      const _RecentSalesEmptyCard()
+                    else
+                      _RecentSalesList(sales: data.recentSales),
+
+                    const SizedBox(height: 28),
+
+                    // ---------------------------------------------------------
+                    // Inventory Alerts
+                    // ---------------------------------------------------------
+                    const _SectionHeader(
+                      title: 'Inventory Alerts',
+                      subtitle: 'Products requiring attention',
+                    ),
+
+                    const SizedBox(height: 14),
+
+                    if (data.inventoryAlerts.isEmpty)
+                      const _InventoryStatusCard()
+                    else
+                      _InventoryAlertsCard(alerts: data.inventoryAlerts),
+                  ]),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 }
 
-// -----------------------------------------------------------------------------
+// =============================================================================
 // Dashboard Header
-// -----------------------------------------------------------------------------
+// =============================================================================
 
 class _DashboardHeader extends StatelessWidget {
-  const _DashboardHeader({required this.storeName, required this.isLoading});
+  const _DashboardHeader({required this.storeName});
 
   final String storeName;
-  final bool isLoading;
 
   String _getGreeting() {
     final currentHour = DateTime.now().hour;
@@ -200,13 +257,13 @@ class _DashboardHeader extends StatelessWidget {
     }
 
     if (words.length == 1) {
-      final firstWord = words.first;
+      final word = words.first;
 
-      if (firstWord.length == 1) {
-        return firstWord.toUpperCase();
+      if (word.length == 1) {
+        return word.toUpperCase();
       }
 
-      return firstWord.substring(0, 2).toUpperCase();
+      return word.substring(0, 2).toUpperCase();
     }
 
     return '${words.first[0]}${words.last[0]}'.toUpperCase();
@@ -233,26 +290,16 @@ class _DashboardHeader extends StatelessWidget {
 
               const SizedBox(height: 5),
 
-              if (isLoading)
-                Container(
-                  width: 160,
-                  height: 25,
-                  decoration: BoxDecoration(
-                    color: colorScheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                )
-              else
-                Text(
-                  storeName,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                    color: colorScheme.onSurface,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.5,
-                  ),
+              Text(
+                storeName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  color: colorScheme.onSurface,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: -0.5,
                 ),
+              ),
             ],
           ),
         ),
@@ -277,22 +324,13 @@ class _DashboardHeader extends StatelessWidget {
             color: colorScheme.primaryContainer,
             borderRadius: BorderRadius.circular(15),
           ),
-          child: isLoading
-              ? SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2.2,
-                    color: colorScheme.primary,
-                  ),
-                )
-              : Text(
-                  _getStoreInitials(),
-                  style: theme.textTheme.labelLarge?.copyWith(
-                    color: colorScheme.onPrimaryContainer,
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
+          child: Text(
+            _getStoreInitials(),
+            style: theme.textTheme.labelLarge?.copyWith(
+              color: colorScheme.onPrimaryContainer,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
         ),
       ],
     );
@@ -333,17 +371,44 @@ class _HeaderActionButton extends StatelessWidget {
   }
 }
 
-// -----------------------------------------------------------------------------
-// Today's Sales Card
-// -----------------------------------------------------------------------------
+// =============================================================================
+// Today's Sales
+// =============================================================================
 
 class _SalesOverviewCard extends StatelessWidget {
-  const _SalesOverviewCard();
+  const _SalesOverviewCard({
+    required this.todaySales,
+    required this.todayBillCount,
+    required this.yesterdaySales,
+  });
+
+  final double todaySales;
+  final int todayBillCount;
+  final double yesterdaySales;
+
+  String _formatAmount(double amount) {
+    final rounded = amount.round();
+
+    final digits = rounded.toString();
+    final buffer = StringBuffer();
+
+    for (int i = 0; i < digits.length; i++) {
+      if (i > 0 && (digits.length - i) % 3 == 0) {
+        buffer.write(',');
+      }
+
+      buffer.write(digits[i]);
+    }
+
+    return '₹${buffer.toString()}';
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+
+    final hasSales = todaySales > 0;
 
     return Container(
       width: double.infinity,
@@ -421,7 +486,7 @@ class _SalesOverviewCard extends StatelessWidget {
           const SizedBox(height: 24),
 
           Text(
-            '₹0',
+            _formatAmount(todaySales),
             style: theme.textTheme.displaySmall?.copyWith(
               color: colorScheme.onPrimary,
               fontWeight: FontWeight.w800,
@@ -432,7 +497,7 @@ class _SalesOverviewCard extends StatelessWidget {
           const SizedBox(height: 7),
 
           Text(
-            'No sales recorded today',
+            hasSales ? 'Net sales after returns' : 'No sales recorded today',
             style: theme.textTheme.bodyMedium?.copyWith(
               color: colorScheme.onPrimary.withValues(alpha: 0.78),
             ),
@@ -452,7 +517,7 @@ class _SalesOverviewCard extends StatelessWidget {
               Expanded(
                 child: _SalesMetric(
                   icon: Icons.receipt_long_outlined,
-                  value: '0',
+                  value: todayBillCount.toString(),
                   label: 'Total bills',
                 ),
               ),
@@ -463,10 +528,10 @@ class _SalesOverviewCard extends StatelessWidget {
                 color: colorScheme.onPrimary.withValues(alpha: 0.18),
               ),
 
-              const Expanded(
+              Expanded(
                 child: _SalesMetric(
                   icon: Icons.compare_arrows_rounded,
-                  value: '₹0',
+                  value: _formatAmount(yesterdaySales),
                   label: 'Yesterday',
                 ),
               ),
@@ -515,6 +580,7 @@ class _SalesMetric extends StatelessWidget {
                   fontWeight: FontWeight.w700,
                 ),
               ),
+
               Text(
                 label,
                 maxLines: 1,
@@ -531,9 +597,9 @@ class _SalesMetric extends StatelessWidget {
   }
 }
 
-// -----------------------------------------------------------------------------
+// =============================================================================
 // Section Header
-// -----------------------------------------------------------------------------
+// =============================================================================
 
 class _SectionHeader extends StatelessWidget {
   const _SectionHeader({
@@ -586,19 +652,46 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
-// -----------------------------------------------------------------------------
+// =============================================================================
 // Business Overview
-// -----------------------------------------------------------------------------
+// =============================================================================
 
 class _BusinessOverviewGrid extends StatelessWidget {
-  const _BusinessOverviewGrid();
+  const _BusinessOverviewGrid({
+    required this.customerCount,
+    required this.productCount,
+    required this.lowStockCount,
+    required this.pendingEmiAmount,
+  });
+
+  final int customerCount;
+  final int productCount;
+  final int lowStockCount;
+  final double pendingEmiAmount;
+
+  String _formatAmount(double amount) {
+    final rounded = amount.round();
+
+    final digits = rounded.toString();
+    final buffer = StringBuffer();
+
+    for (int i = 0; i < digits.length; i++) {
+      if (i > 0 && (digits.length - i) % 3 == 0) {
+        buffer.write(',');
+      }
+
+      buffer.write(digits[i]);
+    }
+
+    return '₹${buffer.toString()}';
+  }
 
   @override
   Widget build(BuildContext context) {
     return GridView(
       shrinkWrap: true,
-      physics: NeverScrollableScrollPhysics(),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+      physics: const NeverScrollableScrollPhysics(),
+      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
@@ -607,23 +700,26 @@ class _BusinessOverviewGrid extends StatelessWidget {
       children: [
         _OverviewCard(
           title: 'Customers',
-          value: '0',
+          value: customerCount.toString(),
           icon: Icons.people_outline_rounded,
         ),
+
         _OverviewCard(
           title: 'Products',
-          value: '0',
+          value: productCount.toString(),
           icon: Icons.inventory_2_outlined,
         ),
+
         _OverviewCard(
           title: 'Low Stock',
-          value: '0',
+          value: lowStockCount.toString(),
           icon: Icons.warning_amber_rounded,
-          isWarning: true,
+          isWarning: lowStockCount > 0,
         ),
+
         _OverviewCard(
           title: 'Pending EMI',
-          value: '₹0',
+          value: _formatAmount(pendingEmiAmount),
           icon: Icons.account_balance_wallet_outlined,
         ),
       ],
@@ -701,9 +797,9 @@ class _OverviewCard extends StatelessWidget {
   }
 }
 
-// -----------------------------------------------------------------------------
+// =============================================================================
 // Quick Actions
-// -----------------------------------------------------------------------------
+// =============================================================================
 
 class _QuickActionsGrid extends StatelessWidget {
   const _QuickActionsGrid();
@@ -717,7 +813,7 @@ class _QuickActionsGrid extends StatelessWidget {
             icon: Icons.add_card_rounded,
             label: 'New Bill',
             onTap: () {
-              // Billing navigation will be added later.
+              // Billing navigation will be connected later.
             },
           ),
         ),
@@ -729,7 +825,7 @@ class _QuickActionsGrid extends StatelessWidget {
             icon: Icons.add_box_outlined,
             label: 'Product',
             onTap: () {
-              // Add-product flow will be added later.
+              // Inventory navigation will be connected later.
             },
           ),
         ),
@@ -741,7 +837,7 @@ class _QuickActionsGrid extends StatelessWidget {
             icon: Icons.person_add_alt_1_rounded,
             label: 'Customer',
             onTap: () {
-              // Add-customer flow will be added later.
+              // Customer navigation will be connected later.
             },
           ),
         ),
@@ -753,7 +849,7 @@ class _QuickActionsGrid extends StatelessWidget {
             icon: Icons.payments_outlined,
             label: 'EMI',
             onTap: () {
-              // EMI flow will be added later.
+              // EMI navigation will be connected later.
             },
           ),
         ),
@@ -829,9 +925,135 @@ class _QuickActionButton extends StatelessWidget {
   }
 }
 
-// -----------------------------------------------------------------------------
+// =============================================================================
 // Recent Sales
-// -----------------------------------------------------------------------------
+// =============================================================================
+
+class _RecentSalesList extends StatelessWidget {
+  const _RecentSalesList({required this.sales});
+
+  final List<DashboardRecentSaleModel> sales;
+
+  String _formatAmount(double amount) {
+    final rounded = amount.round();
+
+    final digits = rounded.toString();
+    final buffer = StringBuffer();
+
+    for (int i = 0; i < digits.length; i++) {
+      if (i > 0 && (digits.length - i) % 3 == 0) {
+        buffer.write(',');
+      }
+
+      buffer.write(digits[i]);
+    }
+
+    return '₹${buffer.toString()}';
+  }
+
+  String _formatPaymentMethod(String method) {
+    final normalized = method.trim().toLowerCase();
+
+    if (normalized == 'upi') return 'UPI';
+    if (normalized == 'cash') return 'Cash';
+    if (normalized == 'card') return 'Card';
+
+    if (normalized.isEmpty) {
+      return '';
+    }
+
+    return method.trim();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Column(
+      children: sales.map((sale) {
+        final paymentMethod = _formatPaymentMethod(sale.paymentMethod);
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 10),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainerLowest,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: colorScheme.outlineVariant.withValues(alpha: 0.65),
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(13),
+                ),
+                child: Icon(
+                  Icons.receipt_long_outlined,
+                  color: colorScheme.onPrimaryContainer,
+                  size: 22,
+                ),
+              ),
+
+              const SizedBox(width: 12),
+
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      sale.customerName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+
+                    const SizedBox(height: 4),
+
+                    Text(
+                      sale.invoiceNumber,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+
+                    if (paymentMethod.isNotEmpty) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        paymentMethod,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+
+              const SizedBox(width: 10),
+
+              Text(
+                _formatAmount(sale.netAmount),
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                  color: colorScheme.onSurface,
+                ),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
+    );
+  }
+}
 
 class _RecentSalesEmptyCard extends StatelessWidget {
   const _RecentSalesEmptyCard();
@@ -895,9 +1117,88 @@ class _RecentSalesEmptyCard extends StatelessWidget {
   }
 }
 
-// -----------------------------------------------------------------------------
-// Inventory Status
-// -----------------------------------------------------------------------------
+// =============================================================================
+// Inventory Alerts
+// =============================================================================
+
+class _InventoryAlertsCard extends StatelessWidget {
+  const _InventoryAlertsCard({required this.alerts});
+
+  final List<DashboardInventoryAlertModel> alerts;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Column(
+      children: alerts.take(5).map((product) {
+        final isOutOfStock = product.isOutOfStock;
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 10),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainerLowest,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(
+              color: colorScheme.outlineVariant.withValues(alpha: 0.65),
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: colorScheme.errorContainer,
+                  borderRadius: BorderRadius.circular(13),
+                ),
+                child: Icon(
+                  isOutOfStock
+                      ? Icons.remove_shopping_cart_outlined
+                      : Icons.warning_amber_rounded,
+                  color: colorScheme.onErrorContainer,
+                  size: 22,
+                ),
+              ),
+
+              const SizedBox(width: 12),
+
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      product.name,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+
+                    const SizedBox(height: 4),
+
+                    Text(
+                      isOutOfStock
+                          ? 'Out of stock'
+                          : '${product.stockQuantity} left • Threshold ${product.lowStockThreshold}',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
+    );
+  }
+}
 
 class _InventoryStatusCard extends StatelessWidget {
   const _InventoryStatusCard();
