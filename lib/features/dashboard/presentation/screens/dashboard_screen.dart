@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:storemate/features/billing/presentation/screens/invoice_details_screen.dart';
 
 import 'package:storemate/features/dashboard/data/models/dashboard_data_model.dart';
 import 'package:storemate/features/dashboard/data/repositories/dashboard_repository_impl.dart';
@@ -7,7 +8,9 @@ import 'package:storemate/features/dashboard/data/services/dashboard_service.dar
 import '../providers/dashboard_provider.dart';
 
 class DashboardScreen extends StatelessWidget {
-  const DashboardScreen({super.key});
+  const DashboardScreen({super.key, this.onViewAllBilling});
+
+  final VoidCallback? onViewAllBilling;
 
   @override
   Widget build(BuildContext context) {
@@ -15,7 +18,7 @@ class DashboardScreen extends StatelessWidget {
       create: (_) => DashboardProvider(
         service: DashboardService(repository: DashboardRepositoryImpl()),
       )..loadDashboard(),
-      child: const _DashboardView(),
+      child: _DashboardView(onViewAllBilling: onViewAllBilling),
     );
   }
 }
@@ -25,7 +28,28 @@ class DashboardScreen extends StatelessWidget {
 // =============================================================================
 
 class _DashboardView extends StatelessWidget {
-  const _DashboardView();
+  const _DashboardView({this.onViewAllBilling});
+
+  final VoidCallback? onViewAllBilling;
+
+  Future<void> _openInvoiceDetails(
+    BuildContext context,
+    String invoiceId,
+  ) async {
+    final provider = context.read<DashboardProvider>();
+
+    final updated = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => InvoiceDetailsScreen(invoiceId: invoiceId),
+      ),
+    );
+
+    if (!context.mounted) return;
+
+    if (updated == true) {
+      await provider.refreshDashboard();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -183,17 +207,36 @@ class _DashboardView extends StatelessWidget {
                       title: 'Recent Sales',
                       subtitle: 'Your latest billing activity',
                       actionLabel: 'View all',
-                      onActionPressed: () {
-                        // Billing navigation will be connected later.
-                      },
+                      onActionPressed: onViewAllBilling,
                     ),
 
                     const SizedBox(height: 14),
 
                     if (data.recentSales.isEmpty)
                       const _RecentSalesEmptyCard()
-                    else
-                      _RecentSalesList(sales: data.recentSales),
+                    else ...[
+                      _RecentSalesList(
+                        sales: data.recentSales,
+                        onInvoiceTap: (invoiceId) {
+                          _openInvoiceDetails(context, invoiceId);
+                        },
+                      ),
+
+                      const SizedBox(height: 6),
+
+                      Align(
+                        alignment: Alignment.center,
+                        child: Text(
+                          'Showing the 5 most recent sales',
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.onSurfaceVariant,
+                              ),
+                        ),
+                      ),
+                    ],
 
                     const SizedBox(height: 28),
 
@@ -930,9 +973,10 @@ class _QuickActionButton extends StatelessWidget {
 // =============================================================================
 
 class _RecentSalesList extends StatelessWidget {
-  const _RecentSalesList({required this.sales});
+  const _RecentSalesList({required this.sales, required this.onInvoiceTap});
 
   final List<DashboardRecentSaleModel> sales;
+  final ValueChanged<String> onInvoiceTap;
 
   String _formatAmount(double amount) {
     final rounded = amount.round();
@@ -976,78 +1020,87 @@ class _RecentSalesList extends StatelessWidget {
 
         return Container(
           margin: const EdgeInsets.only(bottom: 10),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
+          child: Material(
             color: colorScheme.surfaceContainerLowest,
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: colorScheme.outlineVariant.withValues(alpha: 0.65),
-            ),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                alignment: Alignment.center,
+            child: InkWell(
+              onTap: () => onInvoiceTap(sale.id),
+              borderRadius: BorderRadius.circular(18),
+              child: Container(
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: colorScheme.primaryContainer,
-                  borderRadius: BorderRadius.circular(13),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(
+                    color: colorScheme.outlineVariant.withValues(alpha: 0.65),
+                  ),
                 ),
-                child: Icon(
-                  Icons.receipt_long_outlined,
-                  color: colorScheme.onPrimaryContainer,
-                  size: 22,
-                ),
-              ),
-
-              const SizedBox(width: 12),
-
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: Row(
                   children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: colorScheme.primaryContainer,
+                        borderRadius: BorderRadius.circular(13),
+                      ),
+                      child: Icon(
+                        Icons.receipt_long_outlined,
+                        color: colorScheme.onPrimaryContainer,
+                        size: 22,
+                      ),
+                    ),
+
+                    const SizedBox(width: 12),
+
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            sale.customerName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+
+                          const SizedBox(height: 4),
+
+                          Text(
+                            sale.invoiceNumber,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+
+                          if (paymentMethod.isNotEmpty) ...[
+                            const SizedBox(height: 2),
+                            Text(
+                              paymentMethod,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: colorScheme.onSurfaceVariant,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(width: 10),
+
                     Text(
-                      sale.customerName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      _formatAmount(sale.netAmount),
                       style: theme.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w800,
+                        color: colorScheme.onSurface,
                       ),
                     ),
-
-                    const SizedBox(height: 4),
-
-                    Text(
-                      sale.invoiceNumber,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-
-                    if (paymentMethod.isNotEmpty) ...[
-                      const SizedBox(height: 2),
-                      Text(
-                        paymentMethod,
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
                   ],
                 ),
               ),
-
-              const SizedBox(width: 10),
-
-              Text(
-                _formatAmount(sale.netAmount),
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  color: colorScheme.onSurface,
-                ),
-              ),
-            ],
+            ),
           ),
         );
       }).toList(),

@@ -18,13 +18,24 @@ class MainNavigationScreen extends StatefulWidget {
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   int _selectedIndex = 0;
 
-  final List<Widget> _screens = const [
-    DashboardScreen(),
-    InventoryScreen(),
-    BillingScreen(),
-    CustomersScreen(),
-    MoreScreen(),
-  ];
+  late final List<Widget> _screens;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _screens = [
+      DashboardScreen(
+        onViewAllBilling: () {
+          _onDestinationSelected(2);
+        },
+      ),
+      const InventoryScreen(),
+      const BillingScreen(),
+      const CustomersScreen(),
+      const MoreScreen(),
+    ];
+  }
 
   void _onDestinationSelected(int index) {
     setState(() {
@@ -254,46 +265,46 @@ class _QuickBillButton extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return  Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 64,
-            height: 64,
-            padding: const EdgeInsets.all(5),
-            decoration: BoxDecoration(
-              color: colorScheme.surface,
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: colorScheme.primary.withValues(alpha: 0.28),
-                  blurRadius: 20,
-                  offset: const Offset(0, 8),
-                ),
-              ],
-            ),
-            child: Material(
-              color: colorScheme.primary,
-              shape: const CircleBorder(),
-              child: InkWell(
-                onTap: onPressed,
-                customBorder: const CircleBorder(),
-                child: Icon(Icons.add_rounded),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 64,
+          height: 64,
+          padding: const EdgeInsets.all(5),
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
+            shape: BoxShape.circle,
+            boxShadow: [
+              BoxShadow(
+                color: colorScheme.primary.withValues(alpha: 0.28),
+                blurRadius: 20,
+                offset: const Offset(0, 8),
               ),
+            ],
+          ),
+          child: Material(
+            color: colorScheme.primary,
+            shape: const CircleBorder(),
+            child: InkWell(
+              onTap: onPressed,
+              customBorder: const CircleBorder(),
+              child: Icon(Icons.add_rounded),
             ),
           ),
+        ),
 
-          //const SizedBox(height: 3),
+        //const SizedBox(height: 3),
 
-          // Text(
-          //   'Quick Bill',
-          //   style: theme.textTheme.labelSmall?.copyWith(
-          //     color: colorScheme.onSurfaceVariant,
-          //     fontSize: 10.5,
-          //     fontWeight: FontWeight.w700,
-          //   ),
-          // ),
-        ],
-      );
+        // Text(
+        //   'Quick Bill',
+        //   style: theme.textTheme.labelSmall?.copyWith(
+        //     color: colorScheme.onSurfaceVariant,
+        //     fontSize: 10.5,
+        //     fontWeight: FontWeight.w700,
+        //   ),
+        // ),
+      ],
+    );
   }
 }

@@ -395,7 +395,7 @@ class DashboardRepositoryImpl implements DashboardRepository {
       // Dashboard displays only the latest 10 valid sales.
       // -----------------------------------------------------------------------
 
-      if (recentSales.length >= 10) {
+      if (recentSales.length >= 5) {
         break;
       }
     }
