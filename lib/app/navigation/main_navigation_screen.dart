@@ -1,12 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:storemate/features/billing/data/models/invoice_model.dart';
 
 import 'package:storemate/features/billing/presentation/screens/billing_screen.dart';
 import 'package:storemate/features/customers/presentation/screens/add_customer_screen.dart';
 import 'package:storemate/features/customers/presentation/screens/customers_screen.dart';
 import 'package:storemate/features/dashboard/presentation/screens/dashboard_screen.dart';
+import 'package:storemate/features/emi/data/models/emi_installment_model.dart';
+import 'package:storemate/features/emi/data/models/emi_plan_model.dart';
 import 'package:storemate/features/emi/data/repositories/emi_repository_impl.dart';
+import 'package:storemate/features/emi/data/services/emi_service.dart';
+import 'package:storemate/features/emi/presentation/controllers/create_emi_plan_controller.dart';
 import 'package:storemate/features/emi/presentation/controllers/emi_controller.dart';
+import 'package:storemate/features/emi/presentation/controllers/record_emi_payment_controller.dart';
+import 'package:storemate/features/emi/presentation/screens/create_emi_plan_screen.dart';
+import 'package:storemate/features/emi/presentation/screens/emi_plan_details_screen.dart';
 import 'package:storemate/features/emi/presentation/screens/emi_plan_list_screen.dart';
+import 'package:storemate/features/emi/presentation/screens/record_emi_payment_screen.dart';
+import 'package:storemate/features/emi/presentation/screens/select_invoice_for_emi_screen.dart';
 import 'package:storemate/features/inventory/presentation/screens/add_product_screen.dart';
 import 'package:storemate/features/inventory/presentation/screens/inventory_screen.dart';
 import 'package:storemate/features/more/presentation/screens/more_screen.dart';
@@ -380,13 +391,107 @@ class _EmiPlanRouteState extends State<_EmiPlanRoute> {
     );
   }
 
-  void _onCreateEmiPlan() {
-    // TODO:
-    // Navigate to Create EMI Plan screen.
+  // ===========================================================================
+  // Create EMI Plan
+  // ===========================================================================
+
+  Future<void> _onCreateEmiPlan() async {
+    final selectedInvoice = await Navigator.of(context).push<InvoiceModel>(
+      MaterialPageRoute(
+        builder: (_) => const SelectInvoiceForEmiScreen(),
+      ),
+    );
+
+    if (!mounted || selectedInvoice == null) {
+      return;
+    }
+
+    final createdPlan = await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ChangeNotifierProvider(
+          create: (_) => CreateEmiPlanController(
+            service: EmiService(
+              repository: EmiRepositoryImpl(),
+            ),
+          ),
+          child: CreateEmiPlanScreen(
+            invoice: selectedInvoice,
+          ),
+        ),
+      ),
+    );
+
+    if (!mounted || createdPlan == null) {
+      return;
+    }
+
+    await _controller.loadEmiPlans();
   }
 
-  void _onPlanTap(String emiPlanId) {
-    // TODO:
-    // Navigate to EMI Plan Details screen.
+  // ===========================================================================
+  // EMI Plan Details
+  // ===========================================================================
+
+  Future<void> _onPlanTap(String emiPlanId) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => EmiPlanDetailsScreen(
+          controller: _controller,
+          emiPlanId: emiPlanId,
+          onRecordPayment: (emiPlanId, emiPlan, installment) async {
+            await _onRecordPayment(
+              emiPlanId,
+              emiPlan,
+              installment,
+            );
+          },
+        ),
+      ),
+    );
+
+    if (!mounted) {
+      return;
+    }
+
+    await _controller.loadEmiPlans();
+  }
+
+  // ===========================================================================
+  // Record EMI Payment
+  // ===========================================================================
+
+  Future<void> _onRecordPayment(
+    String emiPlanId,
+    EmiPlanModel emiPlan,
+    EmiInstallmentModel installment,
+  ) async {
+    final payment = await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ChangeNotifierProvider(
+          create: (_) => RecordEmiPaymentController(
+            service: EmiService(
+              repository: EmiRepositoryImpl(),
+            ),
+          ),
+          child: RecordEmiPaymentScreen(
+            emiPlanId: emiPlanId,
+            emiPlan: emiPlan,
+            installment: installment,
+          ),
+        ),
+      ),
+    );
+
+    if (!mounted || payment == null) {
+      return;
+    }
+
+    await _controller.refreshEmiPlan(emiPlanId);
+
+    if (!mounted) {
+      return;
+    }
+
+    await _controller.loadEmiPlans();
   }
 }
