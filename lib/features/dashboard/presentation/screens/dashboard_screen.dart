@@ -14,12 +14,14 @@ class DashboardScreen extends StatelessWidget {
     this.onOpenAddProduct,
     this.onOpenAddCustomer,
     this.onOpenEmiPlans,
+    this.onOpenProfile,
   });
 
   final VoidCallback? onViewAllBilling;
   final VoidCallback? onOpenAddProduct;
   final VoidCallback? onOpenAddCustomer;
   final VoidCallback? onOpenEmiPlans;
+  final VoidCallback? onOpenProfile;
 
   @override
   Widget build(BuildContext context) {
@@ -32,6 +34,7 @@ class DashboardScreen extends StatelessWidget {
         onOpenAddProduct: onOpenAddProduct,
         onOpenAddCustomer: onOpenAddCustomer,
         onOpenEmiPlans: onOpenEmiPlans,
+        onOpenProfile: onOpenProfile,
       ),
     );
   }
@@ -47,12 +50,14 @@ class _DashboardView extends StatelessWidget {
     this.onOpenAddProduct,
     this.onOpenAddCustomer,
     this.onOpenEmiPlans,
+    this.onOpenProfile,
   });
 
   final VoidCallback? onViewAllBilling;
   final VoidCallback? onOpenAddProduct;
   final VoidCallback? onOpenAddCustomer;
   final VoidCallback? onOpenEmiPlans;
+  final VoidCallback? onOpenProfile;
 
   Future<void> _openInvoiceDetails(
     BuildContext context,
@@ -167,7 +172,10 @@ class _DashboardView extends StatelessWidget {
             // ---------------------------------------------------------------------
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
-              child: _DashboardHeader(storeName: data.storeName),
+              child: _DashboardHeader(
+                storeName: data.storeName,
+                onOpenProfile: onOpenProfile,
+              ),
             ),
 
             // ---------------------------------------------------------------------
@@ -306,9 +314,10 @@ class _DashboardView extends StatelessWidget {
 // =============================================================================
 
 class _DashboardHeader extends StatelessWidget {
-  const _DashboardHeader({required this.storeName});
+  const _DashboardHeader({required this.storeName, this.onOpenProfile});
 
   final String storeName;
+  final VoidCallback? onOpenProfile;
 
   String _getGreeting() {
     final currentHour = DateTime.now().hour;
@@ -395,19 +404,28 @@ class _DashboardHeader extends StatelessWidget {
 
         const SizedBox(width: 10),
 
-        Container(
-          width: 46,
-          height: 46,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: colorScheme.primaryContainer,
+        Material(
+          color: Colors.transparent,
+          borderRadius: BorderRadius.circular(15),
+          child: InkWell(
+            onTap: onOpenProfile,
             borderRadius: BorderRadius.circular(15),
-          ),
-          child: Text(
-            _getStoreInitials(),
-            style: theme.textTheme.labelLarge?.copyWith(
-              color: colorScheme.onPrimaryContainer,
-              fontWeight: FontWeight.w800,
+            child: Ink(
+              width: 46,
+              height: 46,
+              decoration: BoxDecoration(
+                color: colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(15),
+              ),
+              child: Center(
+                child: Text(
+                  _getStoreInitials(),
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: colorScheme.onPrimaryContainer,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ),
             ),
           ),
         ),

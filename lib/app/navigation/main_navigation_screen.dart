@@ -6,6 +6,7 @@ import 'package:storemate/features/billing/presentation/screens/billing_screen.d
 import 'package:storemate/features/customers/presentation/screens/add_customer_screen.dart';
 import 'package:storemate/features/customers/presentation/screens/customers_screen.dart';
 import 'package:storemate/features/dashboard/presentation/screens/dashboard_screen.dart';
+import 'package:storemate/features/dashboard/presentation/screens/profile_screen.dart';
 import 'package:storemate/features/emi/data/models/emi_installment_model.dart';
 import 'package:storemate/features/emi/data/models/emi_plan_model.dart';
 import 'package:storemate/features/emi/data/repositories/emi_repository_impl.dart';
@@ -48,8 +49,8 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
         onOpenAddProduct: _openAddProduct,
         onOpenAddCustomer: _openAddCustomer,
-
-       onOpenEmiPlans: _openEmiPlans,
+        onOpenEmiPlans: _openEmiPlans,
+        onOpenProfile: _openProfile,
       ),
       const InventoryScreen(),
       const BillingScreen(),
@@ -77,12 +78,16 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   }
 
   void _openEmiPlans() {
-  Navigator.of(context).push(
-    MaterialPageRoute(
-      builder: (_) => const _EmiPlanRoute(),
-    ),
-  );
-}
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const _EmiPlanRoute()));
+  }
+
+  void _openProfile() {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const ProfileScreen()));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -350,7 +355,6 @@ class _QuickBillButton extends StatelessWidget {
   }
 }
 
-
 // =============================================================================
 // EMI Plan Route
 // =============================================================================
@@ -371,9 +375,7 @@ class _EmiPlanRouteState extends State<_EmiPlanRoute> {
   void initState() {
     super.initState();
 
-    _controller = EmiController(
-      repository: EmiRepositoryImpl(),
-    );
+    _controller = EmiController(repository: EmiRepositoryImpl());
   }
 
   @override
@@ -397,9 +399,7 @@ class _EmiPlanRouteState extends State<_EmiPlanRoute> {
 
   Future<void> _onCreateEmiPlan() async {
     final selectedInvoice = await Navigator.of(context).push<InvoiceModel>(
-      MaterialPageRoute(
-        builder: (_) => const SelectInvoiceForEmiScreen(),
-      ),
+      MaterialPageRoute(builder: (_) => const SelectInvoiceForEmiScreen()),
     );
 
     if (!mounted || selectedInvoice == null) {
@@ -410,13 +410,9 @@ class _EmiPlanRouteState extends State<_EmiPlanRoute> {
       MaterialPageRoute(
         builder: (_) => ChangeNotifierProvider(
           create: (_) => CreateEmiPlanController(
-            service: EmiService(
-              repository: EmiRepositoryImpl(),
-            ),
+            service: EmiService(repository: EmiRepositoryImpl()),
           ),
-          child: CreateEmiPlanScreen(
-            invoice: selectedInvoice,
-          ),
+          child: CreateEmiPlanScreen(invoice: selectedInvoice),
         ),
       ),
     );
@@ -439,11 +435,7 @@ class _EmiPlanRouteState extends State<_EmiPlanRoute> {
           controller: _controller,
           emiPlanId: emiPlanId,
           onRecordPayment: (emiPlanId, emiPlan, installment) async {
-            await _onRecordPayment(
-              emiPlanId,
-              emiPlan,
-              installment,
-            );
+            await _onRecordPayment(emiPlanId, emiPlan, installment);
           },
         ),
       ),
@@ -469,9 +461,7 @@ class _EmiPlanRouteState extends State<_EmiPlanRoute> {
       MaterialPageRoute(
         builder: (_) => ChangeNotifierProvider(
           create: (_) => RecordEmiPaymentController(
-            service: EmiService(
-              repository: EmiRepositoryImpl(),
-            ),
+            service: EmiService(repository: EmiRepositoryImpl()),
           ),
           child: RecordEmiPaymentScreen(
             emiPlanId: emiPlanId,
