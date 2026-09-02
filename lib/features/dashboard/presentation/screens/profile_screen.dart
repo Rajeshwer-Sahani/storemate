@@ -1,12 +1,136 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:storemate/features/dashboard/data/models/profile_data_model.dart';
+import 'package:storemate/features/dashboard/data/repositories/profile_repository_impl.dart';
+import 'package:storemate/features/dashboard/data/services/profile_service.dart';
+import 'package:storemate/features/dashboard/presentation/providers/profile_provider.dart';
 
 class ProfileScreen extends StatelessWidget {
-  const ProfileScreen({super.key});
+  const ProfileScreen({
+    super.key,
+    this.onEditProfile,
+    this.onEditStore,
+    this.onChangePassword,
+    this.onLogout,
+  });
+
+  final VoidCallback? onEditProfile;
+  final VoidCallback? onEditStore;
+  final VoidCallback? onChangePassword;
+  final VoidCallback? onLogout;
 
   @override
   Widget build(BuildContext context) {
+    return ChangeNotifierProvider(
+      create: (_) => ProfileProvider(
+        service: ProfileService(repository: ProfileRepositoryImpl()),
+      )..loadProfile(),
+      child: _ProfileView(
+        onEditProfile: onEditProfile,
+        onEditStore: onEditStore,
+        onChangePassword: onChangePassword,
+        onLogout: onLogout,
+      ),
+    );
+  }
+}
+
+class _ProfileView extends StatelessWidget {
+  const _ProfileView({
+    this.onEditProfile,
+    this.onEditStore,
+    this.onChangePassword,
+    this.onLogout,
+  });
+
+  final VoidCallback? onEditProfile;
+  final VoidCallback? onEditStore;
+  final VoidCallback? onChangePassword;
+  final VoidCallback? onLogout;
+
+  @override
+  Widget build(BuildContext context) {
+    final provider = context.watch<ProfileProvider>();
+
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+
+    // ========================================================================
+    // Initial Loading
+    // ========================================================================
+
+    if (provider.isLoading && !provider.hasData) {
+      return Scaffold(
+        backgroundColor: colorScheme.surface,
+        body: const SafeArea(child: Center(child: CircularProgressIndicator())),
+      );
+    }
+
+    // ========================================================================
+    // Error
+    // ========================================================================
+
+    if (provider.hasError && !provider.hasData) {
+      return Scaffold(
+        backgroundColor: colorScheme.surface,
+        body: SafeArea(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.error_outline_rounded,
+                    size: 48,
+                    color: colorScheme.error,
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  Text(
+                    'Unable to load profile',
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+
+                  const SizedBox(height: 8),
+
+                  Text(
+                    provider.errorMessage ??
+                        'Something went wrong. Please try again.',
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  FilledButton.icon(
+                    onPressed: provider.loadProfile,
+                    icon: const Icon(Icons.refresh_rounded),
+                    label: const Text('Try Again'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+
+    final data = provider.profileData;
+
+    if (data == null) {
+      return const Scaffold(
+        body: SafeArea(
+          child: Center(child: Text('No profile data available.')),
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
@@ -29,135 +153,83 @@ class ProfileScreen extends StatelessWidget {
             // Scrollable Content
             // =================================================================
             Expanded(
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // ---------------------------------------------------------
-                    // Profile Summary
-                    // ---------------------------------------------------------
-                    const _ProfileSummaryCard(),
+              child: RefreshIndicator(
+                onRefresh: provider.refreshProfile,
+                child: CustomScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(
+                    parent: BouncingScrollPhysics(),
+                  ),
+                  slivers: [
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(20, 24, 20, 32),
+                      sliver: SliverList(
+                        delegate: SliverChildListDelegate([
+                          // ---------------------------------------------------
+                          // Profile Summary
+                          // ---------------------------------------------------
+                          _ProfileSummaryCard(
+                            data: data,
+                            onEditProfile: onEditProfile,
+                          ),
 
-                    const SizedBox(height: 22),
+                          const SizedBox(height: 22),
 
-                    // ---------------------------------------------------------
-                    // Personal Information
-                    // ---------------------------------------------------------
-                    _ProfileSectionCard(
-                      title: 'Personal Information',
-                      children: [
-                        _ProfileInfoRow(
-                          icon: Icons.person_outline_rounded,
-                          title: 'Full Name',
-                          value: 'Rajeshwar S.',
-                          onTap: () {
-                            // TODO: Open edit personal information.
-                          },
-                        ),
-                        _ProfileInfoRow(
-                          icon: Icons.phone_outlined,
-                          title: 'Phone Number',
-                          value: '+91 98765 43210',
-                          onTap: () {
-                            // TODO: Open edit phone number.
-                          },
-                        ),
-                        _ProfileInfoRow(
-                          icon: Icons.email_outlined,
-                          title: 'Email Address',
-                          value: 'rajeshwar@example.com',
-                          onTap: () {
-                            // TODO: Open edit email address.
-                          },
-                        ),
-                      ],
+                          // ---------------------------------------------------
+                          // Personal Information
+                          // ---------------------------------------------------
+                          _PersonalInformationCard(
+                            data: data,
+                            onEditProfile: onEditProfile,
+                          ),
+
+                          const SizedBox(height: 18),
+
+                          // ---------------------------------------------------
+                          // Store Information
+                          // ---------------------------------------------------
+                          _StoreInformationCard(
+                            data: data,
+                            onEditStore: onEditStore,
+                          ),
+
+                          const SizedBox(height: 18),
+
+                          // ---------------------------------------------------
+                          // Account
+                          // ---------------------------------------------------
+                          _ProfileSectionCard(
+                            title: 'Account',
+                            children: [
+                              _ProfileActionRow(
+                                icon: Icons.lock_outline_rounded,
+                                title: 'Change Password',
+                                subtitle: 'Update your account password',
+                                iconBackground: colorScheme.secondaryContainer,
+                                iconColor: colorScheme.onSecondaryContainer,
+                                onTap: onChangePassword,
+                              ),
+                              _ProfileActionRow(
+                                icon: Icons.logout_rounded,
+                                title: 'Log Out',
+                                subtitle: 'Sign out from your account',
+                                iconBackground: colorScheme.errorContainer,
+                                iconColor: colorScheme.error,
+                                titleColor: colorScheme.error,
+                                onTap: () {
+                                  _showLogoutConfirmation(context);
+                                },
+                              ),
+                            ],
+                          ),
+
+                          const SizedBox(height: 20),
+
+                          const _SecurityFooter(),
+
+                          const SizedBox(height: 8),
+                        ]),
+                      ),
                     ),
-
-                    const SizedBox(height: 18),
-
-                    // ---------------------------------------------------------
-                    // Store Information
-                    // ---------------------------------------------------------
-                    _ProfileSectionCard(
-                      title: 'Store Information',
-                      children: [
-                        _ProfileInfoRow(
-                          icon: Icons.storefront_outlined,
-                          title: 'Store Name',
-                          value: 'Raj Mobile Care',
-                          onTap: () {
-                            // TODO: Open edit store information.
-                          },
-                        ),
-                        _ProfileInfoRow(
-                          icon: Icons.location_on_outlined,
-                          title: 'Store Address',
-                          value: '123, MG Road, Indore, MP 452001',
-                          onTap: () {
-                            // TODO: Open edit store address.
-                          },
-                        ),
-                        _ProfileInfoRow(
-                          icon: Icons.phone_outlined,
-                          title: 'Store Phone',
-                          value: '+91 731 123 4567',
-                          onTap: () {
-                            // TODO: Open edit store phone.
-                          },
-                        ),
-                        _ProfileInfoRow(
-                          icon: Icons.email_outlined,
-                          title: 'Store Email',
-                          value: 'info@rajmobilecare.com',
-                          onTap: () {
-                            // TODO: Open edit store email.
-                          },
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 18),
-
-                    // ---------------------------------------------------------
-                    // Account
-                    // ---------------------------------------------------------
-                    _ProfileSectionCard(
-                      title: 'Account',
-                      children: [
-                        _ProfileActionRow(
-                          icon: Icons.lock_outline_rounded,
-                          title: 'Change Password',
-                          subtitle: 'Update your account password',
-                          iconBackground: colorScheme.secondaryContainer,
-                          iconColor: colorScheme.onSecondaryContainer,
-                          onTap: () {
-                            // TODO: Open change password screen.
-                          },
-                        ),
-                        _ProfileActionRow(
-                          icon: Icons.logout_rounded,
-                          title: 'Log Out',
-                          subtitle: 'Sign out from your account',
-                          iconBackground: colorScheme.errorContainer,
-                          iconColor: colorScheme.error,
-                          titleColor: colorScheme.error,
-                          onTap: () {
-                            _showLogoutConfirmation(context);
-                          },
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 18),
-
-                    // ---------------------------------------------------------
-                    // Security Footer
-                    // ---------------------------------------------------------
-                    const _SecurityFooter(),
-
-                    const SizedBox(height: 8),
                   ],
                 ),
               ),
@@ -198,8 +270,7 @@ class ProfileScreen extends StatelessWidget {
               ),
               onPressed: () {
                 Navigator.of(dialogContext).pop();
-
-                // TODO: Connect to the actual authentication logout.
+                onLogout?.call();
               },
               child: const Text('Log Out'),
             ),
@@ -227,12 +298,9 @@ class _ProfileHeader extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        // ---------------------------------------------------------------------
-        // Back Button
-        // ---------------------------------------------------------------------
         SizedBox(
-          width: 50,
-          height: 50,
+          width: 45,
+          height: 45,
           child: OutlinedButton(
             onPressed: onBack,
             style: OutlinedButton.styleFrom(
@@ -255,9 +323,6 @@ class _ProfileHeader extends StatelessWidget {
 
         const SizedBox(width: 14),
 
-        // ---------------------------------------------------------------------
-        // Title
-        // ---------------------------------------------------------------------
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -292,7 +357,10 @@ class _ProfileHeader extends StatelessWidget {
 // =============================================================================
 
 class _ProfileSummaryCard extends StatelessWidget {
-  const _ProfileSummaryCard();
+  const _ProfileSummaryCard({required this.data, this.onEditProfile});
+
+  final ProfileDataModel data;
+  final VoidCallback? onEditProfile;
 
   @override
   Widget build(BuildContext context) {
@@ -324,12 +392,9 @@ class _ProfileSummaryCard extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // ===================================================================
-          // Profile Identity
-          // ===================================================================
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
+            padding: const EdgeInsets.fromLTRB(20, 22, 20, 22),
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
@@ -340,66 +405,57 @@ class _ProfileSummaryCard extends StatelessWidget {
             child: Row(
               children: [
                 // -------------------------------------------------------------
-                // Avatar + Camera
+                // Avatar
                 // -------------------------------------------------------------
                 SizedBox(
-                  width: 142,
-                  height: 116,
+                  width: 112,
+                  height: 112,
                   child: Stack(
                     clipBehavior: Clip.none,
                     children: [
-                      Positioned(
-                        left: 0,
-                        top: 0,
+                      Container(
+                        width: 104,
+                        height: 104,
+                        padding: const EdgeInsets.all(7),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: colorScheme.primary.withValues(alpha: 0.08),
+                        ),
                         child: Container(
-                          width: 104,
-                          height: 104,
-                          padding: const EdgeInsets.all(7),
+                          alignment: Alignment.center,
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            color: colorScheme.primary.withValues(alpha: 0.08),
-                          ),
-                          child: Container(
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: colorScheme.primary,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: colorScheme.primary.withValues(
-                                    alpha: 0.20,
-                                  ),
-                                  blurRadius: 14,
-                                  offset: const Offset(0, 6),
+                            color: colorScheme.primary,
+                            boxShadow: [
+                              BoxShadow(
+                                color: colorScheme.primary.withValues(
+                                  alpha: 0.20,
                                 ),
-                              ],
-                            ),
-                            child: Text(
-                              'RS',
-                              style: theme.textTheme.headlineMedium?.copyWith(
-                                color: colorScheme.onPrimary,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: -0.5,
+                                blurRadius: 14,
+                                offset: const Offset(0, 6),
                               ),
+                            ],
+                          ),
+                          child: Text(
+                            data.initials,
+                            style: theme.textTheme.headlineMedium?.copyWith(
+                              color: colorScheme.onPrimary,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -0.5,
                             ),
                           ),
                         ),
                       ),
 
-                      // -------------------------------------------------------
-                      // Camera Button
-                      // -------------------------------------------------------
                       Positioned(
-                        left: 83,
-                        top: 72,
+                        right: -2,
+                        bottom: 3,
                         child: Material(
                           color: colorScheme.surface,
                           shape: const CircleBorder(),
                           elevation: 2,
                           child: InkWell(
-                            onTap: () {
-                              // TODO: Open profile image picker.
-                            },
+                            onTap: onEditProfile,
                             customBorder: const CircleBorder(),
                             child: Container(
                               width: 38,
@@ -424,72 +480,78 @@ class _ProfileSummaryCard extends StatelessWidget {
                   ),
                 ),
 
-                const SizedBox(width: 8),
+                const SizedBox(width: 14),
 
                 // -------------------------------------------------------------
-                // Identity Information
+                // Identity
                 // -------------------------------------------------------------
                 Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.only(bottom: 4),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Rajeshwar S.',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.titleLarge?.copyWith(
-                            color: colorScheme.onSurface,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: -0.25,
-                          ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        data.displayName,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          color: colorScheme.onSurface,
+                          fontWeight: FontWeight.w800,
                         ),
+                      ),
 
-                        const SizedBox(height: 4),
+                      const SizedBox(height: 5),
 
-                        Text(
-                          'Store Owner',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            color: colorScheme.primary,
-                            fontWeight: FontWeight.w600,
-                          ),
+                      Text(
+                        data.store.businessType,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: colorScheme.primary,
+                          fontWeight: FontWeight.w600,
                         ),
+                      ),
 
-                        const SizedBox(height: 10),
+                      const SizedBox(height: 10),
 
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 9,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: colorScheme.tertiaryContainer.withValues(
-                              alpha: 0.65,
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 9,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: data.isEmailVerified
+                              ? colorScheme.primaryContainer.withValues(
+                                  alpha: 0.25,
+                                )
+                              : colorScheme.surfaceContainerHighest,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              data.isEmailVerified
+                                  ? Icons.verified_outlined
+                                  : Icons.info_outline_rounded,
+                              size: 17,
+                              color: data.isEmailVerified
+                                  ? colorScheme.primary
+                                  : colorScheme.onSurfaceVariant,
                             ),
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(
-                                Icons.verified_outlined,
-                                size: 17,
-                                color: colorScheme.tertiary,
+                            const SizedBox(width: 5),
+                            Text(
+                              data.isEmailVerified
+                                  ? 'Email Verified'
+                                  : 'Email Not Verified',
+                              style: theme.textTheme.labelMedium?.copyWith(
+                                color: data.isEmailVerified
+                                    ? colorScheme.primary
+                                    : colorScheme.onSurfaceVariant,
+                                fontWeight: FontWeight.w700,
                               ),
-                              const SizedBox(width: 5),
-                              Text(
-                                'Verified',
-                                style: theme.textTheme.labelMedium?.copyWith(
-                                  color: colorScheme.tertiary,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -509,32 +571,32 @@ class _ProfileSummaryCard extends StatelessWidget {
                 ),
               ),
             ),
-            child: const Row(
+            child: Row(
               children: [
                 Expanded(
                   child: _ProfileStatistic(
                     icon: Icons.receipt_long_outlined,
-                    value: '248',
+                    value: data.billCount.toString(),
                     label: 'Bills Created',
                   ),
                 ),
 
-                _StatisticDivider(),
+                const _StatisticDivider(),
 
                 Expanded(
                   child: _ProfileStatistic(
                     icon: Icons.people_outline_rounded,
-                    value: '32',
+                    value: data.customerCount.toString(),
                     label: 'Customers',
                   ),
                 ),
 
-                _StatisticDivider(),
+                const _StatisticDivider(),
 
                 Expanded(
                   child: _ProfileStatistic(
                     icon: Icons.shopping_bag_outlined,
-                    value: '₹2.45L',
+                    value: _formatCurrency(data.totalSales),
                     label: 'Total Sales',
                   ),
                 ),
@@ -544,6 +606,18 @@ class _ProfileSummaryCard extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _formatCurrency(double amount) {
+    if (amount >= 100000) {
+      return '₹${(amount / 100000).toStringAsFixed(2)}L';
+    }
+
+    if (amount >= 1000) {
+      return '₹${(amount / 1000).toStringAsFixed(1)}K';
+    }
+
+    return '₹${amount.toStringAsFixed(0)}';
   }
 }
 
@@ -574,7 +648,7 @@ class _ProfileStatistic extends StatelessWidget {
           height: 44,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: colorScheme.primaryContainer.withValues(alpha: 0.65),
+            color: colorScheme.primaryContainer.withValues(alpha: 0.20),
             borderRadius: BorderRadius.circular(13),
           ),
           child: Icon(icon, size: 22, color: colorScheme.primary),
@@ -626,6 +700,96 @@ class _StatisticDivider extends StatelessWidget {
       width: 1,
       height: 72,
       color: colorScheme.outlineVariant.withValues(alpha: 0.55),
+    );
+  }
+}
+
+class _PersonalInformationCard extends StatelessWidget {
+  const _PersonalInformationCard({required this.data, this.onEditProfile});
+
+  final ProfileDataModel data;
+  final VoidCallback? onEditProfile;
+
+  @override
+  Widget build(BuildContext context) {
+    return _ProfileSectionCard(
+      title: 'Personal Information',
+      children: [
+        _ProfileInfoRow(
+          icon: Icons.person_outline_rounded,
+          title: 'Full Name',
+          value: data.fullName.isEmpty ? 'Not set' : data.fullName,
+          onTap: onEditProfile,
+        ),
+
+        _ProfileInfoRow(
+          icon: Icons.email_outlined,
+          title: 'Email Address',
+          value: data.email.isEmpty ? 'Not available' : data.email,
+          onTap: onEditProfile,
+        ),
+
+        _ProfileInfoRow(
+          icon: Icons.phone_outlined,
+          title: 'Phone Number',
+          value: data.store.ownerPhone.isEmpty
+              ? 'Not available'
+              : data.store.ownerPhone,
+          onTap: onEditProfile,
+        ),
+      ],
+    );
+  }
+}
+
+class _StoreInformationCard extends StatelessWidget {
+  const _StoreInformationCard({required this.data, this.onEditStore});
+
+  final ProfileDataModel data;
+  final VoidCallback? onEditStore;
+
+  @override
+  Widget build(BuildContext context) {
+    return _ProfileSectionCard(
+      title: 'Store Information',
+      children: [
+        _ProfileInfoRow(
+          icon: Icons.storefront_outlined,
+          title: 'Store Name',
+          value: data.store.storeName,
+          onTap: onEditStore,
+        ),
+
+        _ProfileInfoRow(
+          icon: Icons.location_on_outlined,
+          title: 'Store Address',
+          value: data.store.storeAddress,
+          onTap: onEditStore,
+        ),
+
+        _ProfileInfoRow(
+          icon: Icons.business_outlined,
+          title: 'Business Type',
+          value: data.store.businessType,
+          onTap: onEditStore,
+        ),
+
+        _ProfileInfoRow(
+          icon: Icons.phone_outlined,
+          title: 'Store Phone',
+          value: data.store.ownerPhone,
+          onTap: onEditStore,
+        ),
+
+        _ProfileInfoRow(
+          icon: Icons.receipt_long_outlined,
+          title: 'GST Number',
+          value: data.store.gstNumber?.trim().isNotEmpty == true
+              ? data.store.gstNumber!
+              : 'Not added',
+          onTap: onEditStore,
+        ),
+      ],
     );
   }
 }
@@ -690,13 +854,13 @@ class _ProfileInfoRow extends StatelessWidget {
     required this.icon,
     required this.title,
     required this.value,
-    required this.onTap,
+    this.onTap,
   });
 
   final IconData icon;
   final String title;
   final String value;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -709,7 +873,7 @@ class _ProfileInfoRow extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 11),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
           decoration: BoxDecoration(
             border: Border(
               bottom: BorderSide(
@@ -719,15 +883,12 @@ class _ProfileInfoRow extends StatelessWidget {
           ),
           child: Row(
             children: [
-              // ----------------------------------------------------------------
-              // Icon
-              // ----------------------------------------------------------------
               Container(
                 width: 46,
                 height: 46,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: colorScheme.primaryContainer.withValues(alpha: 0.62),
+                  color: colorScheme.primaryContainer.withValues(alpha: 0.20),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Icon(icon, size: 22, color: colorScheme.primary),
@@ -735,9 +896,6 @@ class _ProfileInfoRow extends StatelessWidget {
 
               const SizedBox(width: 14),
 
-              // ----------------------------------------------------------------
-              // Text
-              // ----------------------------------------------------------------
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -759,7 +917,11 @@ class _ProfileInfoRow extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
+                        color: value == 'Not available'
+                            ? colorScheme.onSurfaceVariant.withValues(
+                                alpha: 0.70,
+                              )
+                            : colorScheme.onSurfaceVariant,
                         height: 1.25,
                       ),
                     ),
@@ -769,9 +931,6 @@ class _ProfileInfoRow extends StatelessWidget {
 
               const SizedBox(width: 8),
 
-              // ----------------------------------------------------------------
-              // Arrow
-              // ----------------------------------------------------------------
               Icon(
                 Icons.chevron_right_rounded,
                 size: 23,
@@ -805,7 +964,7 @@ class _ProfileActionRow extends StatelessWidget {
   final String subtitle;
   final Color iconBackground;
   final Color iconColor;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
   final Color? titleColor;
 
   @override
@@ -819,7 +978,7 @@ class _ProfileActionRow extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 11),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
           decoration: BoxDecoration(
             border: Border(
               bottom: BorderSide(
@@ -829,15 +988,12 @@ class _ProfileActionRow extends StatelessWidget {
           ),
           child: Row(
             children: [
-              // ----------------------------------------------------------------
-              // Icon
-              // ----------------------------------------------------------------
               Container(
                 width: 46,
                 height: 46,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: iconBackground.withValues(alpha: 0.70),
+                  color: iconBackground.withValues(alpha: 0.20),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Icon(icon, size: 22, color: iconColor),
@@ -845,9 +1001,6 @@ class _ProfileActionRow extends StatelessWidget {
 
               const SizedBox(width: 14),
 
-              // ----------------------------------------------------------------
-              // Text
-              // ----------------------------------------------------------------
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
