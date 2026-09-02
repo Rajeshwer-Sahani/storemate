@@ -295,59 +295,80 @@ class _ProfileHeader extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        SizedBox(
-          width: 45,
-          height: 45,
-          child: OutlinedButton(
-            onPressed: onBack,
-            style: OutlinedButton.styleFrom(
-              padding: EdgeInsets.zero,
-              backgroundColor: colorScheme.surface,
-              side: BorderSide(
-                color: colorScheme.outlineVariant.withValues(alpha: 0.65),
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-            ),
-            child: Icon(
-              Icons.arrow_back_rounded,
-              size: 25,
-              color: colorScheme.onSurface,
-            ),
-          ),
-        ),
-
-        const SizedBox(width: 14),
-
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Profile',
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  color: colorScheme.onSurface,
-                  fontWeight: FontWeight.w800,
-                  letterSpacing: -0.5,
-                  height: 1.1,
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(0, 4, 0, 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          // -------------------------------------------------------------------
+          // Back Button
+          // -------------------------------------------------------------------
+          SizedBox(
+            width: 48,
+            height: 48,
+            child: OutlinedButton(
+              onPressed: onBack,
+              style: OutlinedButton.styleFrom(
+                padding: EdgeInsets.zero,
+                backgroundColor: colorScheme.surface,
+                side: BorderSide(
+                  color: colorScheme.outlineVariant.withValues(alpha: 0.65),
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
                 ),
               ),
-              const SizedBox(height: 5),
-              Text(
-                'Manage your account and store',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: colorScheme.onSurfaceVariant,
-                  fontSize: 14,
-                ),
+              child: Icon(
+                Icons.arrow_back_rounded,
+                size: 25,
+                color: colorScheme.onSurface,
               ),
-            ],
+            ),
           ),
-        ),
-      ],
+
+          const SizedBox(width: 16),
+
+          // -------------------------------------------------------------------
+          // Title + Subtitle
+          // -------------------------------------------------------------------
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.only(top: 1),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Profile',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.headlineSmall?.copyWith(
+                      color: colorScheme.onSurface,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.5,
+                      height: 1.1,
+                    ),
+                  ),
+
+                  const SizedBox(height: 3),
+
+                  Text(
+                    'Manage your account and store',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                      fontSize: 14,
+                      height: 1.25,
+                      letterSpacing: -0.2,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -518,9 +539,7 @@ class _ProfileSummaryCard extends StatelessWidget {
                         ),
                         decoration: BoxDecoration(
                           color: data.isEmailVerified
-                              ? colorScheme.primaryContainer.withValues(
-                                  alpha: 0.25,
-                                )
+                              ? Colors.green.withValues(alpha: 0.12)
                               : colorScheme.surfaceContainerHighest,
                           borderRadius: BorderRadius.circular(10),
                         ),
@@ -533,7 +552,7 @@ class _ProfileSummaryCard extends StatelessWidget {
                                   : Icons.info_outline_rounded,
                               size: 17,
                               color: data.isEmailVerified
-                                  ? colorScheme.primary
+                                  ? Colors.green.shade700
                                   : colorScheme.onSurfaceVariant,
                             ),
                             const SizedBox(width: 5),
@@ -543,7 +562,7 @@ class _ProfileSummaryCard extends StatelessWidget {
                                   : 'Email Not Verified',
                               style: theme.textTheme.labelMedium?.copyWith(
                                 color: data.isEmailVerified
-                                    ? colorScheme.primary
+                                    ? Colors.green.shade700
                                     : colorScheme.onSurfaceVariant,
                                 fontWeight: FontWeight.w700,
                               ),
@@ -578,6 +597,8 @@ class _ProfileSummaryCard extends StatelessWidget {
                     icon: Icons.receipt_long_outlined,
                     value: data.billCount.toString(),
                     label: 'Bills Created',
+                    iconBackground: Colors.deepPurple.withValues(alpha: 0.12),
+                    iconColor: Colors.deepPurple,
                   ),
                 ),
 
@@ -588,6 +609,8 @@ class _ProfileSummaryCard extends StatelessWidget {
                     icon: Icons.people_outline_rounded,
                     value: data.customerCount.toString(),
                     label: 'Customers',
+                    iconBackground: Colors.teal.withValues(alpha: 0.12),
+                    iconColor: Colors.teal.shade700,
                   ),
                 ),
 
@@ -598,6 +621,8 @@ class _ProfileSummaryCard extends StatelessWidget {
                     icon: Icons.shopping_bag_outlined,
                     value: _formatCurrency(data.totalSales),
                     label: 'Total Sales',
+                    iconBackground: Colors.green.withValues(alpha: 0.12),
+                    iconColor: Colors.green.shade700,
                   ),
                 ),
               ],
@@ -630,11 +655,15 @@ class _ProfileStatistic extends StatelessWidget {
     required this.icon,
     required this.value,
     required this.label,
+    required this.iconBackground,
+    required this.iconColor,
   });
 
   final IconData icon;
   final String value;
   final String label;
+  final Color iconBackground;
+  final Color iconColor;
 
   @override
   Widget build(BuildContext context) {
@@ -648,10 +677,10 @@ class _ProfileStatistic extends StatelessWidget {
           height: 44,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: colorScheme.primaryContainer.withValues(alpha: 0.20),
+            color: iconBackground,
             borderRadius: BorderRadius.circular(13),
           ),
-          child: Icon(icon, size: 22, color: colorScheme.primary),
+          child: Icon(icon, size: 22, color: iconColor),
         ),
 
         const SizedBox(height: 9),
@@ -719,6 +748,8 @@ class _PersonalInformationCard extends StatelessWidget {
           icon: Icons.person_outline_rounded,
           title: 'Full Name',
           value: data.fullName.isEmpty ? 'Not set' : data.fullName,
+          iconBackground: Colors.indigo.withValues(alpha: 0.12),
+          iconColor: Colors.indigo,
           onTap: onEditProfile,
         ),
 
@@ -726,6 +757,8 @@ class _PersonalInformationCard extends StatelessWidget {
           icon: Icons.email_outlined,
           title: 'Email Address',
           value: data.email.isEmpty ? 'Not available' : data.email,
+          iconBackground: Colors.blue.withValues(alpha: 0.12),
+          iconColor: Colors.blue.shade700,
           onTap: onEditProfile,
         ),
 
@@ -735,6 +768,8 @@ class _PersonalInformationCard extends StatelessWidget {
           value: data.store.ownerPhone.isEmpty
               ? 'Not available'
               : data.store.ownerPhone,
+          iconBackground: Colors.orange.withValues(alpha: 0.12),
+          iconColor: Colors.orange.shade700,
           onTap: onEditProfile,
         ),
       ],
@@ -757,6 +792,8 @@ class _StoreInformationCard extends StatelessWidget {
           icon: Icons.storefront_outlined,
           title: 'Store Name',
           value: data.store.storeName,
+          iconBackground: Colors.deepPurple.withValues(alpha: 0.12),
+          iconColor: Colors.deepPurple,
           onTap: onEditStore,
         ),
 
@@ -764,6 +801,8 @@ class _StoreInformationCard extends StatelessWidget {
           icon: Icons.location_on_outlined,
           title: 'Store Address',
           value: data.store.storeAddress,
+          iconBackground: Colors.red.withValues(alpha: 0.12),
+          iconColor: Colors.red.shade700,
           onTap: onEditStore,
         ),
 
@@ -771,6 +810,8 @@ class _StoreInformationCard extends StatelessWidget {
           icon: Icons.business_outlined,
           title: 'Business Type',
           value: data.store.businessType,
+          iconBackground: Colors.teal.withValues(alpha: 0.12),
+          iconColor: Colors.teal.shade700,
           onTap: onEditStore,
         ),
 
@@ -778,6 +819,8 @@ class _StoreInformationCard extends StatelessWidget {
           icon: Icons.phone_outlined,
           title: 'Store Phone',
           value: data.store.ownerPhone,
+          iconBackground: Colors.orange.withValues(alpha: 0.12),
+          iconColor: Colors.orange.shade700,
           onTap: onEditStore,
         ),
 
@@ -787,6 +830,8 @@ class _StoreInformationCard extends StatelessWidget {
           value: data.store.gstNumber?.trim().isNotEmpty == true
               ? data.store.gstNumber!
               : 'Not added',
+          iconBackground: Colors.blueGrey.withValues(alpha: 0.12),
+          iconColor: Colors.blueGrey.shade700,
           onTap: onEditStore,
         ),
       ],
@@ -855,12 +900,16 @@ class _ProfileInfoRow extends StatelessWidget {
     required this.title,
     required this.value,
     this.onTap,
+    this.iconBackground,
+    this.iconColor,
   });
 
   final IconData icon;
   final String title;
   final String value;
   final VoidCallback? onTap;
+  final Color? iconBackground;
+  final Color? iconColor;
 
   @override
   Widget build(BuildContext context) {
@@ -888,10 +937,16 @@ class _ProfileInfoRow extends StatelessWidget {
                 height: 46,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: colorScheme.primaryContainer.withValues(alpha: 0.20),
+                  color:
+                      iconBackground ??
+                      colorScheme.primaryContainer.withValues(alpha: 0.20),
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: Icon(icon, size: 22, color: colorScheme.primary),
+                child: Icon(
+                  icon,
+                  size: 22,
+                  color: iconColor ?? colorScheme.primary,
+                ),
               ),
 
               const SizedBox(width: 14),
