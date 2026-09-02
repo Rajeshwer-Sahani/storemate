@@ -138,127 +138,137 @@ class _DashboardView extends StatelessWidget {
     return Scaffold(
       backgroundColor: colorScheme.surface,
       body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: provider.refreshDashboard,
-          child: CustomScrollView(
-            physics: const AlwaysScrollableScrollPhysics(
-              parent: BouncingScrollPhysics(),
+        child: Column(
+          children: [
+            // ---------------------------------------------------------------------
+            // Fixed Dashboard Header
+            // ---------------------------------------------------------------------
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
+              child: _DashboardHeader(storeName: data.storeName),
             ),
-            slivers: [
-              SliverPadding(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
-                sliver: SliverList(
-                  delegate: SliverChildListDelegate([
-                    // ---------------------------------------------------------
-                    // Header
-                    // ---------------------------------------------------------
-                    _DashboardHeader(storeName: data.storeName),
 
-                    const SizedBox(height: 24),
+            // ---------------------------------------------------------------------
+            // Scrollable Dashboard Content
+            // ---------------------------------------------------------------------
+            Expanded(
+              child: RefreshIndicator(
+                onRefresh: provider.refreshDashboard,
+                child: CustomScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(
+                    parent: BouncingScrollPhysics(),
+                  ),
+                  slivers: [
+                    SliverPadding(
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 32),
+                      sliver: SliverList(
+                        delegate: SliverChildListDelegate([
+                          // -------------------------------------------------------
+                          // Today's Sales
+                          // -------------------------------------------------------
+                          _SalesOverviewCard(
+                            todaySales: data.todaySales,
+                            todayBillCount: data.todayBillCount,
+                            yesterdaySales: data.yesterdaySales,
+                          ),
 
-                    // ---------------------------------------------------------
-                    // Today's Sales
-                    // ---------------------------------------------------------
-                    _SalesOverviewCard(
-                      todaySales: data.todaySales,
-                      todayBillCount: data.todayBillCount,
-                      yesterdaySales: data.yesterdaySales,
-                    ),
+                          const SizedBox(height: 28),
 
-                    const SizedBox(height: 28),
+                          // -------------------------------------------------------
+                          // Business Overview
+                          // -------------------------------------------------------
+                          const _SectionHeader(
+                            title: 'Business Overview',
+                            subtitle: 'Your store at a glance',
+                          ),
 
-                    // ---------------------------------------------------------
-                    // Business Overview
-                    // ---------------------------------------------------------
-                    const _SectionHeader(
-                      title: 'Business Overview',
-                      subtitle: 'Your store at a glance',
-                    ),
+                          const SizedBox(height: 14),
 
-                    const SizedBox(height: 14),
+                          _BusinessOverviewGrid(
+                            customerCount: data.customerCount,
+                            productCount: data.productCount,
+                            lowStockCount: data.lowStockCount,
+                            pendingEmiAmount: data.pendingEmiAmount,
+                          ),
 
-                    _BusinessOverviewGrid(
-                      customerCount: data.customerCount,
-                      productCount: data.productCount,
-                      lowStockCount: data.lowStockCount,
-                      pendingEmiAmount: data.pendingEmiAmount,
-                    ),
+                          const SizedBox(height: 28),
 
-                    const SizedBox(height: 28),
+                          // -------------------------------------------------------
+                          // Quick Actions
+                          // -------------------------------------------------------
+                          const _SectionHeader(
+                            title: 'Quick Actions',
+                            subtitle: 'Manage your store faster',
+                          ),
 
-                    // ---------------------------------------------------------
-                    // Quick Actions
-                    // ---------------------------------------------------------
-                    const _SectionHeader(
-                      title: 'Quick Actions',
-                      subtitle: 'Manage your store faster',
-                    ),
+                          const SizedBox(height: 14),
 
-                    const SizedBox(height: 14),
+                          const _QuickActionsGrid(),
 
-                    const _QuickActionsGrid(),
+                          const SizedBox(height: 28),
 
-                    const SizedBox(height: 28),
+                          // -------------------------------------------------------
+                          // Recent Sales
+                          // -------------------------------------------------------
+                          _SectionHeader(
+                            title: 'Recent Sales',
+                            subtitle: 'Your latest billing activity',
+                            actionLabel: 'View all',
+                            onActionPressed: onViewAllBilling,
+                          ),
 
-                    // ---------------------------------------------------------
-                    // Recent Sales
-                    // ---------------------------------------------------------
-                    _SectionHeader(
-                      title: 'Recent Sales',
-                      subtitle: 'Your latest billing activity',
-                      actionLabel: 'View all',
-                      onActionPressed: onViewAllBilling,
-                    ),
+                          const SizedBox(height: 14),
 
-                    const SizedBox(height: 14),
+                          if (data.recentSales.isEmpty)
+                            const _RecentSalesEmptyCard()
+                          else ...[
+                            _RecentSalesList(
+                              sales: data.recentSales,
+                              onInvoiceTap: (invoiceId) {
+                                _openInvoiceDetails(context, invoiceId);
+                              },
+                            ),
 
-                    if (data.recentSales.isEmpty)
-                      const _RecentSalesEmptyCard()
-                    else ...[
-                      _RecentSalesList(
-                        sales: data.recentSales,
-                        onInvoiceTap: (invoiceId) {
-                          _openInvoiceDetails(context, invoiceId);
-                        },
-                      ),
+                            const SizedBox(height: 6),
 
-                      const SizedBox(height: 6),
-
-                      Align(
-                        alignment: Alignment.center,
-                        child: Text(
-                          'Showing the 5 most recent sales',
-                          style: Theme.of(context).textTheme.bodySmall
-                              ?.copyWith(
-                                color: Theme.of(
-                                  context,
-                                ).colorScheme.onSurfaceVariant,
+                            Align(
+                              alignment: Alignment.center,
+                              child: Text(
+                                'Showing the 5 most recent sales',
+                                style: Theme.of(context).textTheme.bodySmall
+                                    ?.copyWith(
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
+                                    ),
                               ),
-                        ),
+                            ),
+                          ],
+
+                          const SizedBox(height: 28),
+
+                          // -------------------------------------------------------
+                          // Inventory Alerts
+                          // -------------------------------------------------------
+                          const _SectionHeader(
+                            title: 'Inventory Alerts',
+                            subtitle: 'Products requiring attention',
+                          ),
+
+                          const SizedBox(height: 14),
+
+                          if (data.inventoryAlerts.isEmpty)
+                            const _InventoryStatusCard()
+                          else
+                            _InventoryAlertsCard(alerts: data.inventoryAlerts),
+                        ]),
                       ),
-                    ],
-
-                    const SizedBox(height: 28),
-
-                    // ---------------------------------------------------------
-                    // Inventory Alerts
-                    // ---------------------------------------------------------
-                    const _SectionHeader(
-                      title: 'Inventory Alerts',
-                      subtitle: 'Products requiring attention',
                     ),
-
-                    const SizedBox(height: 14),
-
-                    if (data.inventoryAlerts.isEmpty)
-                      const _InventoryStatusCard()
-                    else
-                      _InventoryAlertsCard(alerts: data.inventoryAlerts),
-                  ]),
+                  ],
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
