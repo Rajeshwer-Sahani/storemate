@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 
 import 'package:storemate/features/billing/presentation/screens/billing_screen.dart';
+import 'package:storemate/features/customers/presentation/screens/add_customer_screen.dart';
 import 'package:storemate/features/customers/presentation/screens/customers_screen.dart';
 import 'package:storemate/features/dashboard/presentation/screens/dashboard_screen.dart';
+import 'package:storemate/features/emi/data/repositories/emi_repository_impl.dart';
+import 'package:storemate/features/emi/presentation/controllers/emi_controller.dart';
+import 'package:storemate/features/emi/presentation/screens/emi_plan_list_screen.dart';
+import 'package:storemate/features/inventory/presentation/screens/add_product_screen.dart';
 import 'package:storemate/features/inventory/presentation/screens/inventory_screen.dart';
 import 'package:storemate/features/more/presentation/screens/more_screen.dart';
 
@@ -29,6 +34,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         onViewAllBilling: () {
           _onDestinationSelected(2);
         },
+
+        onOpenAddProduct: _openAddProduct,
+        onOpenAddCustomer: _openAddCustomer,
+
+       onOpenEmiPlans: _openEmiPlans,
       ),
       const InventoryScreen(),
       const BillingScreen(),
@@ -42,6 +52,26 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       _selectedIndex = index;
     });
   }
+
+  void _openAddProduct() {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const AddProductScreen()));
+  }
+
+  void _openAddCustomer() {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const AddCustomerScreen()));
+  }
+
+  void _openEmiPlans() {
+  Navigator.of(context).push(
+    MaterialPageRoute(
+      builder: (_) => const _EmiPlanRoute(),
+    ),
+  );
+}
 
   @override
   Widget build(BuildContext context) {
@@ -306,5 +336,57 @@ class _QuickBillButton extends StatelessWidget {
         // ),
       ],
     );
+  }
+}
+
+
+// =============================================================================
+// EMI Plan Route
+// =============================================================================
+
+class _EmiPlanRoute extends StatefulWidget {
+  const _EmiPlanRoute();
+
+  @override
+  State<_EmiPlanRoute> createState() {
+    return _EmiPlanRouteState();
+  }
+}
+
+class _EmiPlanRouteState extends State<_EmiPlanRoute> {
+  late final EmiController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _controller = EmiController(
+      repository: EmiRepositoryImpl(),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return EmiPlanListScreen(
+      controller: _controller,
+      onCreateEmiPlan: _onCreateEmiPlan,
+      onPlanTap: _onPlanTap,
+    );
+  }
+
+  void _onCreateEmiPlan() {
+    // TODO:
+    // Navigate to Create EMI Plan screen.
+  }
+
+  void _onPlanTap(String emiPlanId) {
+    // TODO:
+    // Navigate to EMI Plan Details screen.
   }
 }

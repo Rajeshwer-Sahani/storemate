@@ -8,9 +8,18 @@ import 'package:storemate/features/dashboard/data/services/dashboard_service.dar
 import '../providers/dashboard_provider.dart';
 
 class DashboardScreen extends StatelessWidget {
-  const DashboardScreen({super.key, this.onViewAllBilling});
+  const DashboardScreen({
+    super.key,
+    this.onViewAllBilling,
+    this.onOpenAddProduct,
+    this.onOpenAddCustomer,
+    this.onOpenEmiPlans,
+  });
 
   final VoidCallback? onViewAllBilling;
+  final VoidCallback? onOpenAddProduct;
+  final VoidCallback? onOpenAddCustomer;
+  final VoidCallback? onOpenEmiPlans;
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +27,12 @@ class DashboardScreen extends StatelessWidget {
       create: (_) => DashboardProvider(
         service: DashboardService(repository: DashboardRepositoryImpl()),
       )..loadDashboard(),
-      child: _DashboardView(onViewAllBilling: onViewAllBilling),
+      child: _DashboardView(
+        onViewAllBilling: onViewAllBilling,
+        onOpenAddProduct: onOpenAddProduct,
+        onOpenAddCustomer: onOpenAddCustomer,
+        onOpenEmiPlans: onOpenEmiPlans,
+      ),
     );
   }
 }
@@ -28,9 +42,17 @@ class DashboardScreen extends StatelessWidget {
 // =============================================================================
 
 class _DashboardView extends StatelessWidget {
-  const _DashboardView({this.onViewAllBilling});
+  const _DashboardView({
+    this.onViewAllBilling,
+    this.onOpenAddProduct,
+    this.onOpenAddCustomer,
+    this.onOpenEmiPlans,
+  });
 
   final VoidCallback? onViewAllBilling;
+  final VoidCallback? onOpenAddProduct;
+  final VoidCallback? onOpenAddCustomer;
+  final VoidCallback? onOpenEmiPlans;
 
   Future<void> _openInvoiceDetails(
     BuildContext context,
@@ -203,7 +225,11 @@ class _DashboardView extends StatelessWidget {
 
                           const SizedBox(height: 14),
 
-                          const _QuickActionsGrid(),
+                          _QuickActionsGrid(
+                            onOpenAddProduct: onOpenAddProduct,
+                            onOpenAddCustomer: onOpenAddCustomer,
+                            onOpenEmiPlans: onOpenEmiPlans,
+                          ),
 
                           const SizedBox(height: 28),
 
@@ -855,7 +881,15 @@ class _OverviewCard extends StatelessWidget {
 // =============================================================================
 
 class _QuickActionsGrid extends StatelessWidget {
-  const _QuickActionsGrid();
+  const _QuickActionsGrid({
+    this.onOpenAddProduct,
+    this.onOpenAddCustomer,
+    this.onOpenEmiPlans,
+  });
+
+  final VoidCallback? onOpenAddProduct;
+  final VoidCallback? onOpenAddCustomer;
+  final VoidCallback? onOpenEmiPlans;
 
   @override
   Widget build(BuildContext context) {
@@ -877,9 +911,7 @@ class _QuickActionsGrid extends StatelessWidget {
           child: _QuickActionButton(
             icon: Icons.add_box_outlined,
             label: 'Product',
-            onTap: () {
-              // Inventory navigation will be connected later.
-            },
+            onTap: onOpenAddProduct,
           ),
         ),
 
@@ -889,9 +921,7 @@ class _QuickActionsGrid extends StatelessWidget {
           child: _QuickActionButton(
             icon: Icons.person_add_alt_1_rounded,
             label: 'Customer',
-            onTap: () {
-              // Customer navigation will be connected later.
-            },
+            onTap: onOpenAddCustomer,
           ),
         ),
 
@@ -901,9 +931,7 @@ class _QuickActionsGrid extends StatelessWidget {
           child: _QuickActionButton(
             icon: Icons.payments_outlined,
             label: 'EMI',
-            onTap: () {
-              // EMI navigation will be connected later.
-            },
+            onTap: onOpenEmiPlans,
           ),
         ),
       ],
@@ -920,7 +948,7 @@ class _QuickActionButton extends StatelessWidget {
 
   final IconData icon;
   final String label;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
