@@ -59,6 +59,12 @@ class DashboardRepositoryImpl implements DashboardRepository {
         _getActiveProducts(storeId),
         _getPendingEmiAmount(storeId),
         _getRecentSales(storeId),
+        _getTodayCollection(
+          storeId: storeId,
+          startUtc: todayStartUtc,
+          endUtc: tomorrowStartUtc,
+        ),
+        _getOutstandingDueAmount(storeId),
       ]);
 
       final todayInvoices = results[0] as List<Map<String, dynamic>>;
@@ -72,6 +78,10 @@ class DashboardRepositoryImpl implements DashboardRepository {
       final pendingEmiAmount = results[4] as double;
 
       final recentSales = results[5] as List<DashboardRecentSaleModel>;
+
+      final todayCollection = results[6] as double;
+
+      final outstandingDueAmount = results[7] as double;
 
       // -----------------------------------------------------------------------
       // Today's sales
@@ -136,12 +146,14 @@ class DashboardRepositoryImpl implements DashboardRepository {
       return DashboardDataModel(
         storeName: storeName,
         todaySales: todaySales,
+        todayCollection: todayCollection,
         todayBillCount: todayInvoices.length,
         yesterdaySales: yesterdaySales,
         customerCount: customerCount,
         productCount: activeProducts.length,
         lowStockCount: inventoryAlerts.length,
         pendingEmiAmount: pendingEmiAmount,
+        outstandingDueAmount: outstandingDueAmount,
         recentSales: recentSales,
         inventoryAlerts: inventoryAlerts,
       );
@@ -295,6 +307,110 @@ class DashboardRepositoryImpl implements DashboardRepository {
 
       if (remaining > 0) {
         total += remaining;
+      }
+    }
+
+    return total;
+  }
+
+  // ===========================================================================
+  // Today's Collection
+  // ===========================================================================
+
+  Future<double> _getTodayCollection({
+    required String storeId,
+    required String startUtc,
+    required String endUtc,
+  }) async {
+    // -------------------------------------------------------------------------
+    // Direct invoice payments
+    // -------------------------------------------------------------------------
+
+    final invoicePaymentsResponse = await _supabase
+        .from('invoice_payments')
+        .select('amount')
+        .eq('store_id', storeId)
+        .gte('created_at', startUtc)
+        .lt('created_at', endUtc);
+
+    double total = 0;
+
+    for (final row in invoicePaymentsResponse as List) {
+      final data = Map<String, dynamic>.from(row);
+
+      total += (data['amount'] as num?)?.toDouble() ?? 0;
+    }
+
+    // -------------------------------------------------------------------------
+    // EMI payments
+    //
+    // emi_payments does not have store_id directly.
+    // Store ownership comes through emi_plans.
+    // -------------------------------------------------------------------------
+
+    final emiPlansResponse = await _supabase
+        .from(_emiPlansTable)
+        .select('''
+        emi_payments (
+          amount,
+          payment_date
+        )
+      ''')
+        .eq('store_id', storeId);
+
+    for (final row in emiPlansResponse as List) {
+      final plan = Map<String, dynamic>.from(row);
+
+      final payments = (plan['emi_payments'] as List?) ?? const [];
+
+      for (final payment in payments) {
+        final paymentData = Map<String, dynamic>.from(payment);
+
+        final paymentDate = paymentData['payment_date']?.toString();
+
+        if (paymentDate == null) {
+          continue;
+        }
+
+        final parsedDate = DateTime.tryParse(paymentDate);
+
+        if (parsedDate == null) {
+          continue;
+        }
+
+        final paymentUtc = parsedDate.toUtc();
+
+        final start = DateTime.parse(startUtc);
+        final end = DateTime.parse(endUtc);
+
+        if (!paymentUtc.isBefore(start) && paymentUtc.isBefore(end)) {
+          total += (paymentData['amount'] as num?)?.toDouble() ?? 0;
+        }
+      }
+    }
+
+    return total;
+  }
+
+  // ===========================================================================
+  // Overall Outstanding Dues
+  // ===========================================================================
+
+  Future<double> _getOutstandingDueAmount(String storeId) async {
+    final response = await _supabase
+        .from(_invoicesTable)
+        .select('due_amount')
+        .eq('store_id', storeId);
+
+    double total = 0;
+
+    for (final row in response as List) {
+      final data = Map<String, dynamic>.from(row);
+
+      final dueAmount = (data['due_amount'] as num?)?.toDouble() ?? 0;
+
+      if (dueAmount > 0) {
+        total += dueAmount;
       }
     }
 

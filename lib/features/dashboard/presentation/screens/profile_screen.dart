@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:storemate/features/auth/presentation/screens/login_screen.dart';
 import 'package:storemate/features/dashboard/data/models/profile_data_model.dart';
 import 'package:storemate/features/dashboard/data/repositories/profile_repository_impl.dart';
 import 'package:storemate/features/dashboard/data/services/profile_service.dart';
 import 'package:storemate/features/dashboard/presentation/providers/profile_provider.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({
@@ -11,13 +13,11 @@ class ProfileScreen extends StatelessWidget {
     this.onEditProfile,
     this.onEditStore,
     this.onChangePassword,
-    this.onLogout,
   });
 
   final VoidCallback? onEditProfile;
   final VoidCallback? onEditStore;
   final VoidCallback? onChangePassword;
-  final VoidCallback? onLogout;
 
   @override
   Widget build(BuildContext context) {
@@ -29,7 +29,6 @@ class ProfileScreen extends StatelessWidget {
         onEditProfile: onEditProfile,
         onEditStore: onEditStore,
         onChangePassword: onChangePassword,
-        onLogout: onLogout,
       ),
     );
   }
@@ -40,13 +39,11 @@ class _ProfileView extends StatelessWidget {
     this.onEditProfile,
     this.onEditStore,
     this.onChangePassword,
-    this.onLogout,
   });
 
   final VoidCallback? onEditProfile;
   final VoidCallback? onEditStore;
   final VoidCallback? onChangePassword;
-  final VoidCallback? onLogout;
 
   @override
   Widget build(BuildContext context) {
@@ -270,7 +267,7 @@ class _ProfileView extends StatelessWidget {
               ),
               onPressed: () {
                 Navigator.of(dialogContext).pop();
-                onLogout?.call();
+                _logout(context);
               },
               child: const Text('Log Out'),
             ),
@@ -278,6 +275,35 @@ class _ProfileView extends StatelessWidget {
         );
       },
     );
+  }
+
+  // ===========================================================================
+  // Logout
+  // ===========================================================================
+
+  Future<void> _logout(BuildContext context) async {
+    try {
+      await Supabase.instance.client.auth.signOut();
+
+      if (!context.mounted) return;
+
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        (route) => false,
+      );
+    } on AuthException catch (error) {
+      if (!context.mounted) return;
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(error.message)));
+    } catch (error) {
+      if (!context.mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Unable to log out. Please try again.')),
+      );
+    }
   }
 }
 

@@ -2,12 +2,14 @@ class DashboardDataModel {
   const DashboardDataModel({
     required this.storeName,
     required this.todaySales,
+    required this.todayCollection,
     required this.todayBillCount,
     required this.yesterdaySales,
     required this.customerCount,
     required this.productCount,
     required this.lowStockCount,
     required this.pendingEmiAmount,
+    required this.outstandingDueAmount,
     required this.recentSales,
     required this.inventoryAlerts,
   });
@@ -22,8 +24,16 @@ class DashboardDataModel {
   // Sales
   // ===========================================================================
 
+  /// Net sales value of invoices created today, after returns.
   final double todaySales;
+
+  /// Amount actually collected from customers today.
+  final double todayCollection;
+
+  /// Number of invoices created today.
   final int todayBillCount;
+
+  /// Net sales value of invoices created yesterday, after returns.
   final double yesterdaySales;
 
   // ===========================================================================
@@ -33,7 +43,14 @@ class DashboardDataModel {
   final int customerCount;
   final int productCount;
   final int lowStockCount;
+
+  /// Existing pending EMI amount.
+  ///
+  /// Kept for compatibility with the current dashboard data layer.
   final double pendingEmiAmount;
+
+  /// Total amount currently outstanding from customers.
+  final double outstandingDueAmount;
 
   // ===========================================================================
   // Recent Activity

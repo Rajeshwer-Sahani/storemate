@@ -218,7 +218,7 @@ class _DashboardView extends StatelessWidget {
                             customerCount: data.customerCount,
                             productCount: data.productCount,
                             lowStockCount: data.lowStockCount,
-                            pendingEmiAmount: data.pendingEmiAmount,
+                            outstandingDueAmount: data.outstandingDueAmount,
                           ),
 
                           const SizedBox(height: 28),
@@ -472,6 +472,10 @@ class _HeaderActionButton extends StatelessWidget {
 // Today's Sales
 // =============================================================================
 
+// =============================================================================
+// Today's Sales
+// =============================================================================
+
 class _SalesOverviewCard extends StatelessWidget {
   const _SalesOverviewCard({
     required this.todaySales,
@@ -509,7 +513,7 @@ class _SalesOverviewCard extends StatelessWidget {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(22),
+      padding: const EdgeInsets.fromLTRB(22, 20, 22, 18),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           begin: Alignment.topLeft,
@@ -531,6 +535,9 @@ class _SalesOverviewCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // -------------------------------------------------------------------
+          // Header
+          // -------------------------------------------------------------------
           Row(
             children: [
               Container(
@@ -562,7 +569,7 @@ class _SalesOverviewCard extends StatelessWidget {
 
               Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 11,
+                  horizontal: 12,
                   vertical: 7,
                 ),
                 decoration: BoxDecoration(
@@ -580,18 +587,21 @@ class _SalesOverviewCard extends StatelessWidget {
             ],
           ),
 
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
 
+          // -------------------------------------------------------------------
+          // Main Sales Amount
+          // -------------------------------------------------------------------
           Text(
             _formatAmount(todaySales),
             style: theme.textTheme.displaySmall?.copyWith(
               color: colorScheme.onPrimary,
               fontWeight: FontWeight.w800,
-              letterSpacing: -1,
+              letterSpacing: -1.2,
             ),
           ),
 
-          const SizedBox(height: 7),
+          const SizedBox(height: 5),
 
           Text(
             hasSales ? 'Net sales after returns' : 'No sales recorded today',
@@ -600,36 +610,41 @@ class _SalesOverviewCard extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(height: 22),
+          const SizedBox(height: 18),
 
+          // -------------------------------------------------------------------
+          // Divider
+          // -------------------------------------------------------------------
           Divider(
             color: colorScheme.onPrimary.withValues(alpha: 0.18),
             height: 1,
           ),
 
-          const SizedBox(height: 18),
+          const SizedBox(height: 14),
 
+          // -------------------------------------------------------------------
+          // Supporting Metrics
+          // -------------------------------------------------------------------
           Row(
             children: [
               Expanded(
                 child: _SalesMetric(
                   icon: Icons.receipt_long_outlined,
                   value: todayBillCount.toString(),
-                  label: 'Total bills',
+                  label: 'Bills Today',
                 ),
               ),
 
-              Container(
-                width: 1,
-                height: 38,
-                color: colorScheme.onPrimary.withValues(alpha: 0.18),
-              ),
+              _SalesMetricDivider(),
 
               Expanded(
-                child: _SalesMetric(
-                  icon: Icons.compare_arrows_rounded,
-                  value: _formatAmount(yesterdaySales),
-                  label: 'Yesterday',
+                child: Padding(
+                  padding: const EdgeInsets.only(left: 25),
+                  child: _SalesMetric(
+                    icon: Icons.compare_arrows_rounded,
+                    value: _formatAmount(yesterdaySales),
+                    label: 'Yesterday',
+                  ),
                 ),
               ),
             ],
@@ -639,6 +654,29 @@ class _SalesOverviewCard extends StatelessWidget {
     );
   }
 }
+
+// =============================================================================
+// Sales Metric Divider
+// =============================================================================
+
+class _SalesMetricDivider extends StatelessWidget {
+  const _SalesMetricDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Container(
+      width: 1,
+      height: 58,
+      color: colorScheme.onPrimary.withValues(alpha: 0.16),
+    );
+  }
+}
+
+// =============================================================================
+// Sales Metric
+// =============================================================================
 
 class _SalesMetric extends StatelessWidget {
   const _SalesMetric({
@@ -658,25 +696,38 @@ class _SalesMetric extends StatelessWidget {
 
     return Row(
       children: [
-        Icon(
-          icon,
-          size: 21,
-          color: colorScheme.onPrimary.withValues(alpha: 0.82),
+        Container(
+          width: 36,
+          height: 36,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: colorScheme.onPrimary.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(11),
+          ),
+          child: Icon(
+            icon,
+            size: 19,
+            color: colorScheme.onPrimary.withValues(alpha: 0.88),
+          ),
         ),
 
         const SizedBox(width: 10),
 
-        Flexible(
+        Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: theme.textTheme.titleMedium?.copyWith(
                   color: colorScheme.onPrimary,
                   fontWeight: FontWeight.w700,
                 ),
               ),
+
+              const SizedBox(height: 1),
 
               Text(
                 label,
@@ -684,6 +735,7 @@ class _SalesMetric extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: colorScheme.onPrimary.withValues(alpha: 0.70),
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ],
@@ -758,13 +810,13 @@ class _BusinessOverviewGrid extends StatelessWidget {
     required this.customerCount,
     required this.productCount,
     required this.lowStockCount,
-    required this.pendingEmiAmount,
+    required this.outstandingDueAmount,
   });
 
   final int customerCount;
   final int productCount;
   final int lowStockCount;
-  final double pendingEmiAmount;
+  final double outstandingDueAmount;
 
   String _formatAmount(double amount) {
     final rounded = amount.round();
@@ -815,8 +867,8 @@ class _BusinessOverviewGrid extends StatelessWidget {
         ),
 
         _OverviewCard(
-          title: 'Pending EMI',
-          value: _formatAmount(pendingEmiAmount),
+          title: 'Outstanding Dues',
+          value: _formatAmount(outstandingDueAmount),
           icon: Icons.account_balance_wallet_outlined,
         ),
       ],
@@ -1150,7 +1202,7 @@ class _RecentSalesList extends StatelessWidget {
                       _formatAmount(sale.netAmount),
                       style: theme.textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.w800,
-                        color: colorScheme.onSurface,
+                        color: Colors.green.shade700,
                       ),
                     ),
                   ],
