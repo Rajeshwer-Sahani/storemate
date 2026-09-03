@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:storemate/core/widgets/product_icon.dart';
 import 'package:storemate/features/inventory/data/services/inventory_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -198,20 +199,11 @@ class _AdjustStockBottomSheetState extends State<AdjustStockBottomSheet> {
                 ),
                 child: Row(
                   children: [
-                    Container(
-                      width: 64,
-                      height: 64,
-                      decoration: BoxDecoration(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.primary.withValues(alpha: 0.10),
-                        borderRadius: BorderRadius.circular(18),
-                      ),
-                      child: Icon(
-                        Icons.inventory_2_outlined,
-                        color: Theme.of(context).colorScheme.primary,
-                        size: 30,
-                      ),
+                    ProductIcon(
+                      product: widget.product,
+                      size: 64,
+                      iconSize: 30,
+                      borderRadius: 18,
                     ),
 
                     const SizedBox(width: 18),

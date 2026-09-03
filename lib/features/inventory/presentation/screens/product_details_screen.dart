@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:storemate/core/widgets/product_icon.dart';
 import 'package:storemate/features/inventory/data/services/inventory_service.dart';
 import 'package:storemate/features/inventory/data/models/product_model.dart';
 import 'package:storemate/features/inventory/presentation/screens/edit_product_screen.dart';
@@ -349,19 +350,15 @@ class ProductDetailsScreen extends StatelessWidget {
               ),
               child: Column(
                 children: [
-                  Container(
-                    width: 82,
-                    height: 82,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: colorScheme.primary.withValues(alpha: 0.10),
-                      borderRadius: BorderRadius.circular(24),
-                    ),
-                    child: Icon(
-                      Icons.inventory_2_outlined,
-                      size: 40,
-                      color: colorScheme.primary,
-                    ),
+                  ProductIcon(
+                    product: {
+                      'name': product.name,
+                      'brand': product.brand,
+                      'product_categories': {'name': product.categoryName},
+                    },
+                    size: 82,
+                    iconSize: 40,
+                    borderRadius: 24,
                   ),
 
                   const SizedBox(height: 18),
@@ -489,12 +486,12 @@ class ProductDetailsScreen extends StatelessWidget {
                       width: 48,
                       height: 48,
                       decoration: BoxDecoration(
-                        color: colorScheme.primary.withValues(alpha: .10),
+                        color: Colors.indigo.withValues(alpha: 0.10),
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: Icon(
                         Icons.history_rounded,
-                        color: colorScheme.primary,
+                        color: Colors.indigo.shade600,
                       ),
                     ),
 
@@ -548,6 +545,8 @@ class ProductDetailsScreen extends StatelessWidget {
                   icon: Icons.shopping_bag_outlined,
                   label: 'Purchase price',
                   value: _formatPrice(product.purchasePrice),
+                  iconColor: Colors.green.shade600,
+                  iconBackground: Colors.green.withValues(alpha: 0.10),
                 ),
 
                 const _InformationDivider(),
@@ -556,6 +555,8 @@ class ProductDetailsScreen extends StatelessWidget {
                   icon: Icons.sell_outlined,
                   label: 'Selling price',
                   value: _formatPrice(product.sellingPrice),
+                  iconColor: Colors.orange.shade700,
+                  iconBackground: Colors.orange.withValues(alpha: 0.10),
                 ),
               ],
             ),
@@ -576,6 +577,8 @@ class ProductDetailsScreen extends StatelessWidget {
                   icon: Icons.category_outlined,
                   label: 'Category',
                   value: _displayValue(product.categoryName),
+                  iconColor: Colors.purple.shade600,
+                  iconBackground: Colors.purple.withValues(alpha: 0.10),
                 ),
 
                 const _InformationDivider(),
@@ -584,6 +587,8 @@ class ProductDetailsScreen extends StatelessWidget {
                   icon: Icons.sell_outlined,
                   label: 'Brand',
                   value: _displayValue(product.brand),
+                  iconColor: Colors.blue.shade600,
+                  iconBackground: Colors.blue.withValues(alpha: 0.10),
                 ),
 
                 const _InformationDivider(),
@@ -592,10 +597,11 @@ class ProductDetailsScreen extends StatelessWidget {
                   icon: Icons.qr_code_rounded,
                   label: 'SKU / Product code',
                   value: _displayValue(product.sku),
+                  iconColor: Colors.teal.shade600,
+                  iconBackground: Colors.teal.withValues(alpha: 0.10),
                 ),
               ],
             ),
-
             const SizedBox(height: 26),
 
             // Description
@@ -822,6 +828,8 @@ class _InformationRow extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.value,
+    this.iconColor,
+    this.iconBackground,
   });
 
   final IconData icon;
@@ -830,11 +838,20 @@ class _InformationRow extends StatelessWidget {
 
   final String value;
 
+  final Color? iconColor;
+
+  final Color? iconBackground;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
     final colorScheme = theme.colorScheme;
+
+    final resolvedIconColor = iconColor ?? colorScheme.primary;
+
+    final resolvedIconBackground =
+        iconBackground ?? colorScheme.primary.withValues(alpha: 0.09);
 
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 17),
@@ -845,10 +862,10 @@ class _InformationRow extends StatelessWidget {
             height: 42,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: colorScheme.primary.withValues(alpha: 0.09),
+              color: resolvedIconBackground,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(icon, size: 21, color: colorScheme.primary),
+            child: Icon(icon, size: 21, color: resolvedIconColor),
           ),
 
           const SizedBox(width: 14),

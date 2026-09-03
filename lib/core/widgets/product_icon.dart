@@ -46,11 +46,7 @@ class ProductIconResolver {
         ? (categoryData['name'] ?? '').toString()
         : '';
 
-    return resolveFromText(
-      name: name,
-      brand: brand,
-      category: category,
-    );
+    return resolveFromText(name: name, brand: brand, category: category);
   }
 
   static ProductIconData resolveFromText({
@@ -120,11 +116,7 @@ class ProductIconResolver {
       );
     }
 
-    if (_containsAny(searchText, [
-      'watch',
-      'smartwatch',
-      'smart watch',
-    ])) {
+    if (_containsAny(searchText, ['watch', 'smartwatch', 'smart watch'])) {
       return const ProductIconData(
         icon: Icons.watch_rounded,
         color: Color(0xFF4F46E5),
@@ -132,11 +124,7 @@ class ProductIconResolver {
       );
     }
 
-    if (_containsAny(searchText, [
-      'laptop',
-      'notebook',
-      'macbook',
-    ])) {
+    if (_containsAny(searchText, ['laptop', 'notebook', 'macbook'])) {
       return const ProductIconData(
         icon: Icons.laptop_mac_rounded,
         color: Color(0xFF9333EA),
@@ -144,10 +132,7 @@ class ProductIconResolver {
       );
     }
 
-    if (_containsAny(searchText, [
-      'tablet',
-      'ipad',
-    ])) {
+    if (_containsAny(searchText, ['tablet', 'ipad'])) {
       return const ProductIconData(
         icon: Icons.tablet_mac_rounded,
         color: Color(0xFF0891B2),
@@ -155,10 +140,7 @@ class ProductIconResolver {
       );
     }
 
-    if (_containsAny(searchText, [
-      'power bank',
-      'powerbank',
-    ])) {
+    if (_containsAny(searchText, ['power bank', 'powerbank'])) {
       return const ProductIconData(
         icon: Icons.battery_charging_full_rounded,
         color: Color(0xFF16A34A),
@@ -166,11 +148,7 @@ class ProductIconResolver {
       );
     }
 
-    if (_containsAny(searchText, [
-      'cable',
-      'usb',
-      'wire',
-    ])) {
+    if (_containsAny(searchText, ['cable', 'usb', 'wire'])) {
       return const ProductIconData(
         icon: Icons.cable_rounded,
         color: Color(0xFFCA8A04),
@@ -199,10 +177,7 @@ class ProductIconResolver {
     );
   }
 
-  static bool _containsAny(
-    String text,
-    List<String> keywords,
-  ) {
+  static bool _containsAny(String text, List<String> keywords) {
     return keywords.any(text.contains);
   }
 }
@@ -210,6 +185,11 @@ class ProductIconResolver {
 /// Reusable product icon widget.
 ///
 /// Use this widget anywhere a product needs to be visually represented.
+///
+/// The visual style automatically adapts to the current theme:
+/// - Light mode uses the predefined pastel background.
+/// - Dark mode uses a subtle dark background tinted with the
+///   product's icon color.
 class ProductIcon extends StatelessWidget {
   const ProductIcon({
     super.key,
@@ -227,6 +207,24 @@ class ProductIcon extends StatelessWidget {
 
   final double borderRadius;
 
+  Color _backgroundColor(BuildContext context, ProductIconData iconData) {
+    final theme = Theme.of(context);
+
+    if (theme.brightness == Brightness.light) {
+      return iconData.backgroundColor;
+    }
+
+    // Dark mode:
+    // Start from the current surface and add a subtle tint using
+    // the product's icon color. This keeps the icon background
+    // visually connected to the product category without creating
+    // a bright pastel block.
+    return Color.alphaBlend(
+      iconData.color.withValues(alpha: 0.14),
+      theme.colorScheme.surfaceContainerHighest,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final iconData = ProductIconResolver.resolve(product);
@@ -236,14 +234,10 @@ class ProductIcon extends StatelessWidget {
       height: size,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: iconData.backgroundColor,
+        color: _backgroundColor(context, iconData),
         borderRadius: BorderRadius.circular(borderRadius),
       ),
-      child: Icon(
-        iconData.icon,
-        color: iconData.color,
-        size: iconSize,
-      ),
+      child: Icon(iconData.icon, color: iconData.color, size: iconSize),
     );
   }
 }
