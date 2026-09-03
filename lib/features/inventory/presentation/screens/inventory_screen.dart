@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:storemate/core/widgets/product_icon.dart';
 import 'package:storemate/features/inventory/data/models/product_model.dart';
 import 'package:storemate/features/inventory/presentation/screens/manage_categories_screen.dart';
 import 'package:storemate/features/inventory/data/services/inventory_service.dart';
@@ -1225,10 +1226,6 @@ class _InventoryHeader extends StatelessWidget {
   }
 }
 
-// =============================================================================
-// Inventory Summary
-// =============================================================================
-
 class _InventorySummary extends StatelessWidget {
   const _InventorySummary({
     required this.totalProducts,
@@ -1237,9 +1234,7 @@ class _InventorySummary extends StatelessWidget {
   });
 
   final int totalProducts;
-
   final int totalStockUnits;
-
   final int lowStockProducts;
 
   @override
@@ -1251,6 +1246,7 @@ class _InventorySummary extends StatelessWidget {
             icon: Icons.inventory_2_outlined,
             value: totalProducts.toString(),
             label: 'Products',
+            iconColor: const Color(0xFF2563EB),
           ),
         ),
 
@@ -1261,6 +1257,7 @@ class _InventorySummary extends StatelessWidget {
             icon: Icons.layers_outlined,
             value: totalStockUnits.toString(),
             label: 'Stock Units',
+            iconColor: const Color(0xFF7C3AED),
           ),
         ),
 
@@ -1271,7 +1268,7 @@ class _InventorySummary extends StatelessWidget {
             icon: Icons.warning_amber_rounded,
             value: lowStockProducts.toString(),
             label: 'Low Stock',
-            isWarning: lowStockProducts > 0,
+            iconColor: const Color(0xFFDC2626),
           ),
         ),
       ],
@@ -1288,24 +1285,18 @@ class _InventorySummaryCard extends StatelessWidget {
     required this.icon,
     required this.value,
     required this.label,
-    this.isWarning = false,
+    required this.iconColor,
   });
 
   final IconData icon;
   final String value;
   final String label;
-  final bool isWarning;
+  final Color iconColor;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-
-    final iconColor = isWarning ? colorScheme.error : colorScheme.primary;
-
-    final iconBackgroundColor = isWarning
-        ? colorScheme.error.withValues(alpha: 0.10)
-        : colorScheme.primary.withValues(alpha: 0.10);
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -1322,7 +1313,7 @@ class _InventorySummaryCard extends StatelessWidget {
             height: 42,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: iconBackgroundColor,
+              color: iconColor.withValues(alpha: 0.10),
               borderRadius: BorderRadius.circular(13),
             ),
             child: Icon(icon, size: 23, color: iconColor),
@@ -1436,20 +1427,8 @@ class _ProductCard extends StatelessWidget {
           child: Row(
             children: [
               // Product icon
-              Container(
-                width: 60,
-                height: 60,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: colorScheme.primary.withValues(alpha: 0.10),
-                  borderRadius: BorderRadius.circular(17),
-                ),
-                child: Icon(
-                  Icons.inventory_2_outlined,
-                  color: colorScheme.primary,
-                  size: 29,
-                ),
-              ),
+              // Product icon
+              ProductIcon(product: product),
 
               const SizedBox(width: 14),
 
