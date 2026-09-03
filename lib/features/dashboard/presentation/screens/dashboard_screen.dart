@@ -844,7 +844,10 @@ class _BusinessOverviewGrid extends StatelessWidget {
         crossAxisCount: 2,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
-        childAspectRatio: 1.35,
+
+        // Give every card a predictable height.
+        // This prevents the Column inside the card from overflowing.
+        mainAxisExtent: 150,
       ),
       children: [
         _OverviewCard(
@@ -894,10 +897,35 @@ class _OverviewCard extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    final accentColor = isWarning ? colorScheme.error : colorScheme.primary;
+    // -------------------------------------------------------------------------
+    // Individual accent colors
+    // -------------------------------------------------------------------------
+
+    final Color accentColor;
+
+    if (isWarning) {
+      accentColor = colorScheme.error;
+    } else {
+      switch (title) {
+        case 'Customers':
+          accentColor = colorScheme.primary;
+          break;
+
+        case 'Products':
+          accentColor = Colors.deepPurple;
+          break;
+
+        case 'Outstanding Dues':
+          accentColor = Colors.teal;
+          break;
+
+        default:
+          accentColor = colorScheme.primary;
+      }
+    }
 
     return Container(
-      padding: const EdgeInsets.all(17),
+      padding: const EdgeInsets.fromLTRB(17, 16, 17, 15),
       decoration: BoxDecoration(
         color: colorScheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(20),
@@ -908,36 +936,49 @@ class _OverviewCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // -------------------------------------------------------------------
+          // Icon
+          // -------------------------------------------------------------------
           Container(
-            width: 39,
-            height: 39,
+            width: 40,
+            height: 40,
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: accentColor.withValues(alpha: 0.10),
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(14),
             ),
-            child: Icon(icon, color: accentColor, size: 21),
+            child: Icon(icon, color: accentColor, size: 23),
           ),
 
-          const Spacer(),
+          const SizedBox(height: 13),
 
+          // -------------------------------------------------------------------
+          // Value
+          // -------------------------------------------------------------------
           Text(
             value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: theme.textTheme.headlineSmall?.copyWith(
               color: colorScheme.onSurface,
               fontWeight: FontWeight.w800,
+              letterSpacing: -0.3,
             ),
           ),
 
-          const SizedBox(height: 2),
+          const SizedBox(height: 3),
 
+          // -------------------------------------------------------------------
+          // Label
+          // -------------------------------------------------------------------
           Text(
             title,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.bodySmall?.copyWith(
+            style: theme.textTheme.bodyMedium?.copyWith(
               color: colorScheme.onSurfaceVariant,
               fontWeight: FontWeight.w500,
+              letterSpacing: -0.3,
             ),
           ),
         ],
@@ -965,10 +1006,15 @@ class _QuickActionsGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
+        // ---------------------------------------------------------------------
+        // New Bill
+        // ---------------------------------------------------------------------
         Expanded(
           child: _QuickActionButton(
             icon: Icons.add_card_rounded,
             label: 'New Bill',
+            iconColor: Colors.blue.shade700,
+            iconBackground: Colors.blue.shade50,
             onTap: () {
               // Billing navigation will be connected later.
             },
@@ -977,30 +1023,45 @@ class _QuickActionsGrid extends StatelessWidget {
 
         const SizedBox(width: 10),
 
+        // ---------------------------------------------------------------------
+        // Product
+        // ---------------------------------------------------------------------
         Expanded(
           child: _QuickActionButton(
             icon: Icons.add_box_outlined,
             label: 'Product',
+            iconColor: Colors.deepPurple,
+            iconBackground: Colors.deepPurple.shade50,
             onTap: onOpenAddProduct,
           ),
         ),
 
         const SizedBox(width: 10),
 
+        // ---------------------------------------------------------------------
+        // Customer
+        // ---------------------------------------------------------------------
         Expanded(
           child: _QuickActionButton(
             icon: Icons.person_add_alt_1_rounded,
             label: 'Customer',
+            iconColor: Colors.teal.shade700,
+            iconBackground: Colors.teal.shade50,
             onTap: onOpenAddCustomer,
           ),
         ),
 
         const SizedBox(width: 10),
 
+        // ---------------------------------------------------------------------
+        // EMI
+        // ---------------------------------------------------------------------
         Expanded(
           child: _QuickActionButton(
             icon: Icons.payments_outlined,
             label: 'EMI',
+            iconColor: Colors.green.shade700,
+            iconBackground: Colors.green.shade50,
             onTap: onOpenEmiPlans,
           ),
         ),
@@ -1013,11 +1074,15 @@ class _QuickActionButton extends StatelessWidget {
   const _QuickActionButton({
     required this.icon,
     required this.label,
+    required this.iconColor,
+    required this.iconBackground,
     required this.onTap,
   });
 
   final IconData icon;
   final String label;
+  final Color iconColor;
+  final Color iconBackground;
   final VoidCallback? onTap;
 
   @override
@@ -1041,23 +1106,25 @@ class _QuickActionButton extends StatelessWidget {
           ),
           child: Column(
             children: [
+              // -----------------------------------------------------------------
+              // Colored Icon
+              // -----------------------------------------------------------------
               Container(
                 width: 42,
                 height: 42,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: colorScheme.primaryContainer,
+                  color: iconBackground,
                   borderRadius: BorderRadius.circular(13),
                 ),
-                child: Icon(
-                  icon,
-                  color: colorScheme.onPrimaryContainer,
-                  size: 22,
-                ),
+                child: Icon(icon, color: iconColor, size: 22),
               ),
 
               const SizedBox(height: 10),
 
+              // -----------------------------------------------------------------
+              // Label
+              // -----------------------------------------------------------------
               Text(
                 label,
                 maxLines: 1,
