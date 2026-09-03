@@ -1013,8 +1013,8 @@ class _QuickActionsGrid extends StatelessWidget {
           child: _QuickActionButton(
             icon: Icons.add_card_rounded,
             label: 'New Bill',
-            iconColor: Colors.blue.shade700,
-            iconBackground: Colors.blue.shade50,
+            iconColor: Colors.blue,
+            iconBackgroundColor: Colors.blue,
             onTap: () {
               // Billing navigation will be connected later.
             },
@@ -1031,7 +1031,7 @@ class _QuickActionsGrid extends StatelessWidget {
             icon: Icons.add_box_outlined,
             label: 'Product',
             iconColor: Colors.deepPurple,
-            iconBackground: Colors.deepPurple.shade50,
+            iconBackgroundColor: Colors.deepPurple,
             onTap: onOpenAddProduct,
           ),
         ),
@@ -1045,8 +1045,8 @@ class _QuickActionsGrid extends StatelessWidget {
           child: _QuickActionButton(
             icon: Icons.person_add_alt_1_rounded,
             label: 'Customer',
-            iconColor: Colors.teal.shade700,
-            iconBackground: Colors.teal.shade50,
+            iconColor: Colors.teal,
+            iconBackgroundColor: Colors.teal,
             onTap: onOpenAddCustomer,
           ),
         ),
@@ -1060,8 +1060,8 @@ class _QuickActionsGrid extends StatelessWidget {
           child: _QuickActionButton(
             icon: Icons.payments_outlined,
             label: 'EMI',
-            iconColor: Colors.green.shade700,
-            iconBackground: Colors.green.shade50,
+            iconColor: Colors.green,
+            iconBackgroundColor: Colors.green,
             onTap: onOpenEmiPlans,
           ),
         ),
@@ -1075,20 +1075,28 @@ class _QuickActionButton extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.iconColor,
-    required this.iconBackground,
+    required this.iconBackgroundColor,
     required this.onTap,
   });
 
   final IconData icon;
   final String label;
   final Color iconColor;
-  final Color iconBackground;
+  final Color iconBackgroundColor;
   final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final isDark = theme.brightness == Brightness.dark;
+
+    // Keep the action colors recognizable in both themes.
+    final resolvedIconColor = iconColor;
+
+    final resolvedIconBackground = isDark
+        ? iconBackgroundColor.withValues(alpha: 0.14)
+        : iconBackgroundColor.withValues(alpha: 0.10);
 
     return Material(
       color: colorScheme.surfaceContainerLowest,
@@ -1114,10 +1122,10 @@ class _QuickActionButton extends StatelessWidget {
                 height: 42,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: iconBackground,
+                  color: resolvedIconBackground,
                   borderRadius: BorderRadius.circular(13),
                 ),
-                child: Icon(icon, color: iconColor, size: 22),
+                child: Icon(icon, color: resolvedIconColor, size: 22),
               ),
 
               const SizedBox(height: 10),
