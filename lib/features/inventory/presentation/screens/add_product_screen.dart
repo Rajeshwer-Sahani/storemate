@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:storemate/core/widgets/product_icon.dart';
 
 import 'package:storemate/features/inventory/data/services/inventory_service.dart';
 
@@ -639,7 +640,7 @@ class _SectionTitle extends StatelessWidget {
   }
 }
 
-// -----------------------------------------------------------------------------  
+// -----------------------------------------------------------------------------
 // Category selector field
 // -----------------------------------------------------------------------------
 
@@ -741,7 +742,6 @@ class _CategorySelectorField extends StatelessWidget {
     );
   }
 }
-
 
 // -----------------------------------------------------------------------------
 // Bottom sheet to select a category
@@ -887,6 +887,10 @@ class _CategorySelectorSheet extends StatelessWidget {
 
                   final isSelected = categoryId == selectedCategoryId;
 
+                  final categoryIcon = ProductIconResolver.resolveFromText(
+                    category: categoryName,
+                  );
+
                   return Material(
                     color: isSelected
                         ? colorScheme.primary.withValues(alpha: 0.09)
@@ -914,14 +918,15 @@ class _CategorySelectorSheet extends StatelessWidget {
                               height: 44,
                               alignment: Alignment.center,
                               decoration: BoxDecoration(
-                                color: colorScheme.primary.withValues(
-                                  alpha: 0.10,
+                                color: ProductIconResolver.backgroundColor(
+                                  context,
+                                  categoryIcon,
                                 ),
                                 borderRadius: BorderRadius.circular(13),
                               ),
                               child: Icon(
-                                Icons.category_outlined,
-                                color: colorScheme.primary,
+                                categoryIcon.icon,
+                                color: categoryIcon.color,
                               ),
                             ),
 

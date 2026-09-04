@@ -25,6 +25,12 @@ class ProductIconData {
 
   final IconData icon;
   final Color color;
+
+  /// Light-mode background color.
+  ///
+  /// Do not use this directly when building UI.
+  /// Use [ProductIconResolver.backgroundColor] instead so
+  /// dark mode can be handled automatically.
   final Color backgroundColor;
 }
 
@@ -180,16 +186,39 @@ class ProductIconResolver {
   static bool _containsAny(String text, List<String> keywords) {
     return keywords.any(text.contains);
   }
+
+  // ---------------------------------------------------------------------------
+  // Theme-aware background
+  // ---------------------------------------------------------------------------
+
+  /// Returns the appropriate icon background for the current theme.
+  ///
+  /// Light mode:
+  /// Uses the predefined soft pastel background.
+  ///
+  /// Dark mode:
+  /// Uses the current theme surface with a subtle tint from the
+  /// product icon color, avoiding bright pastel blocks.
+  static Color backgroundColor(BuildContext context, ProductIconData iconData) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    if (theme.brightness == Brightness.light) {
+      return iconData.backgroundColor;
+    }
+
+    return Color.alphaBlend(
+      iconData.color.withValues(alpha: 0.14),
+      colorScheme.surfaceContainerHighest,
+    );
+  }
 }
 
 /// Reusable product icon widget.
 ///
 /// Use this widget anywhere a product needs to be visually represented.
 ///
-/// The visual style automatically adapts to the current theme:
-/// - Light mode uses the predefined pastel background.
-/// - Dark mode uses a subtle dark background tinted with the
-///   product's icon color.
+/// The visual style automatically adapts to the current theme.
 class ProductIcon extends StatelessWidget {
   const ProductIcon({
     super.key,
@@ -207,24 +236,6 @@ class ProductIcon extends StatelessWidget {
 
   final double borderRadius;
 
-  Color _backgroundColor(BuildContext context, ProductIconData iconData) {
-    final theme = Theme.of(context);
-
-    if (theme.brightness == Brightness.light) {
-      return iconData.backgroundColor;
-    }
-
-    // Dark mode:
-    // Start from the current surface and add a subtle tint using
-    // the product's icon color. This keeps the icon background
-    // visually connected to the product category without creating
-    // a bright pastel block.
-    return Color.alphaBlend(
-      iconData.color.withValues(alpha: 0.14),
-      theme.colorScheme.surfaceContainerHighest,
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final iconData = ProductIconResolver.resolve(product);
@@ -234,7 +245,7 @@ class ProductIcon extends StatelessWidget {
       height: size,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: _backgroundColor(context, iconData),
+        color: ProductIconResolver.backgroundColor(context, iconData),
         borderRadius: BorderRadius.circular(borderRadius),
       ),
       child: Icon(iconData.icon, color: iconData.color, size: iconSize),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:storemate/core/widgets/product_icon.dart';
 import 'package:storemate/features/inventory/data/services/inventory_service.dart';
 
 class ManageCategoriesScreen extends StatefulWidget {
@@ -683,6 +684,19 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
 
     final productCount = _readInteger(category['product_count']);
 
+    final iconData = ProductIconResolver.resolveFromText(
+      category: categoryName,
+    );
+
+    final theme = Theme.of(context);
+
+    final iconBackgroundColor = theme.brightness == Brightness.light
+        ? iconData.backgroundColor
+        : Color.alphaBlend(
+            iconData.color.withValues(alpha: 0.14),
+            colorScheme.surfaceContainerHighest,
+          );
+
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
@@ -695,17 +709,16 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
           Container(
             width: 58,
             height: 58,
+            alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: colorScheme.primary.withValues(alpha: 0.10),
+              color: iconBackgroundColor,
               borderRadius: BorderRadius.circular(18),
             ),
-            child: Icon(
-              Icons.category_outlined,
-              color: colorScheme.primary,
-              size: 28,
-            ),
+            child: Icon(iconData.icon, color: iconData.color, size: 28),
           ),
+
           const SizedBox(width: 16),
+
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -714,21 +727,24 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
                   categoryName,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w800,
                   ),
                 ),
+
                 const SizedBox(height: 6),
+
                 Text(
                   '$productCount '
                   '${productCount == 1 ? 'product' : 'products'}',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  style: theme.textTheme.bodyMedium?.copyWith(
                     color: colorScheme.onSurfaceVariant,
                   ),
                 ),
               ],
             ),
           ),
+
           PopupMenuButton<String>(
             tooltip: 'Category options',
             onSelected: (value) {
@@ -752,6 +768,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
                     ],
                   ),
                 ),
+
                 PopupMenuItem<String>(
                   value: 'delete',
                   child: Row(
@@ -779,7 +796,6 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
       ),
     );
   }
-
   // ---------------------------------------------------------------------------
   // Empty state
   // ---------------------------------------------------------------------------
