@@ -706,15 +706,11 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
       ),
       child: Row(
         children: [
-          Container(
-            width: 58,
-            height: 58,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: iconBackgroundColor,
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: Icon(iconData.icon, color: iconData.color, size: 28),
+          CategoryIcon(
+            categoryName: categoryName,
+            size: 58,
+            iconSize: 28,
+            borderRadius: 18,
           ),
 
           const SizedBox(width: 16),

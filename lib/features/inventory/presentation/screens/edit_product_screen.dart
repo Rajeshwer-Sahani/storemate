@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:storemate/core/widgets/product_icon.dart';
 
 import 'package:storemate/features/inventory/data/models/product_model.dart';
 import 'package:storemate/features/inventory/data/services/inventory_service.dart';
@@ -692,8 +693,8 @@ class _CategorySelectionSheet extends StatelessWidget {
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: isSelected
-                            ? colorScheme.primary.withValues(alpha: 0.08)
-                            : colorScheme.surface,
+                            ? colorScheme.primary.withValues(alpha: 0.12)
+                            : colorScheme.surfaceContainerLow,
                         borderRadius: BorderRadius.circular(18),
                         border: Border.all(
                           color: isSelected
@@ -704,20 +705,11 @@ class _CategorySelectionSheet extends StatelessWidget {
                       ),
                       child: Row(
                         children: [
-                          Container(
-                            width: 48,
-                            height: 48,
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              color: colorScheme.primary.withValues(
-                                alpha: 0.10,
-                              ),
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                            child: Icon(
-                              Icons.category_outlined,
-                              color: colorScheme.primary,
-                            ),
+                          CategoryIcon(
+                            categoryName: name,
+                            size: 48,
+                            iconSize: 24,
+                            borderRadius: 14,
                           ),
 
                           const SizedBox(width: 16),

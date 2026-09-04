@@ -252,3 +252,53 @@ class ProductIcon extends StatelessWidget {
     );
   }
 }
+
+/// Reusable category icon widget.
+///
+/// Uses the same visual language as ProductIcon and automatically
+/// adapts its background for light and dark themes.
+class CategoryIcon extends StatelessWidget {
+  const CategoryIcon({
+    super.key,
+    required this.categoryName,
+    this.size = 58,
+    this.iconSize = 28,
+    this.borderRadius = 18,
+  });
+
+  final String categoryName;
+  final double size;
+  final double iconSize;
+  final double borderRadius;
+
+  Color _backgroundColor(BuildContext context, ProductIconData iconData) {
+    final theme = Theme.of(context);
+
+    if (theme.brightness == Brightness.light) {
+      return iconData.backgroundColor;
+    }
+
+    return Color.alphaBlend(
+      iconData.color.withValues(alpha: 0.14),
+      theme.colorScheme.surfaceContainerHighest,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final iconData = ProductIconResolver.resolveFromText(
+      category: categoryName,
+    );
+
+    return Container(
+      width: size,
+      height: size,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: _backgroundColor(context, iconData),
+        borderRadius: BorderRadius.circular(borderRadius),
+      ),
+      child: Icon(iconData.icon, color: iconData.color, size: iconSize),
+    );
+  }
+}
