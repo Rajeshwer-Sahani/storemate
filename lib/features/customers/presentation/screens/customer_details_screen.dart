@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:storemate/core/widgets/app_snackbar.dart';
 import 'package:storemate/features/customers/data/models/customer_activity_model.dart';
 import 'package:storemate/features/customers/data/models/customer_summary_model.dart';
 import 'package:storemate/features/customers/presentation/screens/edit_customer_screen.dart';
 import 'package:storemate/features/customers/presentation/widgets/archive_customer_dialog.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../widgets/customer_avatar.dart';
 import '../../data/models/customer_model.dart';
 import 'package:storemate/features/customers/data/services/customer_service.dart';
@@ -42,6 +44,120 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
 
   Future<List<CustomerActivityModel>> _loadRecentActivity() {
     return _customerService.getCustomerRecentActivity(widget.customer.id);
+  }
+
+  String? _phoneNumberForContact() {
+    final phoneNumber = widget.customer.phoneNumber.trim();
+    final digitsOnly = phoneNumber.replaceAll(RegExp(r'\D'), '');
+
+    if (digitsOnly.isEmpty ||
+        !RegExp(r'^[+]?[0-9\s().-]+$').hasMatch(phoneNumber)) {
+      return null;
+    }
+
+    return phoneNumber;
+  }
+
+  Future<void> _openContactUri(
+    Uri uri, {
+    required String unavailableMessage,
+  }) async {
+    final launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+
+    if (!launched && mounted) {
+      AppSnackbar.warning(context, message: unavailableMessage);
+    }
+  }
+
+  Future<void> _callCustomer() async {
+    final phoneNumber = _phoneNumberForContact();
+
+    if (phoneNumber == null) {
+      AppSnackbar.warning(
+        context,
+        message: 'This customer does not have a valid phone number.',
+      );
+      return;
+    }
+
+    await _openContactUri(
+      Uri(scheme: 'tel', path: phoneNumber),
+      unavailableMessage: 'Unable to open the phone dialer.',
+    );
+  }
+
+  Future<void> _messageCustomer() async {
+    final phoneNumber = _phoneNumberForContact();
+
+    if (phoneNumber == null) {
+      AppSnackbar.warning(
+        context,
+        message: 'This customer does not have a valid phone number.',
+      );
+      return;
+    }
+
+    await _openContactUri(
+      Uri(scheme: 'sms', path: phoneNumber),
+      unavailableMessage: 'Unable to open the messaging app.',
+    );
+  }
+
+  Future<void> _whatsappCustomer() async {
+    final phoneNumber = _phoneNumberForContact();
+
+    if (phoneNumber == null) {
+      AppSnackbar.warning(
+        context,
+        message: 'This customer does not have a valid phone number.',
+      );
+      return;
+    }
+
+    final digitsOnly = phoneNumber.replaceAll(RegExp(r'\D'), '');
+    await _openContactUri(
+      Uri.parse('whatsapp://send?phone=$digitsOnly'),
+      unavailableMessage: 'WhatsApp is not available on this device.',
+    );
+  }
+
+  Widget _buildContactAction({
+    required BuildContext context,
+    required IconData icon,
+    required String label,
+    required VoidCallback onPressed,
+  }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Expanded(
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircleAvatar(
+                radius: 24,
+                backgroundColor: colorScheme.primaryContainer,
+                foregroundColor: colorScheme.onPrimaryContainer,
+                child: Icon(icon, size: 22),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                label,
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: colorScheme.onSurface,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildSummaryError(BuildContext context) {
@@ -323,6 +439,48 @@ class _CustomerDetailsScreenState extends State<CustomerDetailsScreen> {
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: theme.colorScheme.onSurfaceVariant,
                             ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Contact Customer',
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          _buildContactAction(
+                            context: context,
+                            icon: Icons.call_outlined,
+                            label: 'Call',
+                            onPressed: _callCustomer,
+                          ),
+                          _buildContactAction(
+                            context: context,
+                            icon: FontAwesomeIcons.whatsapp,
+                            label: 'WhatsApp',
+                            onPressed: _whatsappCustomer,
+                          ),
+                          _buildContactAction(
+                            context: context,
+                            icon: Icons.message_outlined,
+                            label: 'Message',
+                            onPressed: _messageCustomer,
                           ),
                         ],
                       ),
