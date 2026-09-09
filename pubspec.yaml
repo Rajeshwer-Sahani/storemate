@@ -76,6 +76,7 @@ flutter:
   assets:
      - assets/images/
      - assets/icons/
+     - assets/fonts/
      - assets/logos/storemate_logo.png
      - assets/logos/storemate_logo_darkmode.png
 
