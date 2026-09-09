@@ -1,3 +1,5 @@
+
+// StoreMate Codex modification test
 import 'package:flutter/material.dart';
 import 'package:storemate/app/app.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';

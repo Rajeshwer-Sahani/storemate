@@ -2,10 +2,12 @@ import 'dart:io';
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import 'package:printing/printing.dart';
 import 'package:storemate/core/widgets/app_page_scaffold.dart';
 import 'package:storemate/core/widgets/app_section_header.dart';
+import 'package:storemate/core/widgets/app_snackbar.dart';
 
 import 'package:storemate/features/billing/data/models/invoice_item_model.dart';
 import 'package:storemate/features/billing/data/models/invoice_model.dart';
@@ -870,6 +872,25 @@ class _InvoiceDetailsScreenState extends State<InvoiceDetailsScreen> {
                     fontWeight: FontWeight.w800,
                   ),
                 ),
+              ),
+
+              IconButton(
+                tooltip: 'Copy Invoice Number',
+                onPressed: () {
+                  Clipboard.setData(
+                    ClipboardData(
+                      text: _invoice!.invoiceNumber,
+                    ),
+                  );
+
+                  if (!mounted) return;
+
+                  AppSnackbar.success(
+                    context,
+                    message: 'Invoice number copied',
+                  );
+                },
+                icon: const Icon(Icons.copy_rounded, size: 20, color: Colors.white),
               ),
 
               // Container(
