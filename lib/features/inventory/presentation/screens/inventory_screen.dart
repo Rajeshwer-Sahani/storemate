@@ -153,18 +153,23 @@ class _InventoryScreenState extends State<InventoryScreen> {
                 const SizedBox(height: 16),
                 _AddProductMethodTile(
                   icon: Icons.edit_note_outlined,
+                  iconColor: Colors.blue,
                   title: 'Add Manually',
                   subtitle: 'Enter product details yourself',
                   onTap: () => Navigator.pop(sheetContext, 'manual'),
                 ),
+
                 _AddProductMethodTile(
                   icon: Icons.upload_file_outlined,
+                  iconColor: Colors.deepOrange,
                   title: 'Import Excel / CSV',
                   subtitle: 'Review products from a spreadsheet',
                   onTap: () => Navigator.pop(sheetContext, 'import'),
                 ),
+
                 _AddProductMethodTile(
                   icon: Icons.copy_all_outlined,
+                  iconColor: Colors.deepPurple,
                   title: 'Duplicate Existing Product',
                   subtitle: 'Start with an existing product',
                   onTap: () => Navigator.pop(sheetContext, 'duplicate'),
@@ -1203,12 +1208,14 @@ class _InventoryScreenState extends State<InventoryScreen> {
 class _AddProductMethodTile extends StatelessWidget {
   const _AddProductMethodTile({
     required this.icon,
+    required this.iconColor,
     required this.title,
     required this.subtitle,
     required this.onTap,
   });
 
   final IconData icon;
+  final Color iconColor;
   final String title;
   final String subtitle;
   final VoidCallback onTap;
@@ -1216,14 +1223,19 @@ class _AddProductMethodTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+
+    final iconBackground = isDark
+        ? Color.lerp(Colors.black, iconColor, 0.28)!
+        : Color.lerp(Colors.white, iconColor, 0.12)!;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
       child: ListTile(
         onTap: onTap,
         leading: CircleAvatar(
-          backgroundColor: theme.colorScheme.primaryContainer,
-          foregroundColor: theme.colorScheme.onPrimaryContainer,
+          backgroundColor: iconBackground,
+          foregroundColor: iconColor,
           child: Icon(icon),
         ),
         title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
