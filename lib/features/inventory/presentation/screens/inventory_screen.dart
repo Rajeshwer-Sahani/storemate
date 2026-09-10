@@ -6,6 +6,8 @@ import 'package:storemate/features/inventory/data/services/inventory_service.dar
 import 'package:storemate/features/inventory/presentation/screens/add_product_screen.dart';
 import 'package:storemate/features/inventory/presentation/screens/archived_products_screen.dart';
 import 'package:storemate/features/inventory/presentation/screens/product_details_screen.dart';
+import 'package:storemate/features/inventory/presentation/screens/duplicate_product_screen.dart';
+import 'package:storemate/features/inventory/presentation/screens/import_products_screen.dart';
 
 // =============================================================================
 // Inventory Filter and Sort Options
@@ -126,6 +128,87 @@ class _InventoryScreenState extends State<InventoryScreen> {
       }
 
       _showMessage('Inventory updated successfully.');
+    }
+  }
+
+  Future<void> _showAddProductMethods() async {
+    final method = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) {
+        final theme = Theme.of(sheetContext);
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Choose Method',
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _AddProductMethodTile(
+                  icon: Icons.edit_note_outlined,
+                  title: 'Add Manually',
+                  subtitle: 'Enter product details yourself',
+                  onTap: () => Navigator.pop(sheetContext, 'manual'),
+                ),
+                _AddProductMethodTile(
+                  icon: Icons.upload_file_outlined,
+                  title: 'Import Excel / CSV',
+                  subtitle: 'Review products from a spreadsheet',
+                  onTap: () => Navigator.pop(sheetContext, 'import'),
+                ),
+                _AddProductMethodTile(
+                  icon: Icons.copy_all_outlined,
+                  title: 'Duplicate Existing Product',
+                  subtitle: 'Start with an existing product',
+                  onTap: () => Navigator.pop(sheetContext, 'duplicate'),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (!mounted || method == null) return;
+
+    switch (method) {
+      case 'manual':
+        await _openAddProductScreen();
+        break;
+      case 'import':
+        final imported = await Navigator.of(context).push<bool>(
+          MaterialPageRoute(builder: (_) => const ImportProductsScreen()),
+        );
+        if (imported == true && mounted) {
+          await _loadProducts(showLoadingIndicator: false);
+          if (mounted) _showMessage('Products imported successfully.');
+        }
+        break;
+      case 'duplicate':
+        final product = await Navigator.of(context).push<ProductModel>(
+          MaterialPageRoute(
+            builder: (_) => DuplicateProductScreen(
+              products: _products.map(ProductModel.fromJson).toList(),
+            ),
+          ),
+        );
+        if (product == null || !mounted) return;
+        final duplicated = await Navigator.of(context).push<bool>(
+          MaterialPageRoute(
+            builder: (_) => AddProductScreen(initialProduct: product),
+          ),
+        );
+        if (duplicated == true) {
+          await _loadProducts(showLoadingIndicator: false);
+        }
+        break;
     }
   }
 
@@ -443,7 +526,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
           child: Column(
             children: [
               _InventoryHeader(
-                onAddProduct: _openAddProductScreen,
+                onAddProduct: _showAddProductMethods,
                 onOpenArchivedProducts: _openArchivedProductsScreen,
                 onOpenManageCategories: _openManageCategoriesScreen,
               ),
@@ -470,7 +553,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
     if (_products.isEmpty) {
       return _EmptyInventoryState(
-        onAddProduct: _openAddProductScreen,
+        onAddProduct: _showAddProductMethods,
         onRefresh: () {
           return _loadProducts(showLoadingIndicator: false);
         },
@@ -1117,6 +1200,40 @@ class _InventoryScreenState extends State<InventoryScreen> {
 }
 
 // =============================================================================
+class _AddProductMethodTile extends StatelessWidget {
+  const _AddProductMethodTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 10),
+      child: ListTile(
+        onTap: onTap,
+        leading: CircleAvatar(
+          backgroundColor: theme.colorScheme.primaryContainer,
+          foregroundColor: theme.colorScheme.onPrimaryContainer,
+          child: Icon(icon),
+        ),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
+        subtitle: Text(subtitle),
+        trailing: const Icon(Icons.chevron_right_rounded),
+      ),
+    );
+  }
+}
+
 // Inventory Header
 // =============================================================================
 

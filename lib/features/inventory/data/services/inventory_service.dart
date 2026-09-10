@@ -231,6 +231,36 @@ class InventoryService {
     });
   }
 
+  Future<void> addProducts(List<Map<String, dynamic>> products) async {
+    if (products.isEmpty) {
+      throw ArgumentError('At least one product is required.');
+    }
+
+    final storeId = await getCurrentStoreId();
+
+    await _supabase
+        .from('products')
+        .insert(
+          products.map((product) {
+            return {
+              'store_id': storeId,
+              'category_id': product['category_id'],
+              'name': (product['name'] as String).trim(),
+              'brand': _emptyStringToNull(product['brand'] as String?),
+              'sku': _emptyStringToNull(product['sku'] as String?),
+              'purchase_price': product['purchase_price'],
+              'selling_price': product['selling_price'],
+              'stock_quantity': product['stock_quantity'],
+              'low_stock_threshold': product['low_stock_threshold'],
+              'description': _emptyStringToNull(
+                product['description'] as String?,
+              ),
+              'is_active': true,
+            };
+          }).toList(),
+        );
+  }
+
   // ---------------------------------------------------------------------------
   // Update an existing product belonging to the current store
   // ---------------------------------------------------------------------------

@@ -3,9 +3,12 @@ import 'package:flutter/services.dart';
 import 'package:storemate/core/widgets/product_icon.dart';
 
 import 'package:storemate/features/inventory/data/services/inventory_service.dart';
+import 'package:storemate/features/inventory/data/models/product_model.dart';
 
 class AddProductScreen extends StatefulWidget {
-  const AddProductScreen({super.key});
+  const AddProductScreen({super.key, this.initialProduct});
+
+  final ProductModel? initialProduct;
 
   @override
   State<AddProductScreen> createState() {
@@ -18,25 +21,21 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
   final InventoryService _inventoryService = InventoryService();
 
-  final TextEditingController _productNameController = TextEditingController();
+  late final TextEditingController _productNameController;
 
-  final TextEditingController _brandController = TextEditingController();
+  late final TextEditingController _brandController;
 
-  final TextEditingController _skuController = TextEditingController();
+  late final TextEditingController _skuController;
 
-  final TextEditingController _purchasePriceController =
-      TextEditingController();
+  late final TextEditingController _purchasePriceController;
 
-  final TextEditingController _sellingPriceController = TextEditingController();
+  late final TextEditingController _sellingPriceController;
 
-  final TextEditingController _stockQuantityController = TextEditingController(
-    text: '0',
-  );
+  late final TextEditingController _stockQuantityController;
 
-  final TextEditingController _lowStockThresholdController =
-      TextEditingController(text: '5');
+  late final TextEditingController _lowStockThresholdController;
 
-  final TextEditingController _descriptionController = TextEditingController();
+  late final TextEditingController _descriptionController;
 
   List<Map<String, dynamic>> _categories = [];
 
@@ -68,7 +67,34 @@ class _AddProductScreenState extends State<AddProductScreen> {
   void initState() {
     super.initState();
 
+    final product = widget.initialProduct;
+    _productNameController = TextEditingController(text: product?.name ?? '');
+    _brandController = TextEditingController(text: product?.brand ?? '');
+    _skuController = TextEditingController(text: product?.sku ?? '');
+    _purchasePriceController = TextEditingController(
+      text: product == null ? '' : _numberText(product.purchasePrice),
+    );
+    _sellingPriceController = TextEditingController(
+      text: product == null ? '' : _numberText(product.sellingPrice),
+    );
+    _stockQuantityController = TextEditingController(
+      text: product?.stockQuantity.toString() ?? '0',
+    );
+    _lowStockThresholdController = TextEditingController(
+      text: product?.lowStockThreshold.toString() ?? '5',
+    );
+    _descriptionController = TextEditingController(
+      text: product?.description ?? '',
+    );
+    _selectedCategoryId = product?.categoryId;
+
     _loadCategories();
+  }
+
+  String _numberText(double value) {
+    return value == value.roundToDouble()
+        ? value.toInt().toString()
+        : value.toString();
   }
 
   @override
@@ -337,7 +363,12 @@ class _AddProductScreenState extends State<AddProductScreen> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Add Product'), centerTitle: false),
+      appBar: AppBar(
+        title: Text(
+          widget.initialProduct == null ? 'Add Product' : 'Duplicate Product',
+        ),
+        centerTitle: false,
+      ),
       body: SafeArea(
         top: false,
         child: GestureDetector(
