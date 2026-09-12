@@ -37,26 +37,43 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
     final barcode = await showDialog<String>(
       context: context,
       builder: (dialogContext) {
-        return AlertDialog(
-          title: const Text('Enter Barcode'),
-          content: TextField(
-            controller: _manualController,
-            autofocus: true,
-            keyboardType: TextInputType.number,
-            decoration: const InputDecoration(hintText: 'Barcode number'),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(),
-              child: const Text('Cancel'),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(
-                dialogContext,
-              ).pop(_manualController.text.trim()),
-              child: const Text('Continue'),
-            ),
-          ],
+        String? validationMessage;
+
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: const Text('Enter Barcode'),
+              content: TextField(
+                controller: _manualController,
+                autofocus: true,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  hintText: 'Barcode number',
+                  errorText: validationMessage,
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: () {
+                    final value = _manualController.text.trim();
+                    if (value.isEmpty) {
+                      setDialogState(
+                        () =>
+                            validationMessage = 'Enter a barcode to continue.',
+                      );
+                      return;
+                    }
+                    Navigator.of(dialogContext).pop(value);
+                  },
+                  child: const Text('Continue'),
+                ),
+              ],
+            );
+          },
         );
       },
     );
@@ -66,6 +83,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
       _detectedBarcode = barcode;
       _errorMessage = null;
     });
+    await _continueWithBarcode();
   }
 
   Future<void> _continueWithBarcode() async {
@@ -80,6 +98,7 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
     });
 
     try {
+      await _controller.stop();
       final existing = await _inventoryService.findProductByBarcode(barcode);
       if (!mounted || _disposed) return;
 
@@ -114,6 +133,9 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
             ),
           );
         }
+        if (mounted && !_disposed) {
+          await _resumeScanner();
+        }
       } else {
         final external = await _inventoryService.lookupExternalBarcode(barcode);
         if (!mounted || _disposed) return;
@@ -145,6 +167,8 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
 
         if (added == true && mounted && !_disposed) {
           Navigator.of(context).pop(true);
+        } else if (mounted && !_disposed) {
+          await _resumeScanner();
         }
       }
     } catch (_) {
@@ -153,10 +177,29 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
           _errorMessage =
               'Unable to look up this barcode. Try again or enter it manually.';
         });
+        await _resumeScanner();
       }
     } finally {
       if (mounted && !_disposed) {
-        setState(() => _isProcessing = false);
+        setState(() {
+          _isProcessing = false;
+          _detectedBarcode = null;
+        });
+      }
+    }
+  }
+
+  Future<void> _resumeScanner() async {
+    if (!mounted || _disposed) return;
+
+    try {
+      await _controller.start();
+    } catch (_) {
+      if (mounted && !_disposed) {
+        setState(() {
+          _errorMessage =
+              'Camera is unavailable. You can enter the barcode manually.';
+        });
       }
     }
   }
@@ -209,6 +252,13 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
                               if (barcode.isNotEmpty &&
                                   _detectedBarcode == null) {
                                 setState(() => _detectedBarcode = barcode);
+                                WidgetsBinding.instance.addPostFrameCallback((
+                                  _,
+                                ) {
+                                  if (mounted && !_disposed) {
+                                    _continueWithBarcode();
+                                  }
+                                });
                               }
                             },
                             onDetectError: (error, _) {
