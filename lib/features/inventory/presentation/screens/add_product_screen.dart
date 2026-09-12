@@ -26,6 +26,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
   late final TextEditingController _brandController;
 
   late final TextEditingController _skuController;
+  late final TextEditingController _barcodeController;
 
   late final TextEditingController _purchasePriceController;
 
@@ -71,6 +72,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
     _productNameController = TextEditingController(text: product?.name ?? '');
     _brandController = TextEditingController(text: product?.brand ?? '');
     _skuController = TextEditingController(text: product?.sku ?? '');
+    _barcodeController = TextEditingController(text: product?.barcode ?? '');
     _purchasePriceController = TextEditingController(
       text: product == null ? '' : _numberText(product.purchasePrice),
     );
@@ -102,6 +104,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
     _productNameController.dispose();
     _brandController.dispose();
     _skuController.dispose();
+    _barcodeController.dispose();
     _purchasePriceController.dispose();
     _sellingPriceController.dispose();
     _stockQuantityController.dispose();
@@ -257,6 +260,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
         categoryId: _selectedCategoryId,
         brand: _brandController.text,
         sku: _skuController.text,
+        barcode: _barcodeController.text,
         purchasePrice: double.parse(_purchasePriceController.text.trim()),
         sellingPrice: double.parse(_sellingPriceController.text.trim()),
         stockQuantity: int.parse(_stockQuantityController.text.trim()),
@@ -453,6 +457,19 @@ class _AddProductScreenState extends State<AddProductScreen> {
                     labelText: 'SKU / Product code (optional)',
                     hintText: 'Example: SAM-S25-128',
                     prefixIcon: Icon(Icons.qr_code_rounded),
+                  ),
+                ),
+
+                const SizedBox(height: 18),
+
+                TextFormField(
+                  controller: _barcodeController,
+                  enabled: !_isSavingProduct,
+                  keyboardType: TextInputType.number,
+                  textInputAction: TextInputAction.next,
+                  decoration: const InputDecoration(
+                    labelText: 'Barcode (optional)',
+                    prefixIcon: Icon(Icons.qr_code_2_outlined),
                   ),
                 ),
 
