@@ -8,7 +8,7 @@ import 'package:storemate/features/inventory/presentation/screens/archived_produ
 import 'package:storemate/features/inventory/presentation/screens/product_details_screen.dart';
 import 'package:storemate/features/inventory/presentation/screens/duplicate_product_screen.dart';
 import 'package:storemate/features/inventory/presentation/screens/import_products_screen.dart';
-import 'package:storemate/features/inventory/presentation/screens/barcode_scanner_screen.dart';
+
 
 // =============================================================================
 // Inventory Filter and Sort Options
@@ -160,13 +160,6 @@ class _InventoryScreenState extends State<InventoryScreen> {
                   subtitle: 'Enter product details yourself',
                   onTap: () => Navigator.pop(sheetContext, 'manual'),
                 ),
-                _AddProductMethodTile(
-                  icon: Icons.qr_code_scanner_rounded,
-                  iconColor: Colors.teal,
-                  title: 'Scan Barcode',
-                  subtitle: 'Scan a barcode to quickly add a product',
-                  onTap: () => Navigator.pop(sheetContext, 'scan'),
-                ),
 
                 _AddProductMethodTile(
                   icon: Icons.upload_file_outlined,
@@ -221,15 +214,6 @@ class _InventoryScreenState extends State<InventoryScreen> {
         );
         if (duplicated == true) {
           await _loadProducts(showLoadingIndicator: false);
-        }
-        break;
-      case 'scan':
-        final added = await Navigator.of(context).push<bool>(
-          MaterialPageRoute(builder: (_) => const BarcodeScannerScreen()),
-        );
-        if (added == true && mounted) {
-          await _loadProducts(showLoadingIndicator: false);
-          if (mounted) _showMessage('Product added successfully.');
         }
         break;
     }

@@ -1,6 +1,4 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
 
 class InventoryService {
   InventoryService({SupabaseClient? supabaseClient})
@@ -210,7 +208,6 @@ class InventoryService {
     String? categoryId,
     String? brand,
     String? sku,
-    String? barcode,
     required double purchasePrice,
     required double sellingPrice,
     required int stockQuantity,
@@ -232,42 +229,6 @@ class InventoryService {
       'description': _emptyStringToNull(description),
       'is_active': true,
     });
-  }
-
-  Future<Map<String, dynamic>?> findProductByBarcode(String barcode) async {
-    final storeId = await getCurrentStoreId();
-    final result = await _supabase
-        .from('products')
-        .select('''
-        id, store_id, category_id, name, brand, sku, barcode,
-        purchase_price, selling_price, stock_quantity, low_stock_threshold,
-        description, is_active, created_at, updated_at,
-        product_categories (id, name)
-        ''')
-        .eq('store_id', storeId)
-        .eq('barcode', barcode.trim())
-        .eq('is_active', true)
-        .maybeSingle();
-    return result;
-  }
-
-  Future<Map<String, dynamic>?> lookupExternalBarcode(String barcode) async {
-    final response = await http.get(
-      Uri.parse('https://world.openfoodfacts.org/api/v2/product/$barcode.json'),
-      headers: {'User-Agent': 'StoreMate/1.0'},
-    );
-    if (response.statusCode != 200) return null;
-    final data = jsonDecode(response.body);
-    if (data is! Map || data['status'] != 1 || data['product'] is! Map) {
-      return null;
-    }
-    final product = Map<String, dynamic>.from(data['product'] as Map);
-    return {
-      'name': product['product_name']?.toString(),
-      'brand': product['brands']?.toString(),
-      'description': product['generic_name']?.toString(),
-      'barcode': barcode,
-    };
   }
 
   Future<void> addProducts(List<Map<String, dynamic>> products) async {
