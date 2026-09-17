@@ -8,6 +8,7 @@ class ProductModel {
     this.brand,
     this.sku,
     this.barcode,
+    this.trackingMode = 'quantity',
     required this.purchasePrice,
     required this.sellingPrice,
     required this.stockQuantity,
@@ -28,6 +29,8 @@ class ProductModel {
   final String? brand;
   final String? sku;
   final String? barcode;
+  final String trackingMode;
+
   final double purchasePrice;
   final double sellingPrice;
 
@@ -71,6 +74,8 @@ class ProductModel {
 
       barcode: json['barcode']?.toString(),
 
+      trackingMode: json['tracking_mode']?.toString() ?? 'quantity',
+
       purchasePrice: (json['purchase_price'] as num?)?.toDouble() ?? 0.0,
 
       sellingPrice: (json['selling_price'] as num?)?.toDouble() ?? 0.0,
@@ -106,6 +111,7 @@ class ProductModel {
       'brand': brand,
       'sku': sku,
       'barcode': barcode,
+      'tracking_mode': trackingMode,
       'purchase_price': purchasePrice,
       'selling_price': sellingPrice,
       'stock_quantity': stockQuantity,

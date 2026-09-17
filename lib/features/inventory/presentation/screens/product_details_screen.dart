@@ -255,6 +255,256 @@ class ProductDetailsScreen extends StatelessWidget {
     }
   }
 
+  Future<void> _showEnableDeviceTrackingConfirmation(
+    BuildContext context,
+  ) async {
+    final shouldEnable = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (bottomSheetContext) {
+        final theme = Theme.of(bottomSheetContext);
+        final colorScheme = theme.colorScheme;
+
+        return Container(
+          padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 44,
+                height: 5,
+                decoration: BoxDecoration(
+                  color: colorScheme.outlineVariant,
+                  borderRadius: BorderRadius.circular(100),
+                ),
+              ),
+
+              const SizedBox(height: 28),
+
+              Container(
+                width: 72,
+                height: 72,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: colorScheme.primary.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(22),
+                ),
+                child: Icon(
+                  Icons.devices_other_rounded,
+                  color: colorScheme.primary,
+                  size: 34,
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              Text(
+                'Enable Device Tracking?',
+                textAlign: TextAlign.center,
+                style: theme.textTheme.headlineSmall?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+
+              const SizedBox(height: 10),
+
+              Text(
+                'This will allow you to track individual physical '
+                'units of ${product.name} using IMEI or serial numbers.',
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodyLarge?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                  height: 1.5,
+                ),
+              ),
+
+              const SizedBox(height: 12),
+
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      Icons.info_outline_rounded,
+                      size: 20,
+                      color: colorScheme.primary,
+                    ),
+
+                    const SizedBox(width: 10),
+
+                    Expanded(
+                      child: Text(
+                        'Your current stock quantity will not change, '
+                        'and no device records will be created automatically.',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                          height: 1.45,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const SizedBox(height: 28),
+
+              Row(
+                children: [
+                  Expanded(
+                    child: SizedBox(
+                      height: 50,
+                      child: OutlinedButton(
+                        onPressed: () {
+                          Navigator.of(bottomSheetContext).pop(false);
+                        },
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: colorScheme.primary,
+                          side: BorderSide(
+                            color: colorScheme.primary,
+                            width: 1.5,
+                          ),
+                          padding: EdgeInsets.zero,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                        ),
+                        child: const Text(
+                          'Cancel',
+                          style: TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(width: 12),
+
+                  Expanded(
+                    child: SizedBox(
+                      height: 50,
+                      child: FilledButton(
+                        onPressed: () {
+                          Navigator.of(bottomSheetContext).pop(true);
+                        },
+                        style: FilledButton.styleFrom(
+                          padding: EdgeInsets.zero,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                        ),
+                        child: const Text(
+                          'Enable Tracking',
+                          style: TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+
+    if (shouldEnable != true || !context.mounted) {
+      return;
+    }
+
+    await _enableDeviceTracking(context);
+  }
+
+  Future<void> _enableDeviceTracking(BuildContext context) async {
+    try {
+      await _inventoryService.enableDeviceTracking(productId: product.id);
+
+      if (!context.mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: const Row(
+              children: [
+                Icon(
+                  Icons.check_circle_outline_rounded,
+                  color: Colors.white,
+                  size: 21,
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Device tracking has been enabled.',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+          ),
+        );
+
+      // Tell InventoryScreen that the product changed.
+      Navigator.of(context).pop(true);
+    } catch (error) {
+      if (!context.mounted) {
+        return;
+      }
+
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: const Row(
+              children: [
+                Icon(
+                  Icons.error_outline_rounded,
+                  color: Colors.white,
+                  size: 21,
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Unable to enable device tracking. Please try again.',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Theme.of(context).colorScheme.error,
+            behavior: SnackBarBehavior.floating,
+            margin: const EdgeInsets.all(16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+          ),
+        );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -532,21 +782,27 @@ class ProductDetailsScreen extends StatelessWidget {
 
             const SizedBox(height: 16),
 
-            // Manage devices
+            // Device tracking
             InkWell(
               borderRadius: BorderRadius.circular(20),
               onTap: () async {
-                final result = await Navigator.of(context).push<bool>(
-                  MaterialPageRoute(
-                    builder: (_) {
-                      return ManageDevicesScreen(product: product);
-                    },
-                  ),
-                );
+                if (product.trackingMode == 'device') {
+                  final result = await Navigator.of(context).push<bool>(
+                    MaterialPageRoute(
+                      builder: (_) {
+                        return ManageDevicesScreen(product: product);
+                      },
+                    ),
+                  );
 
-                if (result == true && context.mounted) {
-                  Navigator.of(context).pop(true);
+                  if (result == true && context.mounted) {
+                    Navigator.of(context).pop(true);
+                  }
+
+                  return;
                 }
+
+                await _showEnableDeviceTrackingConfirmation(context);
               },
               child: Container(
                 padding: const EdgeInsets.all(18),
@@ -565,7 +821,9 @@ class ProductDetailsScreen extends StatelessWidget {
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: Icon(
-                        Icons.devices_other_rounded,
+                        product.trackingMode == 'device'
+                            ? Icons.devices_other_rounded
+                            : Icons.phonelink_setup_rounded,
                         color: colorScheme.primary,
                       ),
                     ),
@@ -577,7 +835,9 @@ class ProductDetailsScreen extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Manage Devices',
+                            product.trackingMode == 'device'
+                                ? 'Manage Devices'
+                                : 'Device Tracking',
                             style: theme.textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.w700,
                             ),
@@ -586,17 +846,24 @@ class ProductDetailsScreen extends StatelessWidget {
                           const SizedBox(height: 4),
 
                           Text(
-                            'Manage IMEI and serial numbers',
+                            product.trackingMode == 'device'
+                                ? 'Manage IMEI and serial numbers'
+                                : 'Track individual devices using IMEI or serial numbers',
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: colorScheme.onSurfaceVariant,
+                              height: 1.4,
                             ),
                           ),
                         ],
                       ),
                     ),
 
+                    const SizedBox(width: 12),
+
                     Icon(
-                      Icons.chevron_right_rounded,
+                      product.trackingMode == 'device'
+                          ? Icons.chevron_right_rounded
+                          : Icons.arrow_forward_rounded,
                       color: colorScheme.onSurfaceVariant,
                     ),
                   ],

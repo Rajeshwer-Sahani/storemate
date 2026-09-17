@@ -329,6 +329,55 @@ class InventoryService {
   }
 
   // ---------------------------------------------------------------------------
+  // Enable device tracking for a product
+  // ---------------------------------------------------------------------------
+
+  Future<void> enableDeviceTracking({required String productId}) async {
+    final storeId = await getCurrentStoreId();
+
+    final trimmedProductId = productId.trim();
+
+    if (trimmedProductId.isEmpty) {
+      throw ArgumentError('A valid product ID is required.');
+    }
+
+    // Verify that the product belongs to the current store and is active.
+    final product = await _supabase
+        .from('products')
+        .select('id, tracking_mode')
+        .eq('id', trimmedProductId)
+        .eq('store_id', storeId)
+        .eq('is_active', true)
+        .maybeSingle();
+
+    if (product == null) {
+      throw Exception(
+        'This product was not found or does not belong to your store.',
+      );
+    }
+
+    final currentTrackingMode =
+        product['tracking_mode']?.toString() ?? 'quantity';
+
+    // Device tracking is already enabled.
+    if (currentTrackingMode == 'device') {
+      return;
+    }
+
+    // Only allow the safe transition for now.
+    if (currentTrackingMode != 'quantity') {
+      throw Exception('This product has an unsupported tracking mode.');
+    }
+
+    await _supabase
+        .from('products')
+        .update({'tracking_mode': 'device'})
+        .eq('id', trimmedProductId)
+        .eq('store_id', storeId)
+        .eq('is_active', true);
+  }
+
+  // ---------------------------------------------------------------------------
   // Archive a product belonging to the logged-in owner's store
   // ---------------------------------------------------------------------------
 
@@ -366,6 +415,7 @@ class InventoryService {
         brand,
         sku,
         barcode,
+        tracking_mode,
         purchase_price,
         selling_price,
         stock_quantity,
@@ -498,6 +548,7 @@ class InventoryService {
         brand,
         sku,
         barcode,
+        tracking_mode,
         purchase_price,
         selling_price,
         stock_quantity,
