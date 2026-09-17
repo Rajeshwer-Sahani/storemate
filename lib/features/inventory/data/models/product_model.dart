@@ -7,6 +7,7 @@ class ProductModel {
     required this.name,
     this.brand,
     this.sku,
+    this.barcode,
     required this.purchasePrice,
     required this.sellingPrice,
     required this.stockQuantity,
@@ -26,7 +27,7 @@ class ProductModel {
   final String name;
   final String? brand;
   final String? sku;
-
+  final String? barcode;
   final double purchasePrice;
   final double sellingPrice;
 
@@ -68,6 +69,8 @@ class ProductModel {
 
       sku: json['sku']?.toString(),
 
+      barcode: json['barcode']?.toString(),
+
       purchasePrice: (json['purchase_price'] as num?)?.toDouble() ?? 0.0,
 
       sellingPrice: (json['selling_price'] as num?)?.toDouble() ?? 0.0,
@@ -102,6 +105,7 @@ class ProductModel {
       'name': name,
       'brand': brand,
       'sku': sku,
+      'barcode': barcode,
       'purchase_price': purchasePrice,
       'selling_price': sellingPrice,
       'stock_quantity': stockQuantity,
