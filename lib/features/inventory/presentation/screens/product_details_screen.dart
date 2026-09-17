@@ -600,8 +600,19 @@ class ProductDetailsScreen extends StatelessWidget {
                   iconColor: Colors.teal.shade600,
                   iconBackground: Colors.teal.withValues(alpha: 0.10),
                 ),
+
+                const _InformationDivider(),
+
+                _InformationRow(
+                  icon: Icons.qr_code_2_rounded,
+                  label: 'Barcode',
+                  value: _displayValue(product.barcode),
+                  iconColor: Colors.indigo.shade600,
+                  iconBackground: Colors.indigo.withValues(alpha: 0.10),
+                ),
               ],
             ),
+
             const SizedBox(height: 26),
 
             // Description
