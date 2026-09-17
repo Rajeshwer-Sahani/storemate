@@ -3,6 +3,7 @@ import 'package:storemate/core/widgets/product_icon.dart';
 import 'package:storemate/features/inventory/data/services/inventory_service.dart';
 import 'package:storemate/features/inventory/data/models/product_model.dart';
 import 'package:storemate/features/inventory/presentation/screens/edit_product_screen.dart';
+import 'package:storemate/features/inventory/presentation/screens/manage_devices_screen.dart';
 import 'package:storemate/features/inventory/presentation/widgets/adjust_stock_bottom_sheet.dart';
 import 'package:storemate/features/inventory/presentation/screens/stock_history_screen.dart';
 
@@ -512,6 +513,80 @@ class ProductDetailsScreen extends StatelessWidget {
 
                           Text(
                             'View every stock adjustment',
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // Manage devices
+            InkWell(
+              borderRadius: BorderRadius.circular(20),
+              onTap: () async {
+                final result = await Navigator.of(context).push<bool>(
+                  MaterialPageRoute(
+                    builder: (_) {
+                      return ManageDevicesScreen(product: product);
+                    },
+                  ),
+                );
+
+                if (result == true && context.mounted) {
+                  Navigator.of(context).pop(true);
+                }
+              },
+              child: Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: colorScheme.surface,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: colorScheme.outlineVariant),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        color: colorScheme.primary.withValues(alpha: 0.10),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Icon(
+                        Icons.devices_other_rounded,
+                        color: colorScheme.primary,
+                      ),
+                    ),
+
+                    const SizedBox(width: 16),
+
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Manage Devices',
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+
+                          const SizedBox(height: 4),
+
+                          Text(
+                            'Manage IMEI and serial numbers',
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: colorScheme.onSurfaceVariant,
                             ),
