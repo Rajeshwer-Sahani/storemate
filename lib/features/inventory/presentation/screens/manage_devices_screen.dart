@@ -3,12 +3,10 @@ import 'package:storemate/features/inventory/data/models/product_model.dart';
 import 'package:storemate/features/inventory/data/models/product_unit_model.dart';
 import 'package:storemate/features/inventory/data/services/product_unit_service.dart';
 import 'package:storemate/features/inventory/presentation/screens/add_product_unit_screen.dart';
+import 'package:storemate/features/inventory/presentation/screens/device_details_screen.dart';
 
 class ManageDevicesScreen extends StatefulWidget {
-  const ManageDevicesScreen({
-    required this.product,
-    super.key,
-  });
+  const ManageDevicesScreen({required this.product, super.key});
 
   final ProductModel product;
 
@@ -56,8 +54,7 @@ class _ManageDevicesScreenState extends State<ManageDevicesScreen> {
 
       setState(() {
         _isLoading = false;
-        _errorMessage =
-            'Unable to load devices. Please try again.';
+        _errorMessage = 'Unable to load devices. Please try again.';
       });
     }
   }
@@ -66,9 +63,7 @@ class _ManageDevicesScreenState extends State<ManageDevicesScreen> {
     final wasAdded = await Navigator.of(context).push<bool>(
       MaterialPageRoute(
         builder: (_) {
-          return AddProductUnitScreen(
-            product: widget.product,
-          );
+          return AddProductUnitScreen(product: widget.product);
         },
       ),
     );
@@ -88,19 +83,12 @@ class _ManageDevicesScreenState extends State<ManageDevicesScreen> {
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Manage Devices'),
-        centerTitle: false,
-      ),
+      appBar: AppBar(title: const Text('Manage Devices'), centerTitle: false),
       body: SafeArea(
         top: false,
         child: RefreshIndicator(
           onRefresh: _refreshDevices,
-          child: _buildBody(
-            context,
-            theme,
-            colorScheme,
-          ),
+          child: _buildBody(context, theme, colorScheme),
         ),
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -117,9 +105,7 @@ class _ManageDevicesScreenState extends State<ManageDevicesScreen> {
     ColorScheme colorScheme,
   ) {
     if (_isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
+      return const Center(child: CircularProgressIndicator());
     }
 
     if (_errorMessage != null) {
@@ -128,11 +114,7 @@ class _ManageDevicesScreenState extends State<ManageDevicesScreen> {
         padding: const EdgeInsets.all(20),
         children: [
           const SizedBox(height: 100),
-          Icon(
-            Icons.error_outline_rounded,
-            size: 52,
-            color: colorScheme.error,
-          ),
+          Icon(Icons.error_outline_rounded, size: 52, color: colorScheme.error),
           const SizedBox(height: 16),
           Text(
             _errorMessage!,
@@ -155,17 +137,11 @@ class _ManageDevicesScreenState extends State<ManageDevicesScreen> {
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(20, 20, 20, 110),
       children: [
-        _buildProductHeader(
-          theme,
-          colorScheme,
-        ),
+        _buildProductHeader(theme, colorScheme),
 
         const SizedBox(height: 24),
 
-        _buildSummary(
-          theme,
-          colorScheme,
-        ),
+        _buildSummary(theme, colorScheme),
 
         const SizedBox(height: 26),
 
@@ -190,43 +166,45 @@ class _ManageDevicesScreenState extends State<ManageDevicesScreen> {
         const SizedBox(height: 14),
 
         if (_units.isEmpty)
-          _buildEmptyState(
-            theme,
-            colorScheme,
-          )
+          _buildEmptyState(theme, colorScheme)
         else
-          ...List.generate(
-            _units.length,
-            (index) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: _DeviceCard(
-                  unit: _units[index],
-                  deviceNumber: index + 1,
-                  onTap: () {
-                    // Device details/edit functionality will be added
-                    // in the next refinement phase.
-                  },
-                ),
-              );
-            },
-          ),
+          ...List.generate(_units.length, (index) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: _DeviceCard(
+                unit: _units[index],
+                deviceNumber: index + 1,
+                onTap: () async {
+                  final result = await Navigator.of(context).push<bool>(
+                    MaterialPageRoute(
+                      builder: (_) {
+                        return DeviceDetailsScreen(
+                          product: widget.product,
+                          unit: _units[index],
+                          deviceNumber: index + 1,
+                        );
+                      },
+                    ),
+                  );
+
+                  if (result == true && mounted) {
+                    await _loadDevices();
+                  }
+                },
+              ),
+            );
+          }),
       ],
     );
   }
 
-  Widget _buildProductHeader(
-    ThemeData theme,
-    ColorScheme colorScheme,
-  ) {
+  Widget _buildProductHeader(ThemeData theme, ColorScheme colorScheme) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: colorScheme.outlineVariant,
-        ),
+        border: Border.all(color: colorScheme.outlineVariant),
       ),
       child: Row(
         children: [
@@ -285,10 +263,7 @@ class _ManageDevicesScreenState extends State<ManageDevicesScreen> {
     );
   }
 
-  Widget _buildSummary(
-    ThemeData theme,
-    ColorScheme colorScheme,
-  ) {
+  Widget _buildSummary(ThemeData theme, ColorScheme colorScheme) {
     final inStockCount = _units
         .where((unit) => unit.status == ProductUnitStatus.inStock)
         .length;
@@ -305,9 +280,7 @@ class _ManageDevicesScreenState extends State<ManageDevicesScreen> {
             value: _units.length.toString(),
             label: 'Total Devices',
             iconColor: colorScheme.primary,
-            iconBackground: colorScheme.primary.withValues(
-              alpha: 0.10,
-            ),
+            iconBackground: colorScheme.primary.withValues(alpha: 0.10),
           ),
         ),
 
@@ -319,9 +292,7 @@ class _ManageDevicesScreenState extends State<ManageDevicesScreen> {
             value: inStockCount.toString(),
             label: 'In Stock',
             iconColor: Colors.green.shade700,
-            iconBackground: Colors.green.withValues(
-              alpha: 0.10,
-            ),
+            iconBackground: Colors.green.withValues(alpha: 0.10),
           ),
         ),
 
@@ -333,27 +304,20 @@ class _ManageDevicesScreenState extends State<ManageDevicesScreen> {
             value: soldCount.toString(),
             label: 'Sold',
             iconColor: Colors.orange.shade700,
-            iconBackground: Colors.orange.withValues(
-              alpha: 0.10,
-            ),
+            iconBackground: Colors.orange.withValues(alpha: 0.10),
           ),
         ),
       ],
     );
   }
 
-  Widget _buildEmptyState(
-    ThemeData theme,
-    ColorScheme colorScheme,
-  ) {
+  Widget _buildEmptyState(ThemeData theme, ColorScheme colorScheme) {
     return Container(
       padding: const EdgeInsets.fromLTRB(24, 34, 24, 34),
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(
-          color: colorScheme.outlineVariant,
-        ),
+        border: Border.all(color: colorScheme.outlineVariant),
       ),
       child: Column(
         children: [
@@ -481,9 +445,7 @@ class _DeviceCard extends StatelessWidget {
           padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(20),
-            border: Border.all(
-              color: colorScheme.outlineVariant,
-            ),
+            border: Border.all(color: colorScheme.outlineVariant),
           ),
           child: Column(
             children: [
@@ -494,9 +456,7 @@ class _DeviceCard extends StatelessWidget {
                     height: 48,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: colorScheme.primary.withValues(
-                        alpha: 0.10,
-                      ),
+                      color: colorScheme.primary.withValues(alpha: 0.10),
                       borderRadius: BorderRadius.circular(15),
                     ),
                     child: Icon(
@@ -597,11 +557,7 @@ class _DeviceIdentifierRow extends StatelessWidget {
 
     return Row(
       children: [
-        Icon(
-          icon,
-          size: 18,
-          color: colorScheme.onSurfaceVariant,
-        ),
+        Icon(icon, size: 18, color: colorScheme.onSurfaceVariant),
 
         const SizedBox(width: 10),
 
@@ -654,9 +610,7 @@ class _SummaryCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: colorScheme.outlineVariant,
-        ),
+        border: Border.all(color: colorScheme.outlineVariant),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -669,11 +623,7 @@ class _SummaryCard extends StatelessWidget {
               color: iconBackground,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(
-              icon,
-              color: iconColor,
-              size: 21,
-            ),
+            child: Icon(icon, color: iconColor, size: 21),
           ),
 
           const SizedBox(height: 12),
