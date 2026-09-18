@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$ReturnableItemModel {
 
-@JsonKey(name: 'invoice_item_id') String get invoiceItemId;@JsonKey(name: 'product_id') String get productId;@JsonKey(name: 'product_name') String get productName;@JsonKey(name: 'sold_quantity') int get soldQuantity;@JsonKey(name: 'returned_quantity') int get returnedQuantity;@JsonKey(name: 'remaining_quantity') int get remainingQuantity;@JsonKey(name: 'unit_price') double get unitPrice;
+@JsonKey(name: 'invoice_item_id') String get invoiceItemId;@JsonKey(name: 'product_id') String get productId;@JsonKey(name: 'product_name') String get productName;@JsonKey(name: 'sold_quantity') int get soldQuantity;@JsonKey(name: 'returned_quantity') int get returnedQuantity;@JsonKey(name: 'remaining_quantity') int get remainingQuantity;@JsonKey(name: 'unit_price') double get unitPrice;@JsonKey(name: 'tracking_mode') String get trackingMode;
 /// Create a copy of ReturnableItemModel
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $ReturnableItemModelCopyWith<ReturnableItemModel> get copyWith => _$ReturnableIt
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ReturnableItemModel&&(identical(other.invoiceItemId, invoiceItemId) || other.invoiceItemId == invoiceItemId)&&(identical(other.productId, productId) || other.productId == productId)&&(identical(other.productName, productName) || other.productName == productName)&&(identical(other.soldQuantity, soldQuantity) || other.soldQuantity == soldQuantity)&&(identical(other.returnedQuantity, returnedQuantity) || other.returnedQuantity == returnedQuantity)&&(identical(other.remainingQuantity, remainingQuantity) || other.remainingQuantity == remainingQuantity)&&(identical(other.unitPrice, unitPrice) || other.unitPrice == unitPrice));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ReturnableItemModel&&(identical(other.invoiceItemId, invoiceItemId) || other.invoiceItemId == invoiceItemId)&&(identical(other.productId, productId) || other.productId == productId)&&(identical(other.productName, productName) || other.productName == productName)&&(identical(other.soldQuantity, soldQuantity) || other.soldQuantity == soldQuantity)&&(identical(other.returnedQuantity, returnedQuantity) || other.returnedQuantity == returnedQuantity)&&(identical(other.remainingQuantity, remainingQuantity) || other.remainingQuantity == remainingQuantity)&&(identical(other.unitPrice, unitPrice) || other.unitPrice == unitPrice)&&(identical(other.trackingMode, trackingMode) || other.trackingMode == trackingMode));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,invoiceItemId,productId,productName,soldQuantity,returnedQuantity,remainingQuantity,unitPrice);
+int get hashCode => Object.hash(runtimeType,invoiceItemId,productId,productName,soldQuantity,returnedQuantity,remainingQuantity,unitPrice,trackingMode);
 
 @override
 String toString() {
-  return 'ReturnableItemModel(invoiceItemId: $invoiceItemId, productId: $productId, productName: $productName, soldQuantity: $soldQuantity, returnedQuantity: $returnedQuantity, remainingQuantity: $remainingQuantity, unitPrice: $unitPrice)';
+  return 'ReturnableItemModel(invoiceItemId: $invoiceItemId, productId: $productId, productName: $productName, soldQuantity: $soldQuantity, returnedQuantity: $returnedQuantity, remainingQuantity: $remainingQuantity, unitPrice: $unitPrice, trackingMode: $trackingMode)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $ReturnableItemModelCopyWith<$Res>  {
   factory $ReturnableItemModelCopyWith(ReturnableItemModel value, $Res Function(ReturnableItemModel) _then) = _$ReturnableItemModelCopyWithImpl;
 @useResult
 $Res call({
-@JsonKey(name: 'invoice_item_id') String invoiceItemId,@JsonKey(name: 'product_id') String productId,@JsonKey(name: 'product_name') String productName,@JsonKey(name: 'sold_quantity') int soldQuantity,@JsonKey(name: 'returned_quantity') int returnedQuantity,@JsonKey(name: 'remaining_quantity') int remainingQuantity,@JsonKey(name: 'unit_price') double unitPrice
+@JsonKey(name: 'invoice_item_id') String invoiceItemId,@JsonKey(name: 'product_id') String productId,@JsonKey(name: 'product_name') String productName,@JsonKey(name: 'sold_quantity') int soldQuantity,@JsonKey(name: 'returned_quantity') int returnedQuantity,@JsonKey(name: 'remaining_quantity') int remainingQuantity,@JsonKey(name: 'unit_price') double unitPrice,@JsonKey(name: 'tracking_mode') String trackingMode
 });
 
 
@@ -65,7 +65,7 @@ class _$ReturnableItemModelCopyWithImpl<$Res>
 
 /// Create a copy of ReturnableItemModel
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? invoiceItemId = null,Object? productId = null,Object? productName = null,Object? soldQuantity = null,Object? returnedQuantity = null,Object? remainingQuantity = null,Object? unitPrice = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? invoiceItemId = null,Object? productId = null,Object? productName = null,Object? soldQuantity = null,Object? returnedQuantity = null,Object? remainingQuantity = null,Object? unitPrice = null,Object? trackingMode = null,}) {
   return _then(_self.copyWith(
 invoiceItemId: null == invoiceItemId ? _self.invoiceItemId : invoiceItemId // ignore: cast_nullable_to_non_nullable
 as String,productId: null == productId ? _self.productId : productId // ignore: cast_nullable_to_non_nullable
@@ -74,7 +74,8 @@ as String,soldQuantity: null == soldQuantity ? _self.soldQuantity : soldQuantity
 as int,returnedQuantity: null == returnedQuantity ? _self.returnedQuantity : returnedQuantity // ignore: cast_nullable_to_non_nullable
 as int,remainingQuantity: null == remainingQuantity ? _self.remainingQuantity : remainingQuantity // ignore: cast_nullable_to_non_nullable
 as int,unitPrice: null == unitPrice ? _self.unitPrice : unitPrice // ignore: cast_nullable_to_non_nullable
-as double,
+as double,trackingMode: null == trackingMode ? _self.trackingMode : trackingMode // ignore: cast_nullable_to_non_nullable
+as String,
   ));
 }
 
@@ -159,10 +160,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@JsonKey(name: 'invoice_item_id')  String invoiceItemId, @JsonKey(name: 'product_id')  String productId, @JsonKey(name: 'product_name')  String productName, @JsonKey(name: 'sold_quantity')  int soldQuantity, @JsonKey(name: 'returned_quantity')  int returnedQuantity, @JsonKey(name: 'remaining_quantity')  int remainingQuantity, @JsonKey(name: 'unit_price')  double unitPrice)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@JsonKey(name: 'invoice_item_id')  String invoiceItemId, @JsonKey(name: 'product_id')  String productId, @JsonKey(name: 'product_name')  String productName, @JsonKey(name: 'sold_quantity')  int soldQuantity, @JsonKey(name: 'returned_quantity')  int returnedQuantity, @JsonKey(name: 'remaining_quantity')  int remainingQuantity, @JsonKey(name: 'unit_price')  double unitPrice, @JsonKey(name: 'tracking_mode')  String trackingMode)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ReturnableItemModel() when $default != null:
-return $default(_that.invoiceItemId,_that.productId,_that.productName,_that.soldQuantity,_that.returnedQuantity,_that.remainingQuantity,_that.unitPrice);case _:
+return $default(_that.invoiceItemId,_that.productId,_that.productName,_that.soldQuantity,_that.returnedQuantity,_that.remainingQuantity,_that.unitPrice,_that.trackingMode);case _:
   return orElse();
 
 }
@@ -180,10 +181,10 @@ return $default(_that.invoiceItemId,_that.productId,_that.productName,_that.sold
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@JsonKey(name: 'invoice_item_id')  String invoiceItemId, @JsonKey(name: 'product_id')  String productId, @JsonKey(name: 'product_name')  String productName, @JsonKey(name: 'sold_quantity')  int soldQuantity, @JsonKey(name: 'returned_quantity')  int returnedQuantity, @JsonKey(name: 'remaining_quantity')  int remainingQuantity, @JsonKey(name: 'unit_price')  double unitPrice)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@JsonKey(name: 'invoice_item_id')  String invoiceItemId, @JsonKey(name: 'product_id')  String productId, @JsonKey(name: 'product_name')  String productName, @JsonKey(name: 'sold_quantity')  int soldQuantity, @JsonKey(name: 'returned_quantity')  int returnedQuantity, @JsonKey(name: 'remaining_quantity')  int remainingQuantity, @JsonKey(name: 'unit_price')  double unitPrice, @JsonKey(name: 'tracking_mode')  String trackingMode)  $default,) {final _that = this;
 switch (_that) {
 case _ReturnableItemModel():
-return $default(_that.invoiceItemId,_that.productId,_that.productName,_that.soldQuantity,_that.returnedQuantity,_that.remainingQuantity,_that.unitPrice);case _:
+return $default(_that.invoiceItemId,_that.productId,_that.productName,_that.soldQuantity,_that.returnedQuantity,_that.remainingQuantity,_that.unitPrice,_that.trackingMode);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -200,10 +201,10 @@ return $default(_that.invoiceItemId,_that.productId,_that.productName,_that.sold
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@JsonKey(name: 'invoice_item_id')  String invoiceItemId, @JsonKey(name: 'product_id')  String productId, @JsonKey(name: 'product_name')  String productName, @JsonKey(name: 'sold_quantity')  int soldQuantity, @JsonKey(name: 'returned_quantity')  int returnedQuantity, @JsonKey(name: 'remaining_quantity')  int remainingQuantity, @JsonKey(name: 'unit_price')  double unitPrice)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@JsonKey(name: 'invoice_item_id')  String invoiceItemId, @JsonKey(name: 'product_id')  String productId, @JsonKey(name: 'product_name')  String productName, @JsonKey(name: 'sold_quantity')  int soldQuantity, @JsonKey(name: 'returned_quantity')  int returnedQuantity, @JsonKey(name: 'remaining_quantity')  int remainingQuantity, @JsonKey(name: 'unit_price')  double unitPrice, @JsonKey(name: 'tracking_mode')  String trackingMode)?  $default,) {final _that = this;
 switch (_that) {
 case _ReturnableItemModel() when $default != null:
-return $default(_that.invoiceItemId,_that.productId,_that.productName,_that.soldQuantity,_that.returnedQuantity,_that.remainingQuantity,_that.unitPrice);case _:
+return $default(_that.invoiceItemId,_that.productId,_that.productName,_that.soldQuantity,_that.returnedQuantity,_that.remainingQuantity,_that.unitPrice,_that.trackingMode);case _:
   return null;
 
 }
@@ -215,7 +216,7 @@ return $default(_that.invoiceItemId,_that.productId,_that.productName,_that.sold
 @JsonSerializable()
 
 class _ReturnableItemModel implements ReturnableItemModel {
-  const _ReturnableItemModel({@JsonKey(name: 'invoice_item_id') required this.invoiceItemId, @JsonKey(name: 'product_id') required this.productId, @JsonKey(name: 'product_name') required this.productName, @JsonKey(name: 'sold_quantity') required this.soldQuantity, @JsonKey(name: 'returned_quantity') required this.returnedQuantity, @JsonKey(name: 'remaining_quantity') required this.remainingQuantity, @JsonKey(name: 'unit_price') required this.unitPrice});
+  const _ReturnableItemModel({@JsonKey(name: 'invoice_item_id') required this.invoiceItemId, @JsonKey(name: 'product_id') required this.productId, @JsonKey(name: 'product_name') required this.productName, @JsonKey(name: 'sold_quantity') required this.soldQuantity, @JsonKey(name: 'returned_quantity') required this.returnedQuantity, @JsonKey(name: 'remaining_quantity') required this.remainingQuantity, @JsonKey(name: 'unit_price') required this.unitPrice, @JsonKey(name: 'tracking_mode') required this.trackingMode});
   factory _ReturnableItemModel.fromJson(Map<String, dynamic> json) => _$ReturnableItemModelFromJson(json);
 
 @override@JsonKey(name: 'invoice_item_id') final  String invoiceItemId;
@@ -225,6 +226,7 @@ class _ReturnableItemModel implements ReturnableItemModel {
 @override@JsonKey(name: 'returned_quantity') final  int returnedQuantity;
 @override@JsonKey(name: 'remaining_quantity') final  int remainingQuantity;
 @override@JsonKey(name: 'unit_price') final  double unitPrice;
+@override@JsonKey(name: 'tracking_mode') final  String trackingMode;
 
 /// Create a copy of ReturnableItemModel
 /// with the given fields replaced by the non-null parameter values.
@@ -239,16 +241,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ReturnableItemModel&&(identical(other.invoiceItemId, invoiceItemId) || other.invoiceItemId == invoiceItemId)&&(identical(other.productId, productId) || other.productId == productId)&&(identical(other.productName, productName) || other.productName == productName)&&(identical(other.soldQuantity, soldQuantity) || other.soldQuantity == soldQuantity)&&(identical(other.returnedQuantity, returnedQuantity) || other.returnedQuantity == returnedQuantity)&&(identical(other.remainingQuantity, remainingQuantity) || other.remainingQuantity == remainingQuantity)&&(identical(other.unitPrice, unitPrice) || other.unitPrice == unitPrice));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ReturnableItemModel&&(identical(other.invoiceItemId, invoiceItemId) || other.invoiceItemId == invoiceItemId)&&(identical(other.productId, productId) || other.productId == productId)&&(identical(other.productName, productName) || other.productName == productName)&&(identical(other.soldQuantity, soldQuantity) || other.soldQuantity == soldQuantity)&&(identical(other.returnedQuantity, returnedQuantity) || other.returnedQuantity == returnedQuantity)&&(identical(other.remainingQuantity, remainingQuantity) || other.remainingQuantity == remainingQuantity)&&(identical(other.unitPrice, unitPrice) || other.unitPrice == unitPrice)&&(identical(other.trackingMode, trackingMode) || other.trackingMode == trackingMode));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,invoiceItemId,productId,productName,soldQuantity,returnedQuantity,remainingQuantity,unitPrice);
+int get hashCode => Object.hash(runtimeType,invoiceItemId,productId,productName,soldQuantity,returnedQuantity,remainingQuantity,unitPrice,trackingMode);
 
 @override
 String toString() {
-  return 'ReturnableItemModel(invoiceItemId: $invoiceItemId, productId: $productId, productName: $productName, soldQuantity: $soldQuantity, returnedQuantity: $returnedQuantity, remainingQuantity: $remainingQuantity, unitPrice: $unitPrice)';
+  return 'ReturnableItemModel(invoiceItemId: $invoiceItemId, productId: $productId, productName: $productName, soldQuantity: $soldQuantity, returnedQuantity: $returnedQuantity, remainingQuantity: $remainingQuantity, unitPrice: $unitPrice, trackingMode: $trackingMode)';
 }
 
 
@@ -259,7 +261,7 @@ abstract mixin class _$ReturnableItemModelCopyWith<$Res> implements $ReturnableI
   factory _$ReturnableItemModelCopyWith(_ReturnableItemModel value, $Res Function(_ReturnableItemModel) _then) = __$ReturnableItemModelCopyWithImpl;
 @override @useResult
 $Res call({
-@JsonKey(name: 'invoice_item_id') String invoiceItemId,@JsonKey(name: 'product_id') String productId,@JsonKey(name: 'product_name') String productName,@JsonKey(name: 'sold_quantity') int soldQuantity,@JsonKey(name: 'returned_quantity') int returnedQuantity,@JsonKey(name: 'remaining_quantity') int remainingQuantity,@JsonKey(name: 'unit_price') double unitPrice
+@JsonKey(name: 'invoice_item_id') String invoiceItemId,@JsonKey(name: 'product_id') String productId,@JsonKey(name: 'product_name') String productName,@JsonKey(name: 'sold_quantity') int soldQuantity,@JsonKey(name: 'returned_quantity') int returnedQuantity,@JsonKey(name: 'remaining_quantity') int remainingQuantity,@JsonKey(name: 'unit_price') double unitPrice,@JsonKey(name: 'tracking_mode') String trackingMode
 });
 
 
@@ -276,7 +278,7 @@ class __$ReturnableItemModelCopyWithImpl<$Res>
 
 /// Create a copy of ReturnableItemModel
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? invoiceItemId = null,Object? productId = null,Object? productName = null,Object? soldQuantity = null,Object? returnedQuantity = null,Object? remainingQuantity = null,Object? unitPrice = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? invoiceItemId = null,Object? productId = null,Object? productName = null,Object? soldQuantity = null,Object? returnedQuantity = null,Object? remainingQuantity = null,Object? unitPrice = null,Object? trackingMode = null,}) {
   return _then(_ReturnableItemModel(
 invoiceItemId: null == invoiceItemId ? _self.invoiceItemId : invoiceItemId // ignore: cast_nullable_to_non_nullable
 as String,productId: null == productId ? _self.productId : productId // ignore: cast_nullable_to_non_nullable
@@ -285,7 +287,8 @@ as String,soldQuantity: null == soldQuantity ? _self.soldQuantity : soldQuantity
 as int,returnedQuantity: null == returnedQuantity ? _self.returnedQuantity : returnedQuantity // ignore: cast_nullable_to_non_nullable
 as int,remainingQuantity: null == remainingQuantity ? _self.remainingQuantity : remainingQuantity // ignore: cast_nullable_to_non_nullable
 as int,unitPrice: null == unitPrice ? _self.unitPrice : unitPrice // ignore: cast_nullable_to_non_nullable
-as double,
+as double,trackingMode: null == trackingMode ? _self.trackingMode : trackingMode // ignore: cast_nullable_to_non_nullable
+as String,
   ));
 }
 

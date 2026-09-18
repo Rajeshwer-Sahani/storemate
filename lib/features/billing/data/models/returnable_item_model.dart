@@ -4,32 +4,29 @@ part 'returnable_item_model.freezed.dart';
 part 'returnable_item_model.g.dart';
 
 @freezed
- abstract class ReturnableItemModel with _$ReturnableItemModel {
+abstract class ReturnableItemModel with _$ReturnableItemModel {
   const factory ReturnableItemModel({
-    @JsonKey(name: 'invoice_item_id')
-    required String invoiceItemId,
+    @JsonKey(name: 'invoice_item_id') required String invoiceItemId,
 
-    @JsonKey(name: 'product_id')
-    required String productId,
+    @JsonKey(name: 'product_id') required String productId,
 
-    @JsonKey(name: 'product_name')
-    required String productName,
+    @JsonKey(name: 'product_name') required String productName,
 
-    @JsonKey(name: 'sold_quantity')
-    required int soldQuantity,
+    @JsonKey(name: 'sold_quantity') required int soldQuantity,
 
-    @JsonKey(name: 'returned_quantity')
-    required int returnedQuantity,
+    @JsonKey(name: 'returned_quantity') required int returnedQuantity,
 
-    @JsonKey(name: 'remaining_quantity')
-    required int remainingQuantity,
+    @JsonKey(name: 'remaining_quantity') required int remainingQuantity,
 
-    @JsonKey(name: 'unit_price')
-    required double unitPrice,
+    @JsonKey(name: 'unit_price') required double unitPrice,
+
+    @JsonKey(name: 'tracking_mode') required String trackingMode,
   }) = _ReturnableItemModel;
 
-  factory ReturnableItemModel.fromJson(
-    Map<String, dynamic> json,
-  ) =>
+  factory ReturnableItemModel.fromJson(Map<String, dynamic> json) =>
       _$ReturnableItemModelFromJson(json);
+}
+
+extension ReturnableItemModelX on ReturnableItemModel {
+  bool get isDeviceTracked => trackingMode == 'device';
 }

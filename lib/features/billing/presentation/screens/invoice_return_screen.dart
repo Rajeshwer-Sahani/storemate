@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:storemate/features/billing/data/models/invoice_return_item_model.dart';
+import 'package:storemate/features/billing/data/models/returnable_item_model.dart';
+import 'package:storemate/features/billing/presentation/widgets/device_selector_bottom_sheet.dart';
 import 'package:storemate/features/billing/presentation/widgets/return_item_card.dart';
 import 'package:storemate/features/billing/presentation/widgets/return_notes_field.dart';
 import 'package:storemate/features/billing/presentation/widgets/return_reason_dropdown.dart';
 import 'package:storemate/features/billing/presentation/widgets/return_summary_card.dart';
+import 'package:storemate/features/inventory/data/models/product_unit_model.dart';
 
 import '../../data/models/invoice_model.dart';
 import '../controllers/invoice_return_controller.dart';
@@ -79,6 +82,63 @@ class _InvoiceReturnScreenState extends State<InvoiceReturnScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Future<void> _selectDevicesForReturn(ReturnableItemModel item) async {
+    final availableUnits = _controller.getReturnableProductUnits(
+      item.invoiceItemId,
+    );
+
+    if (availableUnits.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'No eligible sold devices are available for this return.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    final selectedUnitIds = _controller.getSelectedDeviceIds(
+      item.invoiceItemId,
+    );
+
+    final selectedUnits = await showModalBottomSheet<List<ProductUnitModel>>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (context) {
+        return DeviceSelectorBottomSheet(
+          productName: item.productName,
+          units: availableUnits,
+          selectedUnitIds: selectedUnitIds,
+        );
+      },
+    );
+
+    if (!mounted || selectedUnits == null) {
+      return;
+    }
+
+    if (selectedUnits.length !=
+        _controller.selectedItems[item.invoiceItemId]!.quantity) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Please select exactly '
+            '${_controller.selectedItems[item.invoiceItemId]!.quantity} '
+            'device(s).',
+          ),
+        ),
+      );
+      return;
+    }
+
+    _controller.updateSelectedDevices(
+      invoiceItemId: item.invoiceItemId,
+      productUnitIds: selectedUnits.map((unit) => unit.id).toList(),
     );
   }
 
@@ -158,6 +218,13 @@ class _InvoiceReturnScreenState extends State<InvoiceReturnScreen> {
 
                     selectedQuantity: quantity,
 
+                    selectedDeviceCount:
+                        _controller
+                            .selectedItems[item.invoiceItemId]
+                            ?.productUnitIds
+                            .length ??
+                        0,
+
                     onSelected: (value) {
                       if (value) {
                         _controller.selectItem(item);
@@ -169,6 +236,10 @@ class _InvoiceReturnScreenState extends State<InvoiceReturnScreen> {
                     onQuantityChanged: (value) {
                       _controller.updateQuantity(item.invoiceItemId, value);
                     },
+
+                    onSelectDevices: item.isDeviceTracked && selected
+                        ? () => _selectDevicesForReturn(item)
+                        : null,
                   );
                 }),
 

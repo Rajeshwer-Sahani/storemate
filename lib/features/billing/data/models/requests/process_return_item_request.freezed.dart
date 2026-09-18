@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$ProcessReturnItemRequest {
 
-@JsonKey(name: 'invoice_item_id') String get invoiceItemId; int get quantity;
+@JsonKey(name: 'invoice_item_id') String get invoiceItemId; int get quantity;@JsonKey(name: 'product_unit_ids') List<String> get productUnitIds;
 /// Create a copy of ProcessReturnItemRequest
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -28,16 +28,16 @@ $ProcessReturnItemRequestCopyWith<ProcessReturnItemRequest> get copyWith => _$Pr
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is ProcessReturnItemRequest&&(identical(other.invoiceItemId, invoiceItemId) || other.invoiceItemId == invoiceItemId)&&(identical(other.quantity, quantity) || other.quantity == quantity));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is ProcessReturnItemRequest&&(identical(other.invoiceItemId, invoiceItemId) || other.invoiceItemId == invoiceItemId)&&(identical(other.quantity, quantity) || other.quantity == quantity)&&const DeepCollectionEquality().equals(other.productUnitIds, productUnitIds));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,invoiceItemId,quantity);
+int get hashCode => Object.hash(runtimeType,invoiceItemId,quantity,const DeepCollectionEquality().hash(productUnitIds));
 
 @override
 String toString() {
-  return 'ProcessReturnItemRequest(invoiceItemId: $invoiceItemId, quantity: $quantity)';
+  return 'ProcessReturnItemRequest(invoiceItemId: $invoiceItemId, quantity: $quantity, productUnitIds: $productUnitIds)';
 }
 
 
@@ -48,7 +48,7 @@ abstract mixin class $ProcessReturnItemRequestCopyWith<$Res>  {
   factory $ProcessReturnItemRequestCopyWith(ProcessReturnItemRequest value, $Res Function(ProcessReturnItemRequest) _then) = _$ProcessReturnItemRequestCopyWithImpl;
 @useResult
 $Res call({
-@JsonKey(name: 'invoice_item_id') String invoiceItemId, int quantity
+@JsonKey(name: 'invoice_item_id') String invoiceItemId, int quantity,@JsonKey(name: 'product_unit_ids') List<String> productUnitIds
 });
 
 
@@ -65,11 +65,12 @@ class _$ProcessReturnItemRequestCopyWithImpl<$Res>
 
 /// Create a copy of ProcessReturnItemRequest
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? invoiceItemId = null,Object? quantity = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? invoiceItemId = null,Object? quantity = null,Object? productUnitIds = null,}) {
   return _then(_self.copyWith(
 invoiceItemId: null == invoiceItemId ? _self.invoiceItemId : invoiceItemId // ignore: cast_nullable_to_non_nullable
 as String,quantity: null == quantity ? _self.quantity : quantity // ignore: cast_nullable_to_non_nullable
-as int,
+as int,productUnitIds: null == productUnitIds ? _self.productUnitIds : productUnitIds // ignore: cast_nullable_to_non_nullable
+as List<String>,
   ));
 }
 
@@ -154,10 +155,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@JsonKey(name: 'invoice_item_id')  String invoiceItemId,  int quantity)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function(@JsonKey(name: 'invoice_item_id')  String invoiceItemId,  int quantity, @JsonKey(name: 'product_unit_ids')  List<String> productUnitIds)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _ProcessReturnItemRequest() when $default != null:
-return $default(_that.invoiceItemId,_that.quantity);case _:
+return $default(_that.invoiceItemId,_that.quantity,_that.productUnitIds);case _:
   return orElse();
 
 }
@@ -175,10 +176,10 @@ return $default(_that.invoiceItemId,_that.quantity);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@JsonKey(name: 'invoice_item_id')  String invoiceItemId,  int quantity)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function(@JsonKey(name: 'invoice_item_id')  String invoiceItemId,  int quantity, @JsonKey(name: 'product_unit_ids')  List<String> productUnitIds)  $default,) {final _that = this;
 switch (_that) {
 case _ProcessReturnItemRequest():
-return $default(_that.invoiceItemId,_that.quantity);case _:
+return $default(_that.invoiceItemId,_that.quantity,_that.productUnitIds);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -195,10 +196,10 @@ return $default(_that.invoiceItemId,_that.quantity);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@JsonKey(name: 'invoice_item_id')  String invoiceItemId,  int quantity)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function(@JsonKey(name: 'invoice_item_id')  String invoiceItemId,  int quantity, @JsonKey(name: 'product_unit_ids')  List<String> productUnitIds)?  $default,) {final _that = this;
 switch (_that) {
 case _ProcessReturnItemRequest() when $default != null:
-return $default(_that.invoiceItemId,_that.quantity);case _:
+return $default(_that.invoiceItemId,_that.quantity,_that.productUnitIds);case _:
   return null;
 
 }
@@ -210,11 +211,18 @@ return $default(_that.invoiceItemId,_that.quantity);case _:
 @JsonSerializable()
 
 class _ProcessReturnItemRequest implements ProcessReturnItemRequest {
-  const _ProcessReturnItemRequest({@JsonKey(name: 'invoice_item_id') required this.invoiceItemId, required this.quantity});
+  const _ProcessReturnItemRequest({@JsonKey(name: 'invoice_item_id') required this.invoiceItemId, required this.quantity, @JsonKey(name: 'product_unit_ids') final  List<String> productUnitIds = const <String>[]}): _productUnitIds = productUnitIds;
   factory _ProcessReturnItemRequest.fromJson(Map<String, dynamic> json) => _$ProcessReturnItemRequestFromJson(json);
 
 @override@JsonKey(name: 'invoice_item_id') final  String invoiceItemId;
 @override final  int quantity;
+ final  List<String> _productUnitIds;
+@override@JsonKey(name: 'product_unit_ids') List<String> get productUnitIds {
+  if (_productUnitIds is EqualUnmodifiableListView) return _productUnitIds;
+  // ignore: implicit_dynamic_type
+  return EqualUnmodifiableListView(_productUnitIds);
+}
+
 
 /// Create a copy of ProcessReturnItemRequest
 /// with the given fields replaced by the non-null parameter values.
@@ -229,16 +237,16 @@ Map<String, dynamic> toJson() {
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ProcessReturnItemRequest&&(identical(other.invoiceItemId, invoiceItemId) || other.invoiceItemId == invoiceItemId)&&(identical(other.quantity, quantity) || other.quantity == quantity));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _ProcessReturnItemRequest&&(identical(other.invoiceItemId, invoiceItemId) || other.invoiceItemId == invoiceItemId)&&(identical(other.quantity, quantity) || other.quantity == quantity)&&const DeepCollectionEquality().equals(other._productUnitIds, _productUnitIds));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,invoiceItemId,quantity);
+int get hashCode => Object.hash(runtimeType,invoiceItemId,quantity,const DeepCollectionEquality().hash(_productUnitIds));
 
 @override
 String toString() {
-  return 'ProcessReturnItemRequest(invoiceItemId: $invoiceItemId, quantity: $quantity)';
+  return 'ProcessReturnItemRequest(invoiceItemId: $invoiceItemId, quantity: $quantity, productUnitIds: $productUnitIds)';
 }
 
 
@@ -249,7 +257,7 @@ abstract mixin class _$ProcessReturnItemRequestCopyWith<$Res> implements $Proces
   factory _$ProcessReturnItemRequestCopyWith(_ProcessReturnItemRequest value, $Res Function(_ProcessReturnItemRequest) _then) = __$ProcessReturnItemRequestCopyWithImpl;
 @override @useResult
 $Res call({
-@JsonKey(name: 'invoice_item_id') String invoiceItemId, int quantity
+@JsonKey(name: 'invoice_item_id') String invoiceItemId, int quantity,@JsonKey(name: 'product_unit_ids') List<String> productUnitIds
 });
 
 
@@ -266,11 +274,12 @@ class __$ProcessReturnItemRequestCopyWithImpl<$Res>
 
 /// Create a copy of ProcessReturnItemRequest
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? invoiceItemId = null,Object? quantity = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? invoiceItemId = null,Object? quantity = null,Object? productUnitIds = null,}) {
   return _then(_ProcessReturnItemRequest(
 invoiceItemId: null == invoiceItemId ? _self.invoiceItemId : invoiceItemId // ignore: cast_nullable_to_non_nullable
 as String,quantity: null == quantity ? _self.quantity : quantity // ignore: cast_nullable_to_non_nullable
-as int,
+as int,productUnitIds: null == productUnitIds ? _self._productUnitIds : productUnitIds // ignore: cast_nullable_to_non_nullable
+as List<String>,
   ));
 }
 

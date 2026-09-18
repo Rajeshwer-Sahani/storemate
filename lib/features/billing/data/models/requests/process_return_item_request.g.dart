@@ -11,6 +11,11 @@ _ProcessReturnItemRequest _$ProcessReturnItemRequestFromJson(
 ) => _ProcessReturnItemRequest(
   invoiceItemId: json['invoice_item_id'] as String,
   quantity: (json['quantity'] as num).toInt(),
+  productUnitIds:
+      (json['product_unit_ids'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList() ??
+      const <String>[],
 );
 
 Map<String, dynamic> _$ProcessReturnItemRequestToJson(
@@ -18,4 +23,5 @@ Map<String, dynamic> _$ProcessReturnItemRequestToJson(
 ) => <String, dynamic>{
   'invoice_item_id': instance.invoiceItemId,
   'quantity': instance.quantity,
+  'product_unit_ids': instance.productUnitIds,
 };

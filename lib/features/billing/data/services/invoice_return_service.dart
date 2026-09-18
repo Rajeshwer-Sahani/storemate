@@ -1,3 +1,4 @@
+import 'package:storemate/features/inventory/data/models/product_unit_model.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/invoice_return_history_model.dart';
@@ -14,6 +15,7 @@ class InvoiceReturnService {
   static const _getInvoiceReturnsRpc = 'get_invoice_returns';
   static const _processInvoiceReturnRpc = 'process_invoice_return';
   static const _validateReturnQuantityRpc = 'validate_return_quantity';
+  static const _getReturnableProductUnitsRpc = 'get_returnable_product_units';
 
   /// Get all items that can still be returned.
   Future<List<ReturnableItemModel>> getReturnableItems(String invoiceId) async {
@@ -57,6 +59,29 @@ class InvoiceReturnService {
       throw InvoiceReturnException(e.message);
     } catch (e) {
       throw InvoiceReturnException('Failed to load return history: $e');
+    }
+  }
+
+  /// Get the exact devices from this invoice that are still
+  /// eligible to be returned.
+  Future<List<ProductUnitModel>> getReturnableProductUnits({
+    required String invoiceItemId,
+  }) async {
+    try {
+      final response = await _supabase.rpc(
+        _getReturnableProductUnitsRpc,
+        params: {'p_invoice_item_id': invoiceItemId},
+      );
+
+      return (response as List)
+          .map(
+            (json) => ProductUnitModel.fromJson(json as Map<String, dynamic>),
+          )
+          .toList();
+    } on PostgrestException catch (e) {
+      throw InvoiceReturnException(e.message);
+    } catch (e) {
+      throw InvoiceReturnException('Failed to load returnable devices: $e');
     }
   }
 

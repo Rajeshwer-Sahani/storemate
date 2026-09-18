@@ -15,6 +15,7 @@ _ReturnableItemModel _$ReturnableItemModelFromJson(Map<String, dynamic> json) =>
       returnedQuantity: (json['returned_quantity'] as num).toInt(),
       remainingQuantity: (json['remaining_quantity'] as num).toInt(),
       unitPrice: (json['unit_price'] as num).toDouble(),
+      trackingMode: json['tracking_mode'] as String,
     );
 
 Map<String, dynamic> _$ReturnableItemModelToJson(
@@ -27,4 +28,5 @@ Map<String, dynamic> _$ReturnableItemModelToJson(
   'returned_quantity': instance.returnedQuantity,
   'remaining_quantity': instance.remainingQuantity,
   'unit_price': instance.unitPrice,
+  'tracking_mode': instance.trackingMode,
 };
