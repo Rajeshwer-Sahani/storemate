@@ -15,12 +15,10 @@ class EditProductUnitScreen extends StatefulWidget {
   final ProductUnitModel unit;
 
   @override
-  State<EditProductUnitScreen> createState() =>
-      _EditProductUnitScreenState();
+  State<EditProductUnitScreen> createState() => _EditProductUnitScreenState();
 }
 
-class _EditProductUnitScreenState
-    extends State<EditProductUnitScreen> {
+class _EditProductUnitScreenState extends State<EditProductUnitScreen> {
   final ProductUnitService _productUnitService = ProductUnitService();
 
   final _formKey = GlobalKey<FormState>();
@@ -35,13 +33,9 @@ class _EditProductUnitScreenState
   void initState() {
     super.initState();
 
-    _imei1Controller = TextEditingController(
-      text: widget.unit.imei1 ?? '',
-    );
+    _imei1Controller = TextEditingController(text: widget.unit.imei1 ?? '');
 
-    _imei2Controller = TextEditingController(
-      text: widget.unit.imei2 ?? '',
-    );
+    _imei2Controller = TextEditingController(text: widget.unit.imei2 ?? '');
 
     _serialNumberController = TextEditingController(
       text: widget.unit.serialNumber ?? '',
@@ -61,6 +55,20 @@ class _EditProductUnitScreenState
       return;
     }
 
+    final identifierError = _validateAtLeastOneIdentifier();
+
+    if (identifierError != null) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(identifierError),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      return;
+    }
+
     FocusScope.of(context).unfocus();
 
     setState(() {
@@ -68,8 +76,7 @@ class _EditProductUnitScreenState
     });
 
     try {
-      final updatedUnit =
-          await _productUnitService.updateProductUnit(
+      final updatedUnit = await _productUnitService.updateProductUnit(
         unitId: widget.unit.id,
         imei1: _imei1Controller.text,
         imei2: _imei2Controller.text,
@@ -98,8 +105,7 @@ class _EditProductUnitScreenState
               'Unable to update the device. Check the '
               'IMEI or serial number and try again.',
             ),
-            backgroundColor:
-                Theme.of(context).colorScheme.error,
+            backgroundColor: Theme.of(context).colorScheme.error,
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -110,7 +116,7 @@ class _EditProductUnitScreenState
     final trimmed = value?.trim() ?? '';
 
     if (trimmed.isEmpty) {
-      return 'IMEI 1 is required';
+      return null;
     }
 
     if (!RegExp(r'^\d{15}$').hasMatch(trimmed)) {
@@ -134,16 +140,25 @@ class _EditProductUnitScreenState
     return null;
   }
 
+  String? _validateAtLeastOneIdentifier() {
+    final imei1 = _imei1Controller.text.trim();
+    final imei2 = _imei2Controller.text.trim();
+    final serialNumber = _serialNumberController.text.trim();
+
+    if (imei1.isEmpty && imei2.isEmpty && serialNumber.isEmpty) {
+      return 'Add at least one identifier: IMEI or serial number.';
+    }
+
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Edit Device'),
-        centerTitle: false,
-      ),
+      appBar: AppBar(title: const Text('Edit Device'), centerTitle: false),
       body: SafeArea(
         top: false,
         child: Form(
@@ -151,10 +166,7 @@ class _EditProductUnitScreenState
           child: ListView(
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
             children: [
-              _buildProductCard(
-                theme,
-                colorScheme,
-              ),
+              _buildProductCard(theme, colorScheme),
 
               const SizedBox(height: 28),
 
@@ -168,7 +180,7 @@ class _EditProductUnitScreenState
               const SizedBox(height: 5),
 
               Text(
-                'Update the identifiers for this physical unit.',
+                'Update the identifiers for this physical unit. At least one is required.',
                 style: theme.textTheme.bodyMedium?.copyWith(
                   color: colorScheme.onSurfaceVariant,
                 ),
@@ -179,7 +191,7 @@ class _EditProductUnitScreenState
               _buildField(
                 controller: _imei1Controller,
                 label: 'IMEI 1',
-                hint: 'Enter 15-digit IMEI',
+                hint: 'Enter 15-digit IMEI (optional)',
                 icon: Icons.looks_one_outlined,
                 keyboardType: TextInputType.number,
                 inputFormatters: [
@@ -187,7 +199,6 @@ class _EditProductUnitScreenState
                   LengthLimitingTextInputFormatter(15),
                 ],
                 validator: _validateImei1,
-                required: true,
               ),
 
               const SizedBox(height: 14),
@@ -232,11 +243,7 @@ class _EditProductUnitScreenState
                           ),
                         )
                       : const Icon(Icons.check_rounded),
-                  label: Text(
-                    _isSaving
-                        ? 'Saving Changes...'
-                        : 'Save Changes',
-                  ),
+                  label: Text(_isSaving ? 'Saving Changes...' : 'Save Changes'),
                 ),
               ),
             ],
@@ -246,18 +253,13 @@ class _EditProductUnitScreenState
     );
   }
 
-  Widget _buildProductCard(
-    ThemeData theme,
-    ColorScheme colorScheme,
-  ) {
+  Widget _buildProductCard(ThemeData theme, ColorScheme colorScheme) {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: colorScheme.outlineVariant,
-        ),
+        border: Border.all(color: colorScheme.outlineVariant),
       ),
       child: Row(
         children: [
@@ -332,22 +334,15 @@ class _EditProductUnitScreenState
         fillColor: colorScheme.surface,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
-          borderSide: BorderSide(
-            color: colorScheme.outlineVariant,
-          ),
+          borderSide: BorderSide(color: colorScheme.outlineVariant),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
-          borderSide: BorderSide(
-            color: colorScheme.outlineVariant,
-          ),
+          borderSide: BorderSide(color: colorScheme.outlineVariant),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
-          borderSide: BorderSide(
-            color: colorScheme.primary,
-            width: 1.5,
-          ),
+          borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
         ),
       ),
     );

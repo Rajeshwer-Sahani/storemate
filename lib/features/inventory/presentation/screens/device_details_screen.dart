@@ -35,10 +35,7 @@ class _DeviceDetailsScreenState extends State<DeviceDetailsScreen> {
     final updatedUnit = await Navigator.of(context).push<ProductUnitModel>(
       MaterialPageRoute(
         builder: (_) {
-          return EditProductUnitScreen(
-            product: widget.product,
-            unit: _unit,
-          );
+          return EditProductUnitScreen(product: widget.product, unit: _unit);
         },
       ),
     );
@@ -73,9 +70,7 @@ class _DeviceDetailsScreenState extends State<DeviceDetailsScreen> {
           padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
           decoration: BoxDecoration(
             color: colorScheme.surface,
-            borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(28),
-            ),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -151,9 +146,7 @@ class _DeviceDetailsScreenState extends State<DeviceDetailsScreen> {
                         ),
                         child: const Text(
                           'Cancel',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                          ),
+                          style: TextStyle(fontWeight: FontWeight.w700),
                         ),
                       ),
                     ),
@@ -181,9 +174,7 @@ class _DeviceDetailsScreenState extends State<DeviceDetailsScreen> {
                         ),
                         label: const Text(
                           'Delete',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                          ),
+                          style: TextStyle(fontWeight: FontWeight.w700),
                         ),
                       ),
                     ),
@@ -201,9 +192,7 @@ class _DeviceDetailsScreenState extends State<DeviceDetailsScreen> {
     }
 
     try {
-      await _productUnitService.deleteProductUnit(
-        unitId: _unit.id,
-      );
+      await _productUnitService.deleteProductUnit(unitId: _unit.id);
 
       if (!mounted) {
         return;
@@ -222,10 +211,7 @@ class _DeviceDetailsScreenState extends State<DeviceDetailsScreen> {
     }
   }
 
-  void _showMessage(
-    String message, {
-    bool isError = false,
-  }) {
+  void _showMessage(String message, {bool isError = false}) {
     final colorScheme = Theme.of(context).colorScheme;
 
     ScaffoldMessenger.of(context)
@@ -233,8 +219,7 @@ class _DeviceDetailsScreenState extends State<DeviceDetailsScreen> {
       ..showSnackBar(
         SnackBar(
           content: Text(message),
-          backgroundColor:
-              isError ? colorScheme.error : null,
+          backgroundColor: isError ? colorScheme.error : null,
           behavior: SnackBarBehavior.floating,
         ),
       );
@@ -245,14 +230,9 @@ class _DeviceDetailsScreenState extends State<DeviceDetailsScreen> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    final statusColor = _statusColor(
-      colorScheme,
-      _unit.status,
-    );
+    final statusColor = _statusColor(colorScheme, _unit.status);
 
-    final statusBackground = statusColor.withValues(
-      alpha: 0.10,
-    );
+    final statusBackground = statusColor.withValues(alpha: 0.10);
 
     return Scaffold(
       appBar: AppBar(
@@ -260,8 +240,10 @@ class _DeviceDetailsScreenState extends State<DeviceDetailsScreen> {
         centerTitle: false,
         actions: [
           IconButton(
-            tooltip: 'Edit device',
-            onPressed: _editDevice,
+            tooltip: _unit.isInStock
+                ? 'Edit device'
+                : 'Editing unavailable for this device',
+            onPressed: _unit.isInStock ? _editDevice : null,
             icon: const Icon(Icons.edit_outlined),
           ),
 
@@ -332,9 +314,7 @@ class _DeviceDetailsScreenState extends State<DeviceDetailsScreen> {
                   label: 'IMEI 1',
                   value: _displayValue(_unit.imei1),
                   iconColor: colorScheme.primary,
-                  iconBackground: colorScheme.primary.withValues(
-                    alpha: 0.10,
-                  ),
+                  iconBackground: colorScheme.primary.withValues(alpha: 0.10),
                 ),
 
                 const _InformationDivider(),
@@ -344,9 +324,7 @@ class _DeviceDetailsScreenState extends State<DeviceDetailsScreen> {
                   label: 'IMEI 2',
                   value: _displayValue(_unit.imei2),
                   iconColor: Colors.indigo.shade600,
-                  iconBackground: Colors.indigo.withValues(
-                    alpha: 0.10,
-                  ),
+                  iconBackground: Colors.indigo.withValues(alpha: 0.10),
                 ),
 
                 const _InformationDivider(),
@@ -356,9 +334,7 @@ class _DeviceDetailsScreenState extends State<DeviceDetailsScreen> {
                   label: 'Serial Number',
                   value: _displayValue(_unit.serialNumber),
                   iconColor: Colors.teal.shade600,
-                  iconBackground: Colors.teal.withValues(
-                    alpha: 0.10,
-                  ),
+                  iconBackground: Colors.teal.withValues(alpha: 0.10),
                 ),
               ],
             ),
@@ -379,9 +355,7 @@ class _DeviceDetailsScreenState extends State<DeviceDetailsScreen> {
                   label: 'Product',
                   value: widget.product.name,
                   iconColor: Colors.blue.shade600,
-                  iconBackground: Colors.blue.withValues(
-                    alpha: 0.10,
-                  ),
+                  iconBackground: Colors.blue.withValues(alpha: 0.10),
                 ),
 
                 const _InformationDivider(),
@@ -391,9 +365,7 @@ class _DeviceDetailsScreenState extends State<DeviceDetailsScreen> {
                   label: 'Barcode',
                   value: _displayValue(widget.product.barcode),
                   iconColor: Colors.indigo.shade600,
-                  iconBackground: Colors.indigo.withValues(
-                    alpha: 0.10,
-                  ),
+                  iconBackground: Colors.indigo.withValues(alpha: 0.10),
                 ),
               ],
             ),
@@ -412,9 +384,7 @@ class _DeviceDetailsScreenState extends State<DeviceDetailsScreen> {
               decoration: BoxDecoration(
                 color: colorScheme.surface,
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: colorScheme.outlineVariant,
-                ),
+                border: Border.all(color: colorScheme.outlineVariant),
               ),
               child: Row(
                 children: [
@@ -426,10 +396,7 @@ class _DeviceDetailsScreenState extends State<DeviceDetailsScreen> {
                       color: statusBackground,
                       borderRadius: BorderRadius.circular(14),
                     ),
-                    child: Icon(
-                      _statusIcon(_unit.status),
-                      color: statusColor,
-                    ),
+                    child: Icon(_statusIcon(_unit.status), color: statusColor),
                   ),
 
                   const SizedBox(width: 14),
@@ -511,9 +478,7 @@ class _DeviceDetailsScreenState extends State<DeviceDetailsScreen> {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: colorScheme.outlineVariant,
-        ),
+        border: Border.all(color: colorScheme.outlineVariant),
       ),
       child: Column(
         children: [
@@ -555,10 +520,7 @@ class _DeviceDetailsScreenState extends State<DeviceDetailsScreen> {
           const SizedBox(height: 16),
 
           Container(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 14,
-              vertical: 8,
-            ),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             decoration: BoxDecoration(
               color: statusBackground,
               borderRadius: BorderRadius.circular(100),
@@ -566,11 +528,7 @@ class _DeviceDetailsScreenState extends State<DeviceDetailsScreen> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  _statusIcon(_unit.status),
-                  size: 18,
-                  color: statusColor,
-                ),
+                Icon(_statusIcon(_unit.status), size: 18, color: statusColor),
                 const SizedBox(width: 7),
                 Text(
                   _unit.statusLabel,
@@ -587,10 +545,7 @@ class _DeviceDetailsScreenState extends State<DeviceDetailsScreen> {
     );
   }
 
-  String _displayValue(
-    String? value, {
-    String fallback = 'Not added',
-  }) {
+  String _displayValue(String? value, {String fallback = 'Not added'}) {
     final trimmedValue = value?.trim();
 
     if (trimmedValue == null || trimmedValue.isEmpty) {
@@ -600,10 +555,7 @@ class _DeviceDetailsScreenState extends State<DeviceDetailsScreen> {
     return trimmedValue;
   }
 
-  Color _statusColor(
-    ColorScheme colorScheme,
-    String status,
-  ) {
+  Color _statusColor(ColorScheme colorScheme, String status) {
     switch (status) {
       case ProductUnitStatus.inStock:
         return Colors.green.shade700;
@@ -659,10 +611,7 @@ class _DeviceDetailsScreenState extends State<DeviceDetailsScreen> {
 // -----------------------------------------------------------------------------
 
 class _SectionHeading extends StatelessWidget {
-  const _SectionHeading({
-    required this.title,
-    required this.subtitle,
-  });
+  const _SectionHeading({required this.title, required this.subtitle});
 
   final String title;
   final String subtitle;
@@ -693,9 +642,7 @@ class _SectionHeading extends StatelessWidget {
 }
 
 class _InformationCard extends StatelessWidget {
-  const _InformationCard({
-    required this.children,
-  });
+  const _InformationCard({required this.children});
 
   final List<Widget> children;
 
@@ -708,13 +655,9 @@ class _InformationCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: colorScheme.outlineVariant,
-        ),
+        border: Border.all(color: colorScheme.outlineVariant),
       ),
-      child: Column(
-        children: children,
-      ),
+      child: Column(children: children),
     );
   }
 }
@@ -751,11 +694,7 @@ class _InformationRow extends StatelessWidget {
               color: iconBackground,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Icon(
-              icon,
-              size: 21,
-              color: iconColor,
-            ),
+            child: Icon(icon, size: 21, color: iconColor),
           ),
 
           const SizedBox(width: 14),

@@ -4,10 +4,7 @@ import 'package:storemate/features/inventory/data/models/product_model.dart';
 import 'package:storemate/features/inventory/data/services/product_unit_service.dart';
 
 class AddProductUnitScreen extends StatefulWidget {
-  const AddProductUnitScreen({
-    required this.product,
-    super.key,
-  });
+  const AddProductUnitScreen({required this.product, super.key});
 
   final ProductModel product;
 
@@ -36,6 +33,20 @@ class _AddProductUnitScreenState extends State<AddProductUnitScreen> {
 
   Future<void> _saveDevice() async {
     if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    final identifierError = _validateAtLeastOneIdentifier();
+
+    if (identifierError != null) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(identifierError),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
       return;
     }
 
@@ -96,7 +107,7 @@ class _AddProductUnitScreenState extends State<AddProductUnitScreen> {
     final trimmed = value?.trim() ?? '';
 
     if (trimmed.isEmpty) {
-      return 'IMEI 1 is required';
+      return null;
     }
 
     if (!RegExp(r'^\d{15}$').hasMatch(trimmed)) {
@@ -120,16 +131,25 @@ class _AddProductUnitScreenState extends State<AddProductUnitScreen> {
     return null;
   }
 
+  String? _validateAtLeastOneIdentifier() {
+    final imei1 = _imei1Controller.text.trim();
+    final imei2 = _imei2Controller.text.trim();
+    final serialNumber = _serialNumberController.text.trim();
+
+    if (imei1.isEmpty && imei2.isEmpty && serialNumber.isEmpty) {
+      return 'Add at least one identifier: IMEI or serial number.';
+    }
+
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Add Device'),
-        centerTitle: false,
-      ),
+      appBar: AppBar(title: const Text('Add Device'), centerTitle: false),
       body: SafeArea(
         top: false,
         child: Form(
@@ -137,10 +157,7 @@ class _AddProductUnitScreenState extends State<AddProductUnitScreen> {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
             children: [
-              _buildProductCard(
-                theme,
-                colorScheme,
-              ),
+              _buildProductCard(theme, colorScheme),
 
               const SizedBox(height: 28),
 
@@ -173,7 +190,6 @@ class _AddProductUnitScreenState extends State<AddProductUnitScreen> {
                   LengthLimitingTextInputFormatter(15),
                 ],
                 validator: _validateImei1,
-                required: true,
               ),
 
               const SizedBox(height: 14),
@@ -222,9 +238,9 @@ class _AddProductUnitScreenState extends State<AddProductUnitScreen> {
 
                     Expanded(
                       child: Text(
-                        'IMEI 1 identifies this individual device. '
-                        'IMEI 2 is used for dual-SIM devices and can be '
-                        'left empty when not applicable.',
+                        'At least one identifier is required. '
+                        'For mobile phones, enter IMEI 1. '
+                        'For other devices, you can use the serial number.',
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: colorScheme.onSurfaceVariant,
                           height: 1.45,
@@ -252,9 +268,7 @@ class _AddProductUnitScreenState extends State<AddProductUnitScreen> {
                           ),
                         )
                       : const Icon(Icons.add_rounded),
-                  label: Text(
-                    _isSaving ? 'Adding Device...' : 'Add Device',
-                  ),
+                  label: Text(_isSaving ? 'Adding Device...' : 'Add Device'),
                 ),
               ),
             ],
@@ -264,18 +278,13 @@ class _AddProductUnitScreenState extends State<AddProductUnitScreen> {
     );
   }
 
-  Widget _buildProductCard(
-    ThemeData theme,
-    ColorScheme colorScheme,
-  ) {
+  Widget _buildProductCard(ThemeData theme, ColorScheme colorScheme) {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: colorScheme.outlineVariant,
-        ),
+        border: Border.all(color: colorScheme.outlineVariant),
       ),
       child: Row(
         children: [
@@ -351,22 +360,15 @@ class _AddProductUnitScreenState extends State<AddProductUnitScreen> {
         fillColor: colorScheme.surface,
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
-          borderSide: BorderSide(
-            color: colorScheme.outlineVariant,
-          ),
+          borderSide: BorderSide(color: colorScheme.outlineVariant),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
-          borderSide: BorderSide(
-            color: colorScheme.outlineVariant,
-          ),
+          borderSide: BorderSide(color: colorScheme.outlineVariant),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
-          borderSide: BorderSide(
-            color: colorScheme.primary,
-            width: 1.5,
-          ),
+          borderSide: BorderSide(color: colorScheme.primary, width: 1.5),
         ),
       ),
     );
