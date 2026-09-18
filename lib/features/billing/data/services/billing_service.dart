@@ -352,6 +352,9 @@ class BillingService {
           *,
           invoice_return_items (
             quantity
+          ),
+          invoice_item_units (
+            product_unit_id
           )
         ''')
           .eq('invoice_id', invoiceId)
@@ -376,11 +379,31 @@ class BillingService {
               (returnItemJson['quantity'] as num?)?.toInt() ?? 0;
         }
 
-        // The nested relation is only needed to calculate returnedQuantity.
-        // We don't need to keep it inside InvoiceItemModel.
+        // -----------------------------------------------------------------------
+        // Extract exact physical device IDs linked to this invoice item.
+        // -----------------------------------------------------------------------
+
+        final invoiceItemUnits =
+            (itemJson['invoice_item_units'] as List?) ?? const [];
+
+        final productUnitIds = invoiceItemUnits
+            .map((unit) {
+              final unitJson = Map<String, dynamic>.from(unit);
+              return unitJson['product_unit_id']?.toString();
+            })
+            .whereType<String>()
+            .toList();
+
+        // -----------------------------------------------------------------------
+        // The nested relations are only needed for calculations/relationships.
+        // They are not stored directly inside InvoiceItemModel.
+        // -----------------------------------------------------------------------
+
         itemJson.remove('invoice_return_items');
+        itemJson.remove('invoice_item_units');
 
         itemJson['returned_quantity'] = returnedQuantity;
+        itemJson['product_unit_ids'] = productUnitIds;
 
         return InvoiceItemModel.fromJson(itemJson);
       }).toList();

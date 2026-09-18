@@ -17,6 +17,7 @@ class InvoiceItemModel {
     required this.lineProfit,
     this.serialNumber,
     this.imeiNumber,
+    this.productUnitIds = const [],
     required this.createdAt,
   });
 
@@ -47,6 +48,12 @@ class InvoiceItemModel {
   final String? serialNumber;
   final String? imeiNumber;
 
+  /// Exact physical product units linked to this invoice item.
+  ///
+  /// Empty for quantity-based products.
+  /// Contains the product unit IDs for device-tracked products.
+  final List<String> productUnitIds;
+
   final DateTime createdAt;
 
   // ===========================================================================
@@ -69,8 +76,7 @@ class InvoiceItemModel {
   bool get hasReturn => returnedQuantity > 0;
 
   /// Whether the complete quantity of this item has been returned.
-  bool get isFullyReturned =>
-      quantity > 0 && returnedQuantity >= quantity;
+  bool get isFullyReturned => quantity > 0 && returnedQuantity >= quantity;
 
   /// Whether only part of this item's quantity has been returned.
   bool get isPartiallyReturned =>
@@ -91,8 +97,7 @@ class InvoiceItemModel {
 
       quantity: (json['quantity'] as num).toInt(),
 
-      returnedQuantity:
-          (json['returned_quantity'] as num?)?.toInt() ?? 0,
+      returnedQuantity: (json['returned_quantity'] as num?)?.toInt() ?? 0,
 
       discount: (json['discount'] as num).toDouble(),
       tax: (json['tax'] as num).toDouble(),
@@ -103,6 +108,12 @@ class InvoiceItemModel {
 
       serialNumber: json['serial_number'] as String?,
       imeiNumber: json['imei_number'] as String?,
+
+      productUnitIds:
+          (json['product_unit_ids'] as List?)
+              ?.map((id) => id.toString())
+              .toList() ??
+          const [],
 
       createdAt: DateTime.parse(json['created_at'] as String),
     );
@@ -127,6 +138,7 @@ class InvoiceItemModel {
       'line_profit': lineProfit,
       'serial_number': serialNumber,
       'imei_number': imeiNumber,
+      'product_unit_ids': productUnitIds,
       'created_at': createdAt.toIso8601String(),
     };
   }
@@ -149,6 +161,7 @@ class InvoiceItemModel {
     double? lineProfit,
     String? serialNumber,
     String? imeiNumber,
+    List<String>? productUnitIds,
     DateTime? createdAt,
   }) {
     return InvoiceItemModel(
@@ -169,6 +182,7 @@ class InvoiceItemModel {
       lineProfit: lineProfit ?? this.lineProfit,
       serialNumber: serialNumber ?? this.serialNumber,
       imeiNumber: imeiNumber ?? this.imeiNumber,
+      productUnitIds: productUnitIds ?? this.productUnitIds,
       createdAt: createdAt ?? this.createdAt,
     );
   }

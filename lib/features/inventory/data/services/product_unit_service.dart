@@ -2,9 +2,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:storemate/features/inventory/data/models/product_unit_model.dart';
 
 class ProductUnitService {
-  ProductUnitService({
-    SupabaseClient? supabase,
-  }) : _supabase = supabase ?? Supabase.instance.client;
+  ProductUnitService({SupabaseClient? supabase})
+    : _supabase = supabase ?? Supabase.instance.client;
 
   final SupabaseClient _supabase;
 
@@ -22,10 +21,26 @@ class ProductUnitService {
         .order('created_at', ascending: true);
 
     return (response as List)
-        .map(
-          (json) =>
-              ProductUnitModel.fromJson(json as Map<String, dynamic>),
-        )
+        .map((json) => ProductUnitModel.fromJson(json as Map<String, dynamic>))
+        .toList();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Get available units for invoice selection
+  // ---------------------------------------------------------------------------
+
+  Future<List<ProductUnitModel>> getInStockProductUnits({
+    required String productId,
+  }) async {
+    final response = await _supabase
+        .from('product_units')
+        .select()
+        .eq('product_id', productId)
+        .eq('status', ProductUnitStatus.inStock)
+        .order('created_at', ascending: true);
+
+    return (response as List)
+        .map((json) => ProductUnitModel.fromJson(json as Map<String, dynamic>))
         .toList();
   }
 
@@ -33,9 +48,7 @@ class ProductUnitService {
   // Get a single unit
   // ---------------------------------------------------------------------------
 
-  Future<ProductUnitModel> getProductUnit({
-    required String unitId,
-  }) async {
+  Future<ProductUnitModel> getProductUnit({required String unitId}) async {
     final response = await _supabase
         .from('product_units')
         .select()
@@ -117,9 +130,7 @@ class ProductUnitService {
     String? imei2,
     String? serialNumber,
   }) async {
-    final existingUnit = await getProductUnit(
-      unitId: unitId,
-    );
+    final existingUnit = await getProductUnit(unitId: unitId);
 
     if (!existingUnit.isInStock) {
       throw StateError(
@@ -167,24 +178,15 @@ class ProductUnitService {
   // the UI protection.
   // ---------------------------------------------------------------------------
 
-  Future<void> deleteProductUnit({
-    required String unitId,
-  }) async {
-    final existingUnit = await getProductUnit(
-      unitId: unitId,
-    );
+  Future<void> deleteProductUnit({required String unitId}) async {
+    final existingUnit = await getProductUnit(unitId: unitId);
 
     if (!existingUnit.isInStock) {
-      throw StateError(
-        'Only devices currently in stock can be deleted.',
-      );
+      throw StateError('Only devices currently in stock can be deleted.');
     }
 
     try {
-      await _supabase
-          .from('product_units')
-          .delete()
-          .eq('id', unitId);
+      await _supabase.from('product_units').delete().eq('id', unitId);
     } on PostgrestException catch (error) {
       throw _mapDatabaseError(error);
     }
@@ -199,32 +201,22 @@ class ProductUnitService {
     required String? imei2,
     required String? serialNumber,
   }) {
-    if (imei1 == null &&
-        imei2 == null &&
-        serialNumber == null) {
+    if (imei1 == null && imei2 == null && serialNumber == null) {
       throw ArgumentError(
         'Add at least one device identifier: IMEI or serial number.',
       );
     }
 
     if (imei1 != null && !_isValidImei(imei1)) {
-      throw ArgumentError(
-        'IMEI 1 must contain exactly 15 digits.',
-      );
+      throw ArgumentError('IMEI 1 must contain exactly 15 digits.');
     }
 
     if (imei2 != null && !_isValidImei(imei2)) {
-      throw ArgumentError(
-        'IMEI 2 must contain exactly 15 digits.',
-      );
+      throw ArgumentError('IMEI 2 must contain exactly 15 digits.');
     }
 
-    if (imei1 != null &&
-        imei2 != null &&
-        imei1 == imei2) {
-      throw ArgumentError(
-        'IMEI 1 and IMEI 2 must be different.',
-      );
+    if (imei1 != null && imei2 != null && imei1 == imei2) {
+      throw ArgumentError('IMEI 1 and IMEI 2 must be different.');
     }
   }
 
@@ -260,9 +252,7 @@ class ProductUnitService {
     final message = error.message.toLowerCase();
 
     if (message.contains('device tracking is not enabled')) {
-      return StateError(
-        'Device tracking is not enabled for this product.',
-      );
+      return StateError('Device tracking is not enabled for this product.');
     }
 
     if (message.contains('cannot be changed')) {
@@ -272,19 +262,13 @@ class ProductUnitService {
     }
 
     if (message.contains('another store')) {
-      return StateError(
-        'This device cannot be moved to another store.',
-      );
+      return StateError('This device cannot be moved to another store.');
     }
 
     if (message.contains('another product')) {
-      return StateError(
-        'This device cannot be reassigned to another product.',
-      );
+      return StateError('This device cannot be reassigned to another product.');
     }
 
-    return StateError(
-      error.message,
-    );
+    return StateError(error.message);
   }
 }

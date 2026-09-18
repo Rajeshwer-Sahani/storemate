@@ -4,6 +4,7 @@ import 'package:storemate/core/widgets/app_empty_state.dart';
 import 'package:storemate/core/widgets/app_page_scaffold.dart';
 import 'package:storemate/core/widgets/app_section_header.dart';
 import 'package:storemate/features/billing/data/services/billing_service.dart';
+import 'package:storemate/features/billing/presentation/widgets/device_selector_bottom_sheet.dart';
 import 'package:storemate/features/billing/presentation/widgets/invoice_bottom_bar.dart';
 import 'package:storemate/features/billing/presentation/widgets/invoice_customer_card.dart';
 import 'package:storemate/features/billing/presentation/widgets/invoice_empty_products.dart';
@@ -15,6 +16,7 @@ import 'package:storemate/features/billing/presentation/controllers/create_invoi
 import 'package:storemate/features/billing/presentation/widgets/customer_selector_bottom_sheet.dart';
 import 'package:storemate/features/billing/presentation/widgets/payment_method_bottom_sheet.dart';
 import 'package:storemate/features/billing/presentation/widgets/product_selector_bottom_sheet.dart';
+import 'package:storemate/features/inventory/data/models/product_model.dart';
 
 class CreateInvoiceScreen extends StatefulWidget {
   const CreateInvoiceScreen({super.key});
@@ -146,23 +148,40 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
                                             product.categoryName!.isNotEmpty)
                                           product.categoryName!,
                                       ].join(' • '),
+
                                       quantity: item.quantity,
                                       unitPrice: product.sellingPrice,
                                       totalPrice: _controller.getItemTotal(
                                         item,
                                       ),
 
-                                      onIncrease: () {
-                                        _controller.increaseQuantity(
-                                          product.id,
-                                        );
-                                      },
+                                      isDeviceTracked:
+                                          product.trackingMode == 'device',
 
-                                      onDecrease: () {
-                                        _controller.decreaseQuantity(
-                                          product.id,
-                                        );
-                                      },
+                                      onManageDevices:
+                                          product.trackingMode == 'device'
+                                          ? () => _selectDevicesForProduct(
+                                              product,
+                                            )
+                                          : null,
+
+                                      onIncrease:
+                                          product.trackingMode == 'device'
+                                          ? null
+                                          : () {
+                                              _controller.increaseQuantity(
+                                                product.id,
+                                              );
+                                            },
+
+                                      onDecrease:
+                                          product.trackingMode == 'device'
+                                          ? null
+                                          : () {
+                                              _controller.decreaseQuantity(
+                                                product.id,
+                                              );
+                                            },
 
                                       onDelete: () {
                                         _controller.removeProduct(product.id);
@@ -299,6 +318,58 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
 
     if (product == null) return;
 
+    if (product.trackingMode == 'device') {
+      await _selectDevicesForProduct(product);
+      return;
+    }
+
     _controller.addProduct(product);
+  }
+
+  Future<void> _selectDevicesForProduct(ProductModel product) async {
+    try {
+      final units = await _controller.getAvailableProductUnits(product.id);
+
+      if (!mounted) return;
+
+      final existingItem = _controller.getInvoiceItem(product.id);
+
+      final selectedUnits = await DeviceSelectorBottomSheet.show(
+        context,
+        productName: product.name,
+        units: units,
+        selectedUnitIds: existingItem?.productUnitIds ?? const [],
+      );
+
+      if (selectedUnits == null) return;
+
+      final selectedUnitIds = selectedUnits.map((unit) => unit.id).toList();
+
+      if (selectedUnitIds.isEmpty) {
+        _controller.removeProduct(product.id);
+        return;
+      }
+
+      if (existingItem == null) {
+        _controller.addDeviceProduct(product, selectedUnitIds);
+      } else {
+        _controller.updateProductUnits(
+          productId: product.id,
+          productUnitIds: selectedUnitIds,
+        );
+      }
+    } on StateError catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(e.message)));
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to load available devices: $e')),
+      );
+    }
   }
 }

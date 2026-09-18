@@ -18,6 +18,8 @@ class InvoiceItemTile extends StatelessWidget {
     this.onIncrease,
     this.onDecrease,
     this.editable = true,
+    this.isDeviceTracked = false,
+    this.onManageDevices,
   });
 
   final String productName;
@@ -60,6 +62,12 @@ class InvoiceItemTile extends StatelessWidget {
   /// true  -> Create Invoice
   /// false -> Invoice Details
   final bool editable;
+
+  /// Whether this product uses physical device tracking.
+  final bool isDeviceTracked;
+
+  /// Opens the device selector for this invoice item.
+  final VoidCallback? onManageDevices;
 
   int get remainingQuantity {
     final remaining = quantity - returnedQuantity;
@@ -178,7 +186,7 @@ class InvoiceItemTile extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                        editable ? 'Total' : 'Net Amount',
+                          editable ? 'Total' : 'Net Amount',
                           style: theme.textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.w700,
                             color: colorScheme.onSurface,
@@ -248,6 +256,86 @@ class InvoiceItemTile extends StatelessWidget {
   Widget _buildEditableInformation(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+
+    if (isDeviceTracked) {
+      return Column(
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  children: [
+                    Text(
+                      'Devices',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    Container(
+                      height: 38,
+                      padding: const EdgeInsets.symmetric(horizontal: 14),
+                      decoration: BoxDecoration(
+                        color: colorScheme.surface,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: colorScheme.outlineVariant.withValues(
+                            alpha: .5,
+                          ),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.devices_rounded,
+                            size: 17,
+                            color: colorScheme.primary,
+                          ),
+                          const SizedBox(width: 7),
+                          Text(
+                            '$quantity Selected',
+                            style: theme.textTheme.titleSmall?.copyWith(
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              Container(
+                width: 1,
+                height: 34,
+                color: colorScheme.outlineVariant,
+              ),
+
+              Expanded(
+                child: _InfoTile(
+                  title: 'Unit Price',
+                  value: '₹${unitPrice.toStringAsFixed(2)}',
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 14),
+
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: onManageDevices,
+              icon: const Icon(Icons.settings_outlined, size: 18),
+              label: const Text('Manage Devices'),
+            ),
+          ),
+        ],
+      );
+    }
 
     return Row(
       children: [

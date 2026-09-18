@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:storemate/features/billing/data/models/invoice_model.dart';
+import 'package:storemate/features/inventory/data/models/product_unit_model.dart';
+import 'package:storemate/features/inventory/data/services/product_unit_service.dart';
 
 import '../../../customers/data/models/customer_model.dart';
 import '../../../inventory/data/models/product_model.dart';
@@ -9,10 +11,14 @@ import '../../data/models/create_invoice_request.dart';
 import '../../data/services/billing_service.dart';
 
 class CreateInvoiceController extends ChangeNotifier {
-  CreateInvoiceController({BillingService? billingService})
-    : _billingService = billingService ?? BillingService();
+  CreateInvoiceController({
+    BillingService? billingService,
+    ProductUnitService? productUnitService,
+  }) : _billingService = billingService ?? BillingService(),
+       _productUnitService = productUnitService ?? ProductUnitService();
 
   final BillingService _billingService;
+  final ProductUnitService _productUnitService;
 
   //--------------------------------------------------------------------------
   // Loading State
@@ -148,6 +154,12 @@ class CreateInvoiceController extends ChangeNotifier {
   // Product Management
   //--------------------------------------------------------------------------
 
+  Future<List<ProductUnitModel>> getAvailableProductUnits(
+    String productId,
+  ) async {
+    return _productUnitService.getInStockProductUnits(productId: productId);
+  }
+
   void addProduct(ProductModel product) {
     final index = _invoiceItems.indexWhere(
       (item) => item.productId == product.id,
@@ -168,6 +180,7 @@ class CreateInvoiceController extends ChangeNotifier {
         tax: existing.tax,
         serialNumber: existing.serialNumber,
         imeiNumber: existing.imeiNumber,
+        productUnitIds: existing.productUnitIds,
       );
     } else {
       if (product.stockQuantity <= 0) {
@@ -183,6 +196,24 @@ class CreateInvoiceController extends ChangeNotifier {
         ),
       );
     }
+
+    notifyListeners();
+  }
+
+  void addDeviceProduct(ProductModel product, List<String> productUnitIds) {
+    if (productUnitIds.isEmpty) return;
+
+    _invoiceItems.removeWhere((item) => item.productId == product.id);
+
+    _invoiceItems.add(
+      CreateInvoiceItemRequest(
+        productId: product.id,
+        quantity: productUnitIds.length,
+        discount: 0,
+        tax: 0,
+        productUnitIds: productUnitIds,
+      ),
+    );
 
     notifyListeners();
   }
@@ -226,6 +257,7 @@ class CreateInvoiceController extends ChangeNotifier {
       tax: item.tax,
       serialNumber: item.serialNumber,
       imeiNumber: item.imeiNumber,
+      productUnitIds: item.productUnitIds,
     );
 
     notifyListeners();
@@ -252,6 +284,7 @@ class CreateInvoiceController extends ChangeNotifier {
       tax: item.tax,
       serialNumber: item.serialNumber,
       imeiNumber: item.imeiNumber,
+      productUnitIds: item.productUnitIds,
     );
 
     notifyListeners();
@@ -286,6 +319,37 @@ class CreateInvoiceController extends ChangeNotifier {
       tax: item.tax,
       serialNumber: item.serialNumber,
       imeiNumber: item.imeiNumber,
+      productUnitIds: item.productUnitIds,
+    );
+
+    notifyListeners();
+  }
+
+  void updateProductUnits({
+    required String productId,
+    required List<String> productUnitIds,
+  }) {
+    final index = _invoiceItems.indexWhere(
+      (item) => item.productId == productId,
+    );
+
+    if (index == -1) return;
+
+    if (productUnitIds.isEmpty) {
+      removeProduct(productId);
+      return;
+    }
+
+    final item = _invoiceItems[index];
+
+    _invoiceItems[index] = CreateInvoiceItemRequest(
+      productId: item.productId,
+      quantity: productUnitIds.length,
+      discount: item.discount,
+      tax: item.tax,
+      serialNumber: item.serialNumber,
+      imeiNumber: item.imeiNumber,
+      productUnitIds: List.unmodifiable(productUnitIds),
     );
 
     notifyListeners();
@@ -400,6 +464,14 @@ class CreateInvoiceController extends ChangeNotifier {
 
       if (item.quantity > product.stockQuantity) {
         return '${product.name} does not have enough stock.';
+      }
+
+      if (product.trackingMode == 'device') {
+        if (item.productUnitIds.length != item.quantity) {
+          return 'Please select ${item.quantity} device(s) for ${product.name}.';
+        }
+      } else if (item.productUnitIds.isNotEmpty) {
+        return 'Device selections are not allowed for ${product.name}.';
       }
     }
 
