@@ -1514,14 +1514,16 @@ class _ProductCard extends StatelessWidget {
 
     final trackingMode = (product['tracking_mode'] ?? 'quantity').toString();
 
-    final registeredDeviceCount = readInteger(
-      product['registered_device_count'],
+    final registeredInStockDeviceCount = readInteger(
+      product['registered_in_stock_device_count'],
     );
 
     final isDeviceSetupIncomplete =
         trackingMode == 'device' &&
         stockQuantity > 0 &&
-        registeredDeviceCount == 0;
+        registeredInStockDeviceCount < stockQuantity;
+
+    final missingDeviceCount = stockQuantity - registeredInStockDeviceCount;
 
     final categoryData = product['product_categories'];
 

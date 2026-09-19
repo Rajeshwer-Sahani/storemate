@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:storemate/core/widgets/product_icon.dart';
+import 'package:storemate/features/inventory/data/models/product_unit_model.dart';
 import 'package:storemate/features/inventory/data/services/inventory_service.dart';
 import 'package:storemate/features/inventory/data/models/product_model.dart';
 import 'package:storemate/features/inventory/data/services/product_unit_service.dart';
@@ -511,14 +512,34 @@ class ProductDetailsScreen extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    if (product.trackingMode == 'device' || product.stockQuantity <= 0) {
+    // Only device-tracked products need device setup.
+    if (product.trackingMode != 'device' || product.stockQuantity <= 0) {
       return const SizedBox.shrink();
     }
 
-    return FutureBuilder<int>(
-      future: _productUnitService.getProductUnitCount(productId: product.id),
+    return FutureBuilder<List<ProductUnitModel>>(
+      future: _productUnitService.getInStockProductUnits(productId: product.id),
       builder: (context, snapshot) {
-        final registeredDeviceCount = snapshot.data ?? 0;
+        // While loading, don't show an incorrect warning.
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const SizedBox.shrink();
+        }
+
+        // If loading fails, don't invent a device count.
+        if (snapshot.hasError) {
+          return const SizedBox.shrink();
+        }
+
+        final registeredDeviceCount = snapshot.data?.length ?? 0;
+
+        final stockQuantity = product.stockQuantity;
+
+        final remainingDeviceCount = stockQuantity - registeredDeviceCount;
+
+        // Device setup is complete.
+        if (remainingDeviceCount <= 0) {
+          return const SizedBox.shrink();
+        }
 
         return Container(
           width: double.infinity,
@@ -556,7 +577,7 @@ class ProductDetailsScreen extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Device tracking not configured',
+                          'Device setup incomplete',
                           style: theme.textTheme.titleMedium?.copyWith(
                             fontWeight: FontWeight.w800,
                           ),
@@ -565,10 +586,8 @@ class ProductDetailsScreen extends StatelessWidget {
                         const SizedBox(height: 5),
 
                         Text(
-                          '${product.stockQuantity} units in stock • '
-                          '$registeredDeviceCount '
-                          '${registeredDeviceCount == 1 ? 'device' : 'devices'} '
-                          'registered',
+                          '$registeredDeviceCount / '
+                          '$stockQuantity devices registered',
                           style: theme.textTheme.bodySmall?.copyWith(
                             color: colorScheme.onSurfaceVariant,
                             height: 1.4,
@@ -583,8 +602,20 @@ class ProductDetailsScreen extends StatelessWidget {
               const SizedBox(height: 14),
 
               Text(
-                'Register the IMEI or serial numbers if you want to '
-                'select individual devices during billing.',
+                '$remainingDeviceCount '
+                '${remainingDeviceCount == 1 ? 'device' : 'devices'} '
+                'still need to be added.',
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                  height: 1.45,
+                ),
+              ),
+
+              const SizedBox(height: 6),
+
+              Text(
+                'Add the remaining IMEI or serial numbers '
+                'before selling these devices.',
                 style: theme.textTheme.bodySmall?.copyWith(
                   color: colorScheme.onSurfaceVariant,
                   height: 1.45,
@@ -598,10 +629,20 @@ class ProductDetailsScreen extends StatelessWidget {
                 height: 46,
                 child: FilledButton.icon(
                   onPressed: () async {
-                    await _showEnableDeviceTrackingConfirmation(context);
+                    final result = await Navigator.of(context).push<bool>(
+                      MaterialPageRoute(
+                        builder: (_) {
+                          return ManageDevicesScreen(product: product);
+                        },
+                      ),
+                    );
+
+                    if (result == true && context.mounted) {
+                      Navigator.of(context).pop(true);
+                    }
                   },
-                  icon: const Icon(Icons.phonelink_setup_rounded, size: 19),
-                  label: const Text('Set Up Devices'),
+                  icon: const Icon(Icons.devices_other_rounded, size: 19),
+                  label: const Text('Manage Devices'),
                   style: FilledButton.styleFrom(
                     backgroundColor: Colors.amber.shade700,
                     foregroundColor: Colors.white,

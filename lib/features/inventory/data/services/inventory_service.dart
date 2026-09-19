@@ -561,7 +561,8 @@ class InventoryService {
         name
       ),
       product_units (
-        id
+        id,
+        status
       )
       ''')
         .eq('store_id', storeId)
@@ -573,11 +574,16 @@ class InventoryService {
     return products.map((product) {
       final productUnits = product['product_units'];
 
-      final registeredDeviceCount = productUnits is List
-          ? productUnits.length
+      final registeredInStockDeviceCount = productUnits is List
+          ? productUnits.where((unit) {
+              return unit is Map && unit['status']?.toString() == 'in_stock';
+            }).length
           : 0;
 
-      return {...product, 'registered_device_count': registeredDeviceCount};
+      return {
+        ...product,
+        'registered_in_stock_device_count': registeredInStockDeviceCount,
+      };
     }).toList();
   }
 }
