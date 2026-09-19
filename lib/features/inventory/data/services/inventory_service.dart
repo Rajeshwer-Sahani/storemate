@@ -541,30 +541,43 @@ class InventoryService {
     final response = await _supabase
         .from('products')
         .select('''
+      id,
+      store_id,
+      category_id,
+      name,
+      brand,
+      sku,
+      barcode,
+      tracking_mode,
+      purchase_price,
+      selling_price,
+      stock_quantity,
+      low_stock_threshold,
+      description,
+      is_active,
+      created_at,
+      product_categories (
         id,
-        store_id,
-        category_id,
-        name,
-        brand,
-        sku,
-        barcode,
-        tracking_mode,
-        purchase_price,
-        selling_price,
-        stock_quantity,
-        low_stock_threshold,
-        description,
-        is_active,
-        created_at,
-        product_categories (
-          id,
-          name
-        )
-        ''')
+        name
+      ),
+      product_units (
+        id
+      )
+      ''')
         .eq('store_id', storeId)
         .eq('is_active', true)
         .order('created_at', ascending: false);
 
-    return List<Map<String, dynamic>>.from(response);
+    final products = List<Map<String, dynamic>>.from(response);
+
+    return products.map((product) {
+      final productUnits = product['product_units'];
+
+      final registeredDeviceCount = productUnits is List
+          ? productUnits.length
+          : 0;
+
+      return {...product, 'registered_device_count': registeredDeviceCount};
+    }).toList();
   }
 }

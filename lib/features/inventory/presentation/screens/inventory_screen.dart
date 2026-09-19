@@ -9,7 +9,6 @@ import 'package:storemate/features/inventory/presentation/screens/product_detail
 import 'package:storemate/features/inventory/presentation/screens/duplicate_product_screen.dart';
 import 'package:storemate/features/inventory/presentation/screens/import_products_screen.dart';
 
-
 // =============================================================================
 // Inventory Filter and Sort Options
 // =============================================================================
@@ -1513,6 +1512,17 @@ class _ProductCard extends StatelessWidget {
 
     final lowStockThreshold = readInteger(product['low_stock_threshold']);
 
+    final trackingMode = (product['tracking_mode'] ?? 'quantity').toString();
+
+    final registeredDeviceCount = readInteger(
+      product['registered_device_count'],
+    );
+
+    final isDeviceSetupIncomplete =
+        trackingMode == 'device' &&
+        stockQuantity > 0 &&
+        registeredDeviceCount == 0;
+
     final categoryData = product['product_categories'];
 
     final categoryName = categoryData is Map
@@ -1658,6 +1668,33 @@ class _ProductCard extends StatelessWidget {
                         ),
                       ],
                     ),
+                    if (isDeviceSetupIncomplete) ...[
+                      const SizedBox(height: 10),
+
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.warning_amber_rounded,
+                            size: 16,
+                            color: Colors.amber.shade700,
+                          ),
+
+                          const SizedBox(width: 6),
+
+                          Expanded(
+                            child: Text(
+                              'Device setup incomplete',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: Colors.amber.shade800,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
               ),
