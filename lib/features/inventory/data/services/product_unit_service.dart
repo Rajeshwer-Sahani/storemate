@@ -26,6 +26,19 @@ class ProductUnitService {
   }
 
   // ---------------------------------------------------------------------------
+  // Get product unit count
+  // ---------------------------------------------------------------------------  
+  Future<int> getProductUnitCount({required String productId}) async {
+    final response = await _supabase
+        .from('product_units')
+        .select('id')
+        .eq('product_id', productId)
+        .count();
+
+    return response.count;
+  }
+
+  // ---------------------------------------------------------------------------
   // Get available units for invoice selection
   // ---------------------------------------------------------------------------
 

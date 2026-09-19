@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:storemate/core/widgets/product_icon.dart';
 import 'package:storemate/features/inventory/data/services/inventory_service.dart';
 import 'package:storemate/features/inventory/data/models/product_model.dart';
+import 'package:storemate/features/inventory/data/services/product_unit_service.dart';
 import 'package:storemate/features/inventory/presentation/screens/edit_product_screen.dart';
 import 'package:storemate/features/inventory/presentation/screens/manage_devices_screen.dart';
 import 'package:storemate/features/inventory/presentation/widgets/adjust_stock_bottom_sheet.dart';
@@ -12,6 +13,7 @@ class ProductDetailsScreen extends StatelessWidget {
 
   final ProductModel product;
   final InventoryService _inventoryService = InventoryService();
+  final ProductUnitService _productUnitService = ProductUnitService();
 
   bool get _isOutOfStock {
     return product.stockQuantity <= 0;
@@ -505,6 +507,117 @@ class ProductDetailsScreen extends StatelessWidget {
     }
   }
 
+  Widget _buildDeviceTrackingReminder(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    if (product.trackingMode == 'device' || product.stockQuantity <= 0) {
+      return const SizedBox.shrink();
+    }
+
+    return FutureBuilder<int>(
+      future: _productUnitService.getProductUnitCount(productId: product.id),
+      builder: (context, snapshot) {
+        final registeredDeviceCount = snapshot.data ?? 0;
+
+        return Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: Colors.amber.withValues(alpha: 0.10),
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: Colors.amber.withValues(alpha: 0.28)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    width: 46,
+                    height: 46,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: Colors.amber.withValues(alpha: 0.16),
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    child: const Icon(
+                      Icons.warning_amber_rounded,
+                      color: Colors.amber,
+                      size: 25,
+                    ),
+                  ),
+
+                  const SizedBox(width: 14),
+
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Device tracking not configured',
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+
+                        const SizedBox(height: 5),
+
+                        Text(
+                          '${product.stockQuantity} units in stock • '
+                          '$registeredDeviceCount '
+                          '${registeredDeviceCount == 1 ? 'device' : 'devices'} '
+                          'registered',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                            height: 1.4,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 14),
+
+              Text(
+                'Register the IMEI or serial numbers if you want to '
+                'select individual devices during billing.',
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                  height: 1.45,
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              SizedBox(
+                width: double.infinity,
+                height: 46,
+                child: FilledButton.icon(
+                  onPressed: () async {
+                    await _showEnableDeviceTrackingConfirmation(context);
+                  },
+                  icon: const Icon(Icons.phonelink_setup_rounded, size: 19),
+                  label: const Text('Set Up Devices'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: Colors.amber.shade700,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -711,6 +824,12 @@ class ProductDetailsScreen extends StatelessWidget {
 
             const SizedBox(height: 16),
 
+            // Device tracking reminder
+            _buildDeviceTrackingReminder(context),
+
+            const SizedBox(height: 16),
+
+            // Device tracking
             InkWell(
               borderRadius: BorderRadius.circular(20),
               onTap: () {
