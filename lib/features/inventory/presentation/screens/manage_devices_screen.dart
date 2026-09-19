@@ -22,6 +22,8 @@ class _ManageDevicesScreenState extends State<ManageDevicesScreen> {
   bool _isLoading = true;
   String? _errorMessage;
 
+  bool _hasChanges = false;
+
   @override
   void initState() {
     super.initState();
@@ -68,13 +70,23 @@ class _ManageDevicesScreenState extends State<ManageDevicesScreen> {
       ),
     );
 
-    if (wasAdded == true && mounted) {
-      await _loadDevices();
+    if (wasAdded != true || !mounted) {
+      return;
     }
+
+    setState(() {
+      _hasChanges = true;
+    });
+
+    await _loadDevices();
   }
 
   Future<void> _refreshDevices() async {
     await _loadDevices();
+  }
+
+  void _closeScreen() {
+    Navigator.of(context).pop(_hasChanges);
   }
 
   @override
@@ -82,19 +94,37 @@ class _ManageDevicesScreenState extends State<ManageDevicesScreen> {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    return Scaffold(
-      appBar: AppBar(title: const Text('Manage Devices'), centerTitle: false),
-      body: SafeArea(
-        top: false,
-        child: RefreshIndicator(
-          onRefresh: _refreshDevices,
-          child: _buildBody(context, theme, colorScheme),
+    return PopScope<bool>(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) {
+          return;
+        }
+
+        _closeScreen();
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            tooltip: 'Back',
+            onPressed: _closeScreen,
+            icon: const Icon(Icons.arrow_back_rounded),
+          ),
+          title: const Text('Manage Devices'),
+          centerTitle: false,
         ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _openAddDevice,
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Add Device'),
+        body: SafeArea(
+          top: false,
+          child: RefreshIndicator(
+            onRefresh: _refreshDevices,
+            child: _buildBody(context, theme, colorScheme),
+          ),
+        ),
+        floatingActionButton: FloatingActionButton.extended(
+          onPressed: _openAddDevice,
+          icon: const Icon(Icons.add_rounded),
+          label: const Text('Add Device'),
+        ),
       ),
     );
   }
@@ -187,9 +217,15 @@ class _ManageDevicesScreenState extends State<ManageDevicesScreen> {
                     ),
                   );
 
-                  if (result == true && mounted) {
-                    await _loadDevices();
+                  if (result != true || !mounted) {
+                    return;
                   }
+
+                  setState(() {
+                    _hasChanges = true;
+                  });
+
+                  await _loadDevices();
                 },
               ),
             );

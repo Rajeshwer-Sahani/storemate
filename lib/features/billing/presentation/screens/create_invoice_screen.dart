@@ -17,6 +17,7 @@ import 'package:storemate/features/billing/presentation/widgets/customer_selecto
 import 'package:storemate/features/billing/presentation/widgets/payment_method_bottom_sheet.dart';
 import 'package:storemate/features/billing/presentation/widgets/product_selector_bottom_sheet.dart';
 import 'package:storemate/features/inventory/data/models/product_model.dart';
+import 'package:storemate/features/inventory/presentation/screens/manage_devices_screen.dart';
 
 class CreateInvoiceScreen extends StatefulWidget {
   const CreateInvoiceScreen({super.key});
@@ -326,12 +327,228 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
     _controller.addProduct(product);
   }
 
+  Future<bool?> _showDeviceSetupRequiredDialog(ProductModel product) async {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return Dialog(
+          insetPadding: const EdgeInsets.symmetric(
+            horizontal: 28,
+            vertical: 24,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(28),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // ----------------------------------------------------------------
+                // Header
+                // ----------------------------------------------------------------
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 48,
+                      height: 48,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: Colors.amber.withValues(alpha: 0.14),
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      child: const Icon(
+                        Icons.warning_amber_rounded,
+                        color: Colors.amber,
+                        size: 27,
+                      ),
+                    ),
+
+                    const SizedBox(width: 14),
+
+                    Expanded(
+                      child: Text(
+                        'Device setup required',
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          height: 1.2,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 22),
+
+                // ----------------------------------------------------------------
+                // Product name
+                // ----------------------------------------------------------------
+                Text(
+                  product.name,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                    height: 1.3,
+                  ),
+                ),
+
+                const SizedBox(height: 10),
+
+                // ----------------------------------------------------------------
+                // Stock information
+                // ----------------------------------------------------------------
+                Text(
+                  '${product.stockQuantity} units are in stock, '
+                  'but no available device identifiers are registered.',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    height: 1.5,
+                  ),
+                ),
+
+                const SizedBox(height: 14),
+
+                // ----------------------------------------------------------------
+                // Action explanation
+                // ----------------------------------------------------------------
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: colorScheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.info_outline_rounded,
+                        size: 20,
+                        color: colorScheme.primary,
+                      ),
+
+                      const SizedBox(width: 10),
+
+                      Expanded(
+                        child: Text(
+                          'Register the IMEI or serial numbers before '
+                          'creating a device-tracked sale.',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                            height: 1.45,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 20),
+
+                // ----------------------------------------------------------------
+                // Primary action
+                // ----------------------------------------------------------------
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: FilledButton.icon(
+                    onPressed: () {
+                      Navigator.of(dialogContext).pop(true);
+                    },
+                    icon: const Icon(Icons.devices_other_rounded, size: 19),
+                    label: const Text(
+                      'Register Devices',
+                      style: TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                    style: FilledButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 4),
+
+                // ----------------------------------------------------------------
+                // Secondary action
+                // ----------------------------------------------------------------
+                SizedBox(
+                  width: double.infinity,
+                  height: 46,
+                  child: TextButton(
+                    onPressed: () {
+                      Navigator.of(dialogContext).pop(false);
+                    },
+                    style: TextButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                    child: const Text(
+                      'Cancel',
+                      style: TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> _selectDevicesForProduct(ProductModel product) async {
     try {
       final units = await _controller.getAvailableProductUnits(product.id);
 
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
 
+      // -------------------------------------------------------------------------
+      // Level 3 safety check
+      // -------------------------------------------------------------------------
+      // A device-tracked product cannot be sold until at least one physical
+      // device has been registered and is available for sale.
+      //
+      // If no devices are available, stop the invoice flow here and ask the
+      // user to register the physical devices first.
+      // -------------------------------------------------------------------------
+      if (units.isEmpty) {
+        final shouldRegister = await _showDeviceSetupRequiredDialog(product);
+
+        if (shouldRegister != true || !mounted) {
+          return;
+        }
+
+        final wasUpdated = await Navigator.of(context).push<bool>(
+          MaterialPageRoute(
+            builder: (_) {
+              return ManageDevicesScreen(product: product);
+            },
+          ),
+        );
+
+        if (wasUpdated == true && mounted) {
+          // Re-check the database after returning from Manage Devices.
+          await _selectDevicesForProduct(product);
+        }
+
+        return;
+      }
+
+      // -------------------------------------------------------------------------
+      // Devices are available → continue with the normal device selector.
+      // -------------------------------------------------------------------------
       final existingItem = _controller.getInvoiceItem(product.id);
 
       final selectedUnits = await DeviceSelectorBottomSheet.show(
@@ -341,7 +558,9 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
         selectedUnitIds: existingItem?.productUnitIds ?? const [],
       );
 
-      if (selectedUnits == null) return;
+      if (selectedUnits == null) {
+        return;
+      }
 
       final selectedUnitIds = selectedUnits.map((unit) => unit.id).toList();
 
@@ -359,13 +578,17 @@ class _CreateInvoiceScreenState extends State<CreateInvoiceScreen> {
         );
       }
     } on StateError catch (e) {
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
 
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(e.message)));
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted) {
+        return;
+      }
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to load available devices: $e')),
