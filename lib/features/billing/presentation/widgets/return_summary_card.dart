@@ -21,29 +21,28 @@ class ReturnSummaryCard extends StatelessWidget {
   final bool isLoading;
 
   String _formatReturnReason(ReturnReason? reason) {
-    if (reason == null) return "-";
+    if (reason == null) {
+      return '-';
+    }
 
     switch (reason) {
       case ReturnReason.damaged:
-        return "Damaged";
-
+        return 'Damaged';
       case ReturnReason.wrongItem:
-        return "Wrong Item";
-
+        return 'Wrong Item';
       case ReturnReason.customerChangedMind:
-        return "Customer Changed Mind";
-
+        return 'Customer Changed Mind';
       case ReturnReason.defective:
-        return "Defective";
-
+        return 'Defective';
       case ReturnReason.other:
-        return "Other";
+        return 'Other';
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     final currencyFormatter = NumberFormat.currency(
       locale: 'en_IN',
@@ -51,33 +50,56 @@ class ReturnSummaryCard extends StatelessWidget {
       decimalDigits: 2,
     );
 
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: theme.colorScheme.outlineVariant),
+    final canProcess =
+        selectedItems > 0 && totalQuantity > 0 && returnReason != null;
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: colorScheme.outlineVariant),
       ),
       child: Padding(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            //-----------------------------------------
-            // Title
-            //-----------------------------------------
             Row(
               children: [
-                Icon(
-                  Icons.receipt_long_rounded,
-                  color: theme.colorScheme.primary,
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: colorScheme.primaryContainer,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Icon(
+                    Icons.receipt_long_rounded,
+                    color: colorScheme.onPrimaryContainer,
+                  ),
                 ),
 
-                const SizedBox(width: 10),
+                const SizedBox(width: 12),
 
-                Text(
-                  "Return Summary",
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Return Summary',
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Review the return before processing.',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -85,68 +107,165 @@ class ReturnSummaryCard extends StatelessWidget {
 
             const SizedBox(height: 20),
 
-            _SummaryRow(
-              title: "Selected Items",
-              value: selectedItems.toString(),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(18),
+              decoration: BoxDecoration(
+                color: colorScheme.primaryContainer.withValues(alpha: .55),
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Refund Amount',
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: colorScheme.onPrimaryContainer,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+
+                  const SizedBox(height: 5),
+
+                  Text(
+                    currencyFormatter.format(refundAmount),
+                    style: theme.textTheme.headlineMedium?.copyWith(
+                      color: colorScheme.onPrimaryContainer,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -0.7,
+                    ),
+                  ),
+                ],
+              ),
             ),
 
-            const SizedBox(height: 12),
-
-            _SummaryRow(
-              title: "Total Quantity",
-              value: totalQuantity.toString(),
-            ),
-
-            const SizedBox(height: 12),
-
-            _SummaryRow(
-              title: "Return Reason",
-              value: returnReason != null
-                  ? _formatReturnReason(returnReason!)
-                  : "-",
-            ),
-
-            const Divider(height: 32),
+            const SizedBox(height: 18),
 
             Row(
               children: [
                 Expanded(
-                  child: Text(
-                    "Refund Amount",
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                  child: _SummaryMetric(
+                    icon: Icons.inventory_2_outlined,
+                    label: 'Items',
+                    value: selectedItems.toString(),
                   ),
                 ),
 
-                Text(
-                  currencyFormatter.format(refundAmount),
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                    color: theme.colorScheme.primary,
-                    fontWeight: FontWeight.bold,
+                const SizedBox(width: 10),
+
+                Expanded(
+                  child: _SummaryMetric(
+                    icon: Icons.format_list_numbered_rounded,
+                    label: 'Quantity',
+                    value: totalQuantity.toString(),
                   ),
                 ),
               ],
             ),
 
-            const SizedBox(height: 28),
+            const SizedBox(height: 14),
+
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+              decoration: BoxDecoration(
+                color: colorScheme.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 34,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      color: colorScheme.primaryContainer,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      Icons.assignment_return_outlined,
+                      size: 18,
+                      color: colorScheme.onPrimaryContainer,
+                    ),
+                  ),
+
+                  const SizedBox(width: 10),
+
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Return Reason',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+
+                        const SizedBox(height: 2),
+
+                        Text(
+                          _formatReturnReason(returnReason),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 20),
 
             SizedBox(
               width: double.infinity,
-              height: 52,
+              height: 54,
               child: FilledButton.icon(
-                onPressed: isLoading ? null : onProcessReturn,
+                onPressed: isLoading || !canProcess ? null : onProcessReturn,
                 icon: isLoading
                     ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2.2),
                       )
-                    : const Icon(Icons.assignment_return),
-
-                label: Text(isLoading ? "Processing..." : "Process Return"),
+                    : const Icon(Icons.assignment_return_rounded),
+                label: Text(
+                  isLoading ? 'Processing Return...' : 'Process Return',
+                ),
               ),
             ),
+
+            if (!canProcess && !isLoading) ...[
+              const SizedBox(height: 10),
+
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.info_outline_rounded,
+                    size: 16,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      selectedItems == 0
+                          ? 'Select at least one item to continue.'
+                          : returnReason == null
+                          ? 'Select a return reason to continue.'
+                          : 'Review the selected return details.',
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ],
         ),
       ),
@@ -154,27 +273,56 @@ class ReturnSummaryCard extends StatelessWidget {
   }
 }
 
-class _SummaryRow extends StatelessWidget {
-  const _SummaryRow({required this.title, required this.value});
+class _SummaryMetric extends StatelessWidget {
+  const _SummaryMetric({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
 
-  final String title;
+  final IconData icon;
+  final String label;
   final String value;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
-    return Row(
-      children: [
-        Expanded(child: Text(title, style: theme.textTheme.bodyLarge)),
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 20, color: colorScheme.primary),
 
-        Text(
-          value,
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w600,
+          const SizedBox(width: 9),
+
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
