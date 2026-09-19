@@ -261,7 +261,7 @@ class ReturnItemCard extends StatelessWidget {
             label: 'Returned',
             value: item.returnedQuantity.toString(),
             icon: Icons.assignment_return_outlined,
-            color: colorScheme.tertiary,
+            color: Colors.teal,
           ),
         ),
 
@@ -272,7 +272,7 @@ class ReturnItemCard extends StatelessWidget {
             label: 'Available',
             value: item.remainingQuantity.toString(),
             icon: Icons.check_circle_outline_rounded,
-            color: colorScheme.primary,
+            color: Colors.green,
           ),
         ),
       ],
@@ -425,7 +425,9 @@ class _StatBox extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 11),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: .06),
+        color: color.withValues(
+          alpha: Theme.of(context).brightness == Brightness.dark ? .10 : .07,
+        ),
         borderRadius: BorderRadius.circular(14),
       ),
       child: Column(

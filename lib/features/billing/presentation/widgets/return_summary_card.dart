@@ -148,6 +148,7 @@ class ReturnSummaryCard extends StatelessWidget {
                     icon: Icons.inventory_2_outlined,
                     label: 'Items',
                     value: selectedItems.toString(),
+                    color: Colors.indigo,
                   ),
                 ),
 
@@ -158,6 +159,7 @@ class ReturnSummaryCard extends StatelessWidget {
                     icon: Icons.format_list_numbered_rounded,
                     label: 'Quantity',
                     value: totalQuantity.toString(),
+                    color: Colors.deepPurple,
                   ),
                 ),
               ],
@@ -278,11 +280,13 @@ class _SummaryMetric extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.value,
+    required this.color,
   });
 
   final IconData icon;
   final String label;
   final String value;
+  final Color color;
 
   @override
   Widget build(BuildContext context) {
@@ -292,12 +296,14 @@ class _SummaryMetric extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerLow,
+        color: color.withValues(
+          alpha: Theme.of(context).brightness == Brightness.dark ? .10 : .07,
+        ),
         borderRadius: BorderRadius.circular(15),
       ),
       child: Row(
         children: [
-          Icon(icon, size: 20, color: colorScheme.primary),
+          Icon(icon, size: 21, color: color),
 
           const SizedBox(width: 9),
 
