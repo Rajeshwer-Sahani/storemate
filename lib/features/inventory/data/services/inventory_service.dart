@@ -409,7 +409,7 @@ class InventoryService {
 
     final existingProduct = await _supabase
         .from('products')
-        .select('id, tracking_mode')
+        .select('id, tracking_mode, category_id')
         .eq('id', trimmedProductId)
         .eq('store_id', storeId)
         .eq('is_active', true)
@@ -430,16 +430,14 @@ class InventoryService {
     );
 
     /*
-     * Category requirement is authoritative for the product's current
-     * tracking behavior.
-     *
-     * Historical quantity-tracked products can remain quantity-tracked until
-     * they are edited. Once edited into a category that requires devices,
-     * they become device-tracked.
-     *
-     * We never automatically downgrade an existing device-tracked product
-     * back to quantity tracking here.
-     */
+ * The selected category defines the product's required tracking mode.
+ *
+ * Existing historical products can be migrated to device tracking without
+ * changing their historical invoices or returns. Historical transactions
+ * remain exactly as they were; only future inventory tracking uses devices.
+ *
+ * Existing device-tracked products are never downgraded to quantity tracking.
+ */
     final String effectiveTrackingMode;
 
     if (requiresDeviceTracking) {
