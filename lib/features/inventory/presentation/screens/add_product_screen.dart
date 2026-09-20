@@ -4,6 +4,7 @@ import 'package:storemate/core/widgets/product_icon.dart';
 
 import 'package:storemate/features/inventory/data/services/inventory_service.dart';
 import 'package:storemate/features/inventory/data/models/product_model.dart';
+import 'package:storemate/features/inventory/presentation/widgets/tracking_mode_card.dart';
 
 class AddProductScreen extends StatefulWidget {
   const AddProductScreen({super.key, this.initialProduct});
@@ -55,6 +56,20 @@ class _AddProductScreenState extends State<AddProductScreen> {
     }
 
     return null;
+  }
+
+  bool get _selectedCategoryRequiresDeviceTracking {
+    if (_selectedCategoryId == null) {
+      return false;
+    }
+
+    for (final category in _categories) {
+      if (category['id']?.toString() == _selectedCategoryId) {
+        return category['requires_device_tracking'] == true;
+      }
+    }
+
+    return false;
   }
 
   bool _isLoadingCategories = true;
@@ -262,7 +277,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
         categoryId: _selectedCategoryId,
         brand: _brandController.text,
         sku: _skuController.text,
-        barcode:  _barcodeController.text,
+        barcode: _barcodeController.text,
         purchasePrice: double.parse(_purchasePriceController.text.trim()),
         sellingPrice: double.parse(_sellingPriceController.text.trim()),
         stockQuantity: int.parse(_stockQuantityController.text.trim()),
@@ -432,7 +447,18 @@ class _AddProductScreenState extends State<AddProductScreen> {
                   onTap: _showCategorySelector,
                 ),
 
-                const SizedBox(height: 12),
+                if (_selectedCategoryId != null) ...[
+                  const SizedBox(height: 12),
+
+                  TrackingModeCard(
+                    requiresDeviceTracking:
+                        _selectedCategoryRequiresDeviceTracking,
+                  ),
+                ],
+
+                const SizedBox(height: 18),
+
+                // Brand
 
                 // Brand
                 TextFormField(

@@ -3,6 +3,7 @@ import 'package:storemate/core/widgets/product_icon.dart';
 
 import 'package:storemate/features/inventory/data/models/product_model.dart';
 import 'package:storemate/features/inventory/data/services/inventory_service.dart';
+import 'package:storemate/features/inventory/presentation/widgets/tracking_mode_card.dart';
 
 class EditProductScreen extends StatefulWidget {
   const EditProductScreen({required this.product, super.key});
@@ -194,6 +195,20 @@ class _EditProductScreenState extends State<EditProductScreen> {
     return widget.product.categoryName;
   }
 
+  bool get _selectedCategoryRequiresDeviceTracking {
+    if (_selectedCategoryId == null) {
+      return false;
+    }
+
+    for (final category in _categories) {
+      if (category['id']?.toString() == _selectedCategoryId) {
+        return category['requires_device_tracking'] == true;
+      }
+    }
+
+    return false;
+  }
+
   // ---------------------------------------------------------------------------
   // Save updated product
   // ---------------------------------------------------------------------------
@@ -342,6 +357,15 @@ class _EditProductScreenState extends State<EditProductScreen> {
                         ),
                 ),
               ),
+
+                            if (_selectedCategoryId != null) ...[
+                const SizedBox(height: 12),
+
+                TrackingModeCard(
+                  requiresDeviceTracking:
+                      _selectedCategoryRequiresDeviceTracking,
+                ),
+              ],
 
               const SizedBox(height: 18),
 
