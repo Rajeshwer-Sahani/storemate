@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:storemate/features/inventory/data/models/product_model.dart';
 import 'package:storemate/features/inventory/data/services/product_unit_service.dart';
+import 'package:storemate/features/inventory/presentation/screens/imei_scanner_screen.dart';
 
 class AddProductUnitScreen extends StatefulWidget {
   const AddProductUnitScreen({required this.product, super.key});
@@ -23,12 +24,49 @@ class _AddProductUnitScreenState extends State<AddProductUnitScreen> {
 
   bool _isSaving = false;
 
+  bool _isImei1Scanned = false;
+  bool _isImei2Scanned = false;
+
+  bool _isUpdatingFromScanner = false;
+
   @override
   void dispose() {
     _imei1Controller.dispose();
     _imei2Controller.dispose();
     _serialNumberController.dispose();
     super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    _imei1Controller.addListener(_handleImei1Changed);
+    _imei2Controller.addListener(_handleImei2Changed);
+  }
+
+  void _handleImei1Changed() {
+    if (_isUpdatingFromScanner) {
+      return;
+    }
+
+    if (_isImei1Scanned) {
+      setState(() {
+        _isImei1Scanned = false;
+      });
+    }
+  }
+
+  void _handleImei2Changed() {
+    if (_isUpdatingFromScanner) {
+      return;
+    }
+
+    if (_isImei2Scanned) {
+      setState(() {
+        _isImei2Scanned = false;
+      });
+    }
   }
 
   Future<void> _saveDevice() async {
@@ -101,6 +139,50 @@ class _AddProductUnitScreenState extends State<AddProductUnitScreen> {
           ),
         );
     }
+  }
+
+  Future<void> _scanImei1() async {
+    FocusScope.of(context).unfocus();
+
+    final imei = await Navigator.of(context).push<String>(
+      MaterialPageRoute(builder: (_) => const ImeiScannerScreen(imeiNumber: 1)),
+    );
+
+    if (!mounted || imei == null) {
+      return;
+    }
+
+    _isUpdatingFromScanner = true;
+
+    _imei1Controller.text = imei;
+
+    _isUpdatingFromScanner = false;
+
+    setState(() {
+      _isImei1Scanned = true;
+    });
+  }
+
+  Future<void> _scanImei2() async {
+    FocusScope.of(context).unfocus();
+
+    final imei = await Navigator.of(context).push<String>(
+      MaterialPageRoute(builder: (_) => const ImeiScannerScreen(imeiNumber: 2)),
+    );
+
+    if (!mounted || imei == null) {
+      return;
+    }
+
+    _isUpdatingFromScanner = true;
+
+    _imei2Controller.text = imei;
+
+    _isUpdatingFromScanner = false;
+
+    setState(() {
+      _isImei2Scanned = true;
+    });
   }
 
   String? _validateImei1(String? value) {
@@ -190,6 +272,8 @@ class _AddProductUnitScreenState extends State<AddProductUnitScreen> {
                   LengthLimitingTextInputFormatter(15),
                 ],
                 validator: _validateImei1,
+                onScan: _scanImei1,
+                isScanned: _isImei1Scanned,
               ),
 
               const SizedBox(height: 14),
@@ -205,6 +289,8 @@ class _AddProductUnitScreenState extends State<AddProductUnitScreen> {
                   LengthLimitingTextInputFormatter(15),
                 ],
                 validator: _validateImei2,
+                onScan: _scanImei2,
+                isScanned: _isImei2Scanned,
               ),
 
               const SizedBox(height: 14),
@@ -342,6 +428,8 @@ class _AddProductUnitScreenState extends State<AddProductUnitScreen> {
     List<TextInputFormatter>? inputFormatters,
     String? Function(String?)? validator,
     bool required = false,
+    VoidCallback? onScan,
+    bool isScanned = false,
   }) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
@@ -356,6 +444,18 @@ class _AddProductUnitScreenState extends State<AddProductUnitScreen> {
         labelText: required ? '$label *' : label,
         hintText: hint,
         prefixIcon: Icon(icon),
+        suffixIcon: onScan == null
+            ? null
+            : IconButton(
+                tooltip: isScanned ? 'Scan again' : 'Scan $label',
+                onPressed: _isSaving ? null : onScan,
+                icon: Icon(
+                  isScanned
+                      ? Icons.check_circle_rounded
+                      : Icons.qr_code_scanner_rounded,
+                  color: isScanned ? Colors.green : colorScheme.primary,
+                ),
+              ),
         filled: true,
         fillColor: colorScheme.surface,
         border: OutlineInputBorder(
