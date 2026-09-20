@@ -43,7 +43,7 @@ class InventoryService {
 
     final response = await _supabase
         .from('product_categories')
-        .select('id, name')
+        .select('id, name, requires_device_tracking')
         .eq('store_id', storeId)
         .order('name');
 
@@ -51,7 +51,7 @@ class InventoryService {
   }
 
   // ---------------------------------------------------------------------------
-  // Get product categories with active product counts for the current store
+  // Get product categories with active product counts
   // ---------------------------------------------------------------------------
 
   Future<List<Map<String, dynamic>>>
@@ -63,6 +63,7 @@ class InventoryService {
         .select('''
         id,
         name,
+        requires_device_tracking,
         created_at,
         products (
           id,
@@ -86,10 +87,43 @@ class InventoryService {
       return <String, dynamic>{
         'id': category['id'],
         'name': category['name'],
+        'requires_device_tracking':
+            category['requires_device_tracking'] == true,
         'created_at': category['created_at'],
         'product_count': activeProductCount,
       };
     }).toList();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Get tracking requirement for a category
+  // ---------------------------------------------------------------------------
+
+  Future<bool> categoryRequiresDeviceTracking({
+    required String categoryId,
+  }) async {
+    final storeId = await getCurrentStoreId();
+
+    final trimmedCategoryId = categoryId.trim();
+
+    if (trimmedCategoryId.isEmpty) {
+      return false;
+    }
+
+    final category = await _supabase
+        .from('product_categories')
+        .select('requires_device_tracking')
+        .eq('id', trimmedCategoryId)
+        .eq('store_id', storeId)
+        .maybeSingle();
+
+    if (category == null) {
+      throw Exception(
+        'The selected category was not found or does not belong to your store.',
+      );
+    }
+
+    return category['requires_device_tracking'] == true;
   }
 
   // ---------------------------------------------------------------------------
@@ -98,6 +132,7 @@ class InventoryService {
 
   Future<Map<String, dynamic>> createProductCategory({
     required String name,
+    bool requiresDeviceTracking = false,
   }) async {
     final storeId = await getCurrentStoreId();
     final trimmedName = name.trim();
@@ -108,8 +143,12 @@ class InventoryService {
 
     final response = await _supabase
         .from('product_categories')
-        .insert({'store_id': storeId, 'name': trimmedName})
-        .select('id, name')
+        .insert({
+          'store_id': storeId,
+          'name': trimmedName,
+          'requires_device_tracking': requiresDeviceTracking,
+        })
+        .select('id, name, requires_device_tracking')
         .single();
 
     return response;
@@ -155,7 +194,7 @@ class InventoryService {
   }
 
   // ---------------------------------------------------------------------------
-  // Safely delete an unused product category from the current store
+  // Safely delete an unused product category
   // ---------------------------------------------------------------------------
 
   Future<void> deleteProductCategory({required String categoryId}) async {
@@ -217,13 +256,41 @@ class InventoryService {
   }) async {
     final storeId = await getCurrentStoreId();
 
+    final trimmedName = name.trim();
+
+    if (trimmedName.isEmpty) {
+      throw ArgumentError('Product name cannot be empty.');
+    }
+
+    if (purchasePrice < 0) {
+      throw ArgumentError('Purchase price cannot be negative.');
+    }
+
+    if (sellingPrice < 0) {
+      throw ArgumentError('Selling price cannot be negative.');
+    }
+
+    if (stockQuantity < 0) {
+      throw ArgumentError('Stock quantity cannot be negative.');
+    }
+
+    if (lowStockThreshold < 0) {
+      throw ArgumentError('Low-stock threshold cannot be negative.');
+    }
+
+    final requiresDeviceTracking = await _getCategoryTrackingRequirement(
+      storeId: storeId,
+      categoryId: categoryId,
+    );
+
     await _supabase.from('products').insert({
       'store_id': storeId,
       'category_id': categoryId,
-      'name': name.trim(),
+      'name': trimmedName,
       'brand': _emptyStringToNull(brand),
       'sku': _emptyStringToNull(sku),
       'barcode': _emptyStringToNull(barcode),
+      'tracking_mode': requiresDeviceTracking ? 'device' : 'quantity',
       'purchase_price': purchasePrice,
       'selling_price': sellingPrice,
       'stock_quantity': stockQuantity,
@@ -233,6 +300,10 @@ class InventoryService {
     });
   }
 
+  // ---------------------------------------------------------------------------
+  // Add multiple products
+  // ---------------------------------------------------------------------------
+
   Future<void> addProducts(List<Map<String, dynamic>> products) async {
     if (products.isEmpty) {
       throw ArgumentError('At least one product is required.');
@@ -240,32 +311,58 @@ class InventoryService {
 
     final storeId = await getCurrentStoreId();
 
-    await _supabase
-        .from('products')
-        .insert(
-          products.map((product) {
-            return {
-              'store_id': storeId,
-              'category_id': product['category_id'],
-              'name': (product['name'] as String).trim(),
-              'brand': _emptyStringToNull(product['brand'] as String?),
-              'sku': _emptyStringToNull(product['sku'] as String?),
-              'barcode': _emptyStringToNull(product['barcode'] as String?),
-              'purchase_price': product['purchase_price'],
-              'selling_price': product['selling_price'],
-              'stock_quantity': product['stock_quantity'],
-              'low_stock_threshold': product['low_stock_threshold'],
-              'description': _emptyStringToNull(
-                product['description'] as String?,
-              ),
-              'is_active': true,
-            };
-          }).toList(),
-        );
+    final categoryIds = products
+        .map((product) => product['category_id']?.toString())
+        .whereType<String>()
+        .where((id) => id.trim().isNotEmpty)
+        .toSet()
+        .toList();
+
+    final categoryRequirements = <String, bool>{};
+
+    if (categoryIds.isNotEmpty) {
+      final categories = await _supabase
+          .from('product_categories')
+          .select('id, requires_device_tracking')
+          .eq('store_id', storeId)
+          .inFilter('id', categoryIds);
+
+      for (final category in categories) {
+        categoryRequirements[category['id'].toString()] =
+            category['requires_device_tracking'] == true;
+      }
+    }
+
+    final rows = products.map((product) {
+      final categoryId = product['category_id']?.toString();
+
+      final requiresDeviceTracking =
+          categoryId != null &&
+          categoryId.trim().isNotEmpty &&
+          categoryRequirements[categoryId] == true;
+
+      return {
+        'store_id': storeId,
+        'category_id': categoryId,
+        'name': (product['name'] as String).trim(),
+        'brand': _emptyStringToNull(product['brand'] as String?),
+        'sku': _emptyStringToNull(product['sku'] as String?),
+        'barcode': _emptyStringToNull(product['barcode'] as String?),
+        'tracking_mode': requiresDeviceTracking ? 'device' : 'quantity',
+        'purchase_price': product['purchase_price'],
+        'selling_price': product['selling_price'],
+        'stock_quantity': product['stock_quantity'],
+        'low_stock_threshold': product['low_stock_threshold'],
+        'description': _emptyStringToNull(product['description'] as String?),
+        'is_active': true,
+      };
+    }).toList();
+
+    await _supabase.from('products').insert(rows);
   }
 
   // ---------------------------------------------------------------------------
-  // Update an existing product belonging to the current store
+  // Update an existing product
   // ---------------------------------------------------------------------------
 
   Future<void> updateProduct({
@@ -283,9 +380,10 @@ class InventoryService {
   }) async {
     final storeId = await getCurrentStoreId();
 
+    final trimmedProductId = productId.trim();
     final trimmedName = name.trim();
 
-    if (productId.trim().isEmpty) {
+    if (trimmedProductId.isEmpty) {
       throw ArgumentError('A valid product ID is required.');
     }
 
@@ -309,6 +407,49 @@ class InventoryService {
       throw ArgumentError('Low-stock threshold cannot be negative.');
     }
 
+    final existingProduct = await _supabase
+        .from('products')
+        .select('id, tracking_mode')
+        .eq('id', trimmedProductId)
+        .eq('store_id', storeId)
+        .eq('is_active', true)
+        .maybeSingle();
+
+    if (existingProduct == null) {
+      throw Exception(
+        'This product was not found or does not belong to your store.',
+      );
+    }
+
+    final currentTrackingMode =
+        existingProduct['tracking_mode']?.toString() ?? 'quantity';
+
+    final requiresDeviceTracking = await _getCategoryTrackingRequirement(
+      storeId: storeId,
+      categoryId: categoryId,
+    );
+
+    /*
+     * Category requirement is authoritative for the product's current
+     * tracking behavior.
+     *
+     * Historical quantity-tracked products can remain quantity-tracked until
+     * they are edited. Once edited into a category that requires devices,
+     * they become device-tracked.
+     *
+     * We never automatically downgrade an existing device-tracked product
+     * back to quantity tracking here.
+     */
+    final String effectiveTrackingMode;
+
+    if (requiresDeviceTracking) {
+      effectiveTrackingMode = 'device';
+    } else if (currentTrackingMode == 'device') {
+      effectiveTrackingMode = 'device';
+    } else {
+      effectiveTrackingMode = 'quantity';
+    }
+
     await _supabase
         .from('products')
         .update({
@@ -317,13 +458,14 @@ class InventoryService {
           'brand': _emptyStringToNull(brand),
           'sku': _emptyStringToNull(sku),
           'barcode': _emptyStringToNull(barcode),
+          'tracking_mode': effectiveTrackingMode,
           'purchase_price': purchasePrice,
           'selling_price': sellingPrice,
           'stock_quantity': stockQuantity,
           'low_stock_threshold': lowStockThreshold,
           'description': _emptyStringToNull(description),
         })
-        .eq('id', productId)
+        .eq('id', trimmedProductId)
         .eq('store_id', storeId)
         .eq('is_active', true);
   }
@@ -341,10 +483,17 @@ class InventoryService {
       throw ArgumentError('A valid product ID is required.');
     }
 
-    // Verify that the product belongs to the current store and is active.
     final product = await _supabase
         .from('products')
-        .select('id, tracking_mode')
+        .select('''
+          id,
+          tracking_mode,
+          category_id,
+          product_categories (
+            id,
+            requires_device_tracking
+          )
+        ''')
         .eq('id', trimmedProductId)
         .eq('store_id', storeId)
         .eq('is_active', true)
@@ -359,12 +508,10 @@ class InventoryService {
     final currentTrackingMode =
         product['tracking_mode']?.toString() ?? 'quantity';
 
-    // Device tracking is already enabled.
     if (currentTrackingMode == 'device') {
       return;
     }
 
-    // Only allow the safe transition for now.
     if (currentTrackingMode != 'quantity') {
       throw Exception('This product has an unsupported tracking mode.');
     }
@@ -378,7 +525,7 @@ class InventoryService {
   }
 
   // ---------------------------------------------------------------------------
-  // Archive a product belonging to the logged-in owner's store
+  // Archive a product
   // ---------------------------------------------------------------------------
 
   Future<void> archiveProduct({required String productId}) async {
@@ -399,7 +546,7 @@ class InventoryService {
   }
 
   // ---------------------------------------------------------------------------
-  // Fetch archived products belonging to the logged-in owner's store
+  // Fetch archived products
   // ---------------------------------------------------------------------------
 
   Future<List<Map<String, dynamic>>> getArchivedProducts() async {
@@ -426,7 +573,8 @@ class InventoryService {
         updated_at,
         product_categories (
           id,
-          name
+          name,
+          requires_device_tracking
         )
       ''')
         .eq('store_id', storeId)
@@ -437,7 +585,7 @@ class InventoryService {
   }
 
   // ---------------------------------------------------------------------------
-  // Restore an archived product belonging to the logged-in owner's store
+  // Restore an archived product
   // ---------------------------------------------------------------------------
 
   Future<void> restoreProduct({required String productId}) async {
@@ -485,10 +633,6 @@ class InventoryService {
   // Fetch stock adjustment history for a product
   // ---------------------------------------------------------------------------
 
-  // ---------------------------------------------------------------------------
-  // Fetch stock adjustment history for a product
-  // ---------------------------------------------------------------------------
-
   Future<List<Map<String, dynamic>>> getStockAdjustmentHistory({
     required String productId,
   }) async {
@@ -518,21 +662,7 @@ class InventoryService {
   }
 
   // ---------------------------------------------------------------------------
-  // Convert empty optional text into null before saving it to Supabase
-  // ---------------------------------------------------------------------------
-
-  String? _emptyStringToNull(String? value) {
-    final trimmedValue = value?.trim();
-
-    if (trimmedValue == null || trimmedValue.isEmpty) {
-      return null;
-    }
-
-    return trimmedValue;
-  }
-
-  // ---------------------------------------------------------------------------
-  // Fetch all products belonging to the logged-in owner's store
+  // Fetch all active products
   // ---------------------------------------------------------------------------
 
   Future<List<Map<String, dynamic>>> getProducts() async {
@@ -556,9 +686,11 @@ class InventoryService {
       description,
       is_active,
       created_at,
+      updated_at,
       product_categories (
         id,
-        name
+        name,
+        requires_device_tracking
       ),
       product_units (
         id,
@@ -580,10 +712,61 @@ class InventoryService {
             }).length
           : 0;
 
+      final categoryData = product['product_categories'];
+
+      final categoryRequiresDeviceTracking =
+          categoryData is Map &&
+          categoryData['requires_device_tracking'] == true;
+
       return {
         ...product,
+        'category_requires_device_tracking': categoryRequiresDeviceTracking,
         'registered_in_stock_device_count': registeredInStockDeviceCount,
       };
     }).toList();
+  }
+
+  // ---------------------------------------------------------------------------
+  // Get category tracking requirement internally
+  // ---------------------------------------------------------------------------
+
+  Future<bool> _getCategoryTrackingRequirement({
+    required String storeId,
+    required String? categoryId,
+  }) async {
+    final trimmedCategoryId = categoryId?.trim();
+
+    if (trimmedCategoryId == null || trimmedCategoryId.isEmpty) {
+      return false;
+    }
+
+    final category = await _supabase
+        .from('product_categories')
+        .select('id, requires_device_tracking')
+        .eq('id', trimmedCategoryId)
+        .eq('store_id', storeId)
+        .maybeSingle();
+
+    if (category == null) {
+      throw Exception(
+        'The selected category was not found or does not belong to your store.',
+      );
+    }
+
+    return category['requires_device_tracking'] == true;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Convert empty optional text into null
+  // ---------------------------------------------------------------------------
+
+  String? _emptyStringToNull(String? value) {
+    final trimmedValue = value?.trim();
+
+    if (trimmedValue == null || trimmedValue.isEmpty) {
+      return null;
+    }
+
+    return trimmedValue;
   }
 }
