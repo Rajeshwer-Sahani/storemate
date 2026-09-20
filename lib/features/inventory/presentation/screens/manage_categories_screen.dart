@@ -88,10 +88,6 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
   // Open add-category bottom sheet
   // ---------------------------------------------------------------------------
 
-  // ---------------------------------------------------------------------------
-  // Open add-category bottom sheet
-  // ---------------------------------------------------------------------------
-
   Future<void> _showAddCategorySheet() async {
     final result = await _showAddCategoryFormSheet();
 
@@ -138,369 +134,14 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
   // Add-category form with product tracking selection
   // ---------------------------------------------------------------------------
 
-  Future<Map<String, dynamic>?> _showAddCategoryFormSheet() async {
-    final controller = TextEditingController();
-    final formKey = GlobalKey<FormState>();
-
-    final result = await showModalBottomSheet<Map<String, dynamic>>(
+  Future<Map<String, dynamic>?> _showAddCategoryFormSheet() {
+    return showModalBottomSheet<Map<String, dynamic>>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: Colors.transparent,
-      builder: (bottomSheetContext) {
-        final theme = Theme.of(bottomSheetContext);
-        final colorScheme = theme.colorScheme;
-
-        bool isSaving = false;
-        bool requiresDeviceTracking = false;
-
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            return Padding(
-              padding: EdgeInsets.only(
-                bottom: MediaQuery.viewInsetsOf(context).bottom,
-              ),
-              child: Container(
-                constraints: BoxConstraints(
-                  maxHeight: MediaQuery.sizeOf(context).height * 0.88,
-                ),
-                padding: EdgeInsets.fromLTRB(
-                  24,
-                  12,
-                  24,
-                  24 + MediaQuery.paddingOf(context).bottom,
-                ),
-                decoration: BoxDecoration(
-                  color: colorScheme.surface,
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(32),
-                  ),
-                ),
-                child: SingleChildScrollView(
-                  child: Form(
-                    key: formKey,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // Drag handle
-                        Align(
-                          child: Container(
-                            width: 44,
-                            height: 5,
-                            decoration: BoxDecoration(
-                              color: colorScheme.outlineVariant,
-                              borderRadius: BorderRadius.circular(100),
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(height: 24),
-
-                        // Header
-                        Row(
-                          children: [
-                            Container(
-                              width: 56,
-                              height: 56,
-                              decoration: BoxDecoration(
-                                color: colorScheme.primary.withValues(
-                                  alpha: 0.10,
-                                ),
-                                borderRadius: BorderRadius.circular(18),
-                              ),
-                              child: Icon(
-                                Icons.category_outlined,
-                                color: colorScheme.primary,
-                                size: 27,
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Add Category',
-                                    style: theme.textTheme.titleLarge?.copyWith(
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    'Create a category and define how its '
-                                    'products are tracked.',
-                                    style: theme.textTheme.bodyMedium?.copyWith(
-                                      color: colorScheme.onSurfaceVariant,
-                                      height: 1.35,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 28),
-
-                        // Category name
-                        TextFormField(
-                          controller: controller,
-                          autofocus: true,
-                          textCapitalization: TextCapitalization.words,
-                          textInputAction: TextInputAction.next,
-                          maxLength: 50,
-                          decoration: const InputDecoration(
-                            labelText: 'Category name',
-                            hintText: 'For example, Mobile Phones',
-                            prefixIcon: Icon(Icons.category_outlined),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'Please enter a category name.';
-                            }
-
-                            if (value.trim().length < 2) {
-                              return 'Category name must contain at least 2 characters.';
-                            }
-
-                            return null;
-                          },
-                        ),
-
-                        const SizedBox(height: 8),
-
-                        // Tracking section title
-                        Text(
-                          'How should products in this category be tracked?',
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-
-                        const SizedBox(height: 6),
-
-                        Text(
-                          'This determines whether products use normal '
-                          'quantity stock or individual device identifiers.',
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                            height: 1.4,
-                          ),
-                        ),
-
-                        const SizedBox(height: 16),
-
-                        // Quantity option
-                        _buildTrackingOptionCard(
-                          context: context,
-                          title: 'Quantity',
-                          description:
-                              'Track stock by quantity.\n\n'
-                              'Chargers, speakers, accessories, etc.',
-                          icon: Icons.inventory_2_outlined,
-                          selected: !requiresDeviceTracking,
-                          onTap: () {
-                            setModalState(() {
-                              requiresDeviceTracking = false;
-                            });
-                          },
-                        ),
-
-                        const SizedBox(height: 12),
-
-                        // Individual device option
-                        _buildTrackingOptionCard(
-                          context: context,
-                          title: 'Individual Devices',
-                          description:
-                              'Every physical item has an IMEI or serial number.\n\n'
-                              'Phones, laptops, tablets, etc.',
-                          icon: Icons.smartphone_outlined,
-                          selected: requiresDeviceTracking,
-                          onTap: () {
-                            setModalState(() {
-                              requiresDeviceTracking = true;
-                            });
-                          },
-                        ),
-
-                        const SizedBox(height: 24),
-
-                        // Add button
-                        SizedBox(
-                          width: double.infinity,
-                          height: 54,
-                          child: FilledButton.icon(
-                            onPressed: isSaving
-                                ? null
-                                : () {
-                                    if (formKey.currentState?.validate() !=
-                                        true) {
-                                      return;
-                                    }
-
-                                    setModalState(() {
-                                      isSaving = true;
-                                    });
-
-                                    Navigator.of(context).pop({
-                                      'name': controller.text.trim(),
-                                      'requiresDeviceTracking':
-                                          requiresDeviceTracking,
-                                    });
-                                  },
-                            icon: isSaving
-                                ? const SizedBox(
-                                    width: 20,
-                                    height: 20,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2.2,
-                                    ),
-                                  )
-                                : const Icon(Icons.add_rounded, size: 21),
-                            label: Text(
-                              isSaving ? 'Adding...' : 'Add Category',
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            );
-          },
-        );
-      },
-    );
-
-    controller.dispose();
-
-    return result;
-  }
-
-  // ---------------------------------------------------------------------------
-  // Tracking option card
-  // ---------------------------------------------------------------------------
-
-  Widget _buildTrackingOptionCard({
-    required BuildContext context,
-    required String title,
-    required String description,
-    required IconData icon,
-    required bool selected,
-    required VoidCallback onTap,
-  }) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-
-    final borderColor = selected
-        ? colorScheme.primary
-        : colorScheme.outlineVariant;
-
-    final backgroundColor = selected
-        ? colorScheme.primary.withValues(alpha: 0.07)
-        : colorScheme.surface;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: backgroundColor,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: borderColor, width: selected ? 1.5 : 1),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: selected
-                      ? colorScheme.primary.withValues(alpha: 0.12)
-                      : colorScheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(15),
-                ),
-                child: Icon(
-                  icon,
-                  color: selected
-                      ? colorScheme.primary
-                      : colorScheme.onSurfaceVariant,
-                  size: 24,
-                ),
-              ),
-
-              const SizedBox(width: 14),
-
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            title,
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ),
-
-                        const SizedBox(width: 8),
-
-                        AnimatedContainer(
-                          duration: const Duration(milliseconds: 180),
-                          width: 24,
-                          height: 24,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: selected
-                                  ? colorScheme.primary
-                                  : colorScheme.outline,
-                              width: 2,
-                            ),
-                          ),
-                          child: selected
-                              ? Center(
-                                  child: Container(
-                                    width: 12,
-                                    height: 12,
-                                    decoration: BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: colorScheme.primary,
-                                    ),
-                                  ),
-                                )
-                              : null,
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 8),
-
-                    Text(
-                      description,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                        height: 1.45,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
+      requestFocus: false,
+      builder: (_) => const _AddCategorySheet(),
     );
   }
 
@@ -1059,18 +700,7 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
 
     final requiresDeviceTracking = category['requires_device_tracking'] == true;
 
-    final iconData = ProductIconResolver.resolveFromText(
-      category: categoryName,
-    );
-
     final theme = Theme.of(context);
-
-    final iconBackgroundColor = theme.brightness == Brightness.light
-        ? iconData.backgroundColor
-        : Color.alphaBlend(
-            iconData.color.withValues(alpha: 0.14),
-            colorScheme.surfaceContainerHighest,
-          );
 
     return Container(
       padding: const EdgeInsets.all(18),
@@ -1210,7 +840,6 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
     );
   }
 
-  
   // ---------------------------------------------------------------------------
   // Empty state
   // ---------------------------------------------------------------------------
@@ -1260,6 +889,365 @@ class _ManageCategoriesScreenState extends State<ManageCategoriesScreen> {
               label: const Text('Add First Category'),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Add Category Bottom Sheet
+// -----------------------------------------------------------------------------
+
+class _AddCategorySheet extends StatefulWidget {
+  const _AddCategorySheet();
+
+  @override
+  State<_AddCategorySheet> createState() => _AddCategorySheetState();
+}
+
+class _AddCategorySheetState extends State<_AddCategorySheet> {
+  final TextEditingController _controller = TextEditingController();
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+
+  bool _requiresDeviceTracking = false;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    if (_formKey.currentState?.validate() != true) {
+      return;
+    }
+
+    final categoryName = _controller.text.trim();
+
+    FocusScope.of(context).unfocus();
+
+    Navigator.of(context).pop({
+      'name': categoryName,
+      'requiresDeviceTracking': _requiresDeviceTracking,
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
+      child: Container(
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.sizeOf(context).height * 0.88,
+        ),
+        padding: EdgeInsets.fromLTRB(
+          24,
+          12,
+          24,
+          24 + MediaQuery.paddingOf(context).bottom,
+        ),
+        decoration: BoxDecoration(
+          color: colorScheme.surface,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
+        ),
+        child: SingleChildScrollView(
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Drag handle
+                Align(
+                  child: Container(
+                    width: 44,
+                    height: 5,
+                    decoration: BoxDecoration(
+                      color: colorScheme.outlineVariant,
+                      borderRadius: BorderRadius.circular(100),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 24),
+
+                // Header
+                Row(
+                  children: [
+                    Container(
+                      width: 56,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        color: colorScheme.primary.withValues(alpha: 0.10),
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                      child: Icon(
+                        Icons.category_outlined,
+                        color: colorScheme.primary,
+                        size: 27,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Add Category',
+                            style: theme.textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Create a category and define how its '
+                            'products are tracked.',
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                              height: 1.35,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 28),
+
+                // Category name
+                TextFormField(
+                  controller: _controller,
+                  autofocus: false,
+                  textCapitalization: TextCapitalization.words,
+                  textInputAction: TextInputAction.next,
+                  maxLength: 50,
+                  decoration: const InputDecoration(
+                    labelText: 'Category name',
+                    hintText: 'For example, Mobile Phones',
+                    prefixIcon: Icon(Icons.category_outlined),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'Please enter a category name.';
+                    }
+
+                    if (value.trim().length < 2) {
+                      return 'Category name must contain at least 2 characters.';
+                    }
+
+                    return null;
+                  },
+                ),
+
+                const SizedBox(height: 8),
+
+                // Tracking section title
+                Text(
+                  'How should products in this category be tracked?',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+
+                const SizedBox(height: 6),
+
+                Text(
+                  'This determines whether products use normal '
+                  'quantity stock or individual device identifiers.',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    height: 1.4,
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // Quantity option
+                _TrackingOptionCard(
+                  title: 'Quantity',
+                  description:
+                      'Track stock by quantity.\n\n'
+                      'Chargers, speakers, accessories, etc.',
+                  icon: Icons.inventory_2_outlined,
+                  selected: !_requiresDeviceTracking,
+                  onTap: () {
+                    setState(() {
+                      _requiresDeviceTracking = false;
+                    });
+                  },
+                ),
+
+                const SizedBox(height: 12),
+
+                // Individual device option
+                _TrackingOptionCard(
+                  title: 'Individual Devices',
+                  description:
+                      'Every physical item has an IMEI or serial number.\n\n'
+                      'Phones, laptops, tablets, etc.',
+                  icon: Icons.smartphone_outlined,
+                  selected: _requiresDeviceTracking,
+                  onTap: () {
+                    setState(() {
+                      _requiresDeviceTracking = true;
+                    });
+                  },
+                ),
+
+                const SizedBox(height: 24),
+
+                // Add button
+                SizedBox(
+                  width: double.infinity,
+                  height: 54,
+                  child: FilledButton.icon(
+                    onPressed: _submit,
+                    icon: const Icon(Icons.add_rounded, size: 21),
+                    label: const Text('Add Category'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Tracking Option Card
+// -----------------------------------------------------------------------------
+
+class _TrackingOptionCard extends StatelessWidget {
+  const _TrackingOptionCard({
+    required this.title,
+    required this.description,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String title;
+  final String description;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    final borderColor = selected
+        ? colorScheme.primary
+        : colorScheme.outlineVariant;
+
+    final backgroundColor = selected
+        ? colorScheme.primary.withValues(alpha: 0.07)
+        : colorScheme.surface;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: backgroundColor,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: borderColor, width: selected ? 1.5 : 1),
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: selected
+                      ? colorScheme.primary.withValues(alpha: 0.12)
+                      : colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(15),
+                ),
+                child: Icon(
+                  icon,
+                  color: selected
+                      ? colorScheme.primary
+                      : colorScheme.onSurfaceVariant,
+                  size: 24,
+                ),
+              ),
+
+              const SizedBox(width: 14),
+
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            title,
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(width: 8),
+
+                        AnimatedContainer(
+                          duration: const Duration(milliseconds: 180),
+                          width: 24,
+                          height: 24,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: selected
+                                  ? colorScheme.primary
+                                  : colorScheme.outline,
+                              width: 2,
+                            ),
+                          ),
+                          child: selected
+                              ? Center(
+                                  child: Container(
+                                    width: 12,
+                                    height: 12,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: colorScheme.primary,
+                                    ),
+                                  ),
+                                )
+                              : null,
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 8),
+
+                    Text(
+                      description,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                        height: 1.45,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
