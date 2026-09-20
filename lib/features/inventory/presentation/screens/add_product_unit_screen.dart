@@ -88,6 +88,20 @@ class _AddProductUnitScreenState extends State<AddProductUnitScreen> {
       return;
     }
 
+    final duplicateImeiError = _validateDuplicateImeis();
+
+    if (duplicateImeiError != null) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(duplicateImeiError),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      return;
+    }
+
     FocusScope.of(context).unfocus();
 
     setState(() {
@@ -166,8 +180,15 @@ class _AddProductUnitScreenState extends State<AddProductUnitScreen> {
   Future<void> _scanImei2() async {
     FocusScope.of(context).unfocus();
 
+    final imei1 = _imei1Controller.text.trim();
+
     final imei = await Navigator.of(context).push<String>(
-      MaterialPageRoute(builder: (_) => const ImeiScannerScreen(imeiNumber: 2)),
+      MaterialPageRoute(
+        builder: (_) => ImeiScannerScreen(
+          imeiNumber: 2,
+          excludedImeis: [if (imei1.isNotEmpty) imei1],
+        ),
+      ),
     );
 
     if (!mounted || imei == null) {
@@ -208,6 +229,17 @@ class _AddProductUnitScreenState extends State<AddProductUnitScreen> {
 
     if (!RegExp(r'^\d{15}$').hasMatch(trimmed)) {
       return 'Enter a valid 15-digit IMEI';
+    }
+
+    return null;
+  }
+
+  String? _validateDuplicateImeis() {
+    final imei1 = _imei1Controller.text.trim();
+    final imei2 = _imei2Controller.text.trim();
+
+    if (imei1.isNotEmpty && imei2.isNotEmpty && imei1 == imei2) {
+      return 'IMEI 1 and IMEI 2 cannot be the same.';
     }
 
     return null;
