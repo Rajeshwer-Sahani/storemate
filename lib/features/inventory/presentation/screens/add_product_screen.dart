@@ -4,6 +4,7 @@ import 'package:storemate/core/widgets/product_icon.dart';
 
 import 'package:storemate/features/inventory/data/services/inventory_service.dart';
 import 'package:storemate/features/inventory/data/models/product_model.dart';
+import 'package:storemate/features/inventory/presentation/screens/imei_scanner_screen.dart';
 import 'package:storemate/features/inventory/presentation/widgets/tracking_mode_card.dart';
 
 class AddProductScreen extends StatefulWidget {
@@ -76,6 +77,10 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
   bool _isSavingProduct = false;
 
+  bool _isBarcodeScanned = false;
+
+  bool _isUpdatingBarcodeFromScanner = false;
+
   // ---------------------------------------------------------------------------
   // Screen lifecycle
   // ---------------------------------------------------------------------------
@@ -107,6 +112,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
     );
     _selectedCategoryId = product?.categoryId;
 
+    _barcodeController.addListener(_handleBarcodeChanged);
+
     _loadCategories();
   }
 
@@ -118,6 +125,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
   @override
   void dispose() {
+    _barcodeController.removeListener(_handleBarcodeChanged);
+
     _productNameController.dispose();
     _brandController.dispose();
     _skuController.dispose();
@@ -129,6 +138,18 @@ class _AddProductScreenState extends State<AddProductScreen> {
     _descriptionController.dispose();
 
     super.dispose();
+  }
+
+  void _handleBarcodeChanged() {
+    if (_isUpdatingBarcodeFromScanner) {
+      return;
+    }
+
+    if (_isBarcodeScanned) {
+      setState(() {
+        _isBarcodeScanned = false;
+      });
+    }
   }
 
   // ---------------------------------------------------------------------------
@@ -254,6 +275,34 @@ class _AddProductScreenState extends State<AddProductScreen> {
       );
     }
   }
+
+  Future<void> _scanBarcode() async {
+    FocusManager.instance.primaryFocus?.unfocus();
+
+    final existingBarcode = _barcodeController.text.trim();
+
+    final barcode = await Navigator.of(context).push<String>(
+      MaterialPageRoute(
+        builder: (_) => ImeiScannerScreen(
+          scanType: 'barcode',
+          excludedValues: [if (existingBarcode.isNotEmpty) existingBarcode],
+        ),
+      ),
+    );
+
+    if (!mounted || barcode == null || barcode.trim().isEmpty) {
+      return;
+    }
+
+    _isUpdatingBarcodeFromScanner = true;
+    _barcodeController.text = barcode.trim();
+    _isUpdatingBarcodeFromScanner = false;
+
+    setState(() {
+      _isBarcodeScanned = true;
+    });
+  }
+
   // ---------------------------------------------------------------------------
   // Validate and save product
   // ---------------------------------------------------------------------------
@@ -459,8 +508,6 @@ class _AddProductScreenState extends State<AddProductScreen> {
                 const SizedBox(height: 18),
 
                 // Brand
-
-                // Brand
                 TextFormField(
                   controller: _brandController,
                   enabled: !_isSavingProduct,
@@ -497,10 +544,24 @@ class _AddProductScreenState extends State<AddProductScreen> {
                   keyboardType: TextInputType.number,
                   textInputAction: TextInputAction.next,
                   inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                  decoration: const InputDecoration(
+                  decoration: InputDecoration(
                     labelText: 'Barcode (optional)',
                     hintText: 'Example: 8906129037366',
-                    prefixIcon: Icon(Icons.qr_code_2_rounded),
+                    prefixIcon: const Icon(Icons.qr_code_2_rounded),
+                    suffixIcon: _isBarcodeScanned
+                        ? IconButton(
+                            tooltip: 'Scan again',
+                            onPressed: _isSavingProduct ? null : _scanBarcode,
+                            icon: const Icon(
+                              Icons.check_circle_rounded,
+                              color: Colors.green,
+                            ),
+                          )
+                        : IconButton(
+                            tooltip: 'Scan barcode',
+                            onPressed: _isSavingProduct ? null : _scanBarcode,
+                            icon: const Icon(Icons.document_scanner_outlined),
+                          ),
                   ),
                 ),
 

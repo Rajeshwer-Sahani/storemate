@@ -12,6 +12,7 @@ class ImeiScannerScreen extends StatefulWidget {
   /// Supported values:
   /// - 'imei'
   /// - 'serial'
+  /// - 'barcode'
   final String scanType;
 
   final int? imeiNumber;
@@ -53,6 +54,8 @@ class _ImeiScannerScreenState extends State<ImeiScannerScreen>
 
   bool get _isSerialNumberScan => widget.scanType == 'serial';
 
+  bool get _isBarcodeScan => widget.scanType == 'barcode';
+
   @override
   void initState() {
     super.initState();
@@ -75,12 +78,54 @@ class _ImeiScannerScreenState extends State<ImeiScannerScreen>
       return;
     }
 
+    if (_isBarcodeScan) {
+      _handleBarcodeDetection(capture);
+      return;
+    }
+
     if (_isSerialNumberScan) {
       _handleSerialNumberDetection(capture);
       return;
     }
 
     _handleImeiDetection(capture);
+  }
+
+  void _handleBarcodeDetection(BarcodeCapture capture) {
+    for (final barcode in capture.barcodes) {
+      final rawValue = barcode.rawValue?.trim();
+
+      if (rawValue == null || rawValue.isEmpty) {
+        continue;
+      }
+
+      // Ignore the barcode already present in the field.
+      if (_excludedValues.contains(rawValue)) {
+        continue;
+      }
+
+      // Product Barcode mode only accepts retail barcode formats.
+      if (!_isProductBarcodeFormat(barcode.format)) {
+        continue;
+      }
+
+      // Product barcodes in StoreMate must contain digits only.
+      if (!RegExp(r'^\d+$').hasMatch(rawValue)) {
+        continue;
+      }
+
+      // Never accept a 15-digit IMEI as a product barcode.
+      if (RegExp(r'^\d{15}$').hasMatch(rawValue)) {
+        continue;
+      }
+
+      _isProcessing = true;
+
+      _controller.stop();
+
+      Navigator.of(context).pop(rawValue);
+      return;
+    }
   }
 
   void _handleSerialNumberDetection(BarcodeCapture capture) {
@@ -228,7 +273,9 @@ class _ImeiScannerScreenState extends State<ImeiScannerScreen>
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final scanLabel = _isSerialNumberScan
+    final scanLabel = _isBarcodeScan
+        ? 'Product Barcode'
+        : _isSerialNumberScan
         ? 'Serial Number'
         : 'IMEI ${widget.imeiNumber}';
 
@@ -378,7 +425,10 @@ class _ImeiScannerScreenState extends State<ImeiScannerScreen>
                 const SizedBox(height: 4),
 
                 Text(
-                  _isSerialNumberScan
+                  _isBarcodeScan
+                      ? 'Position the product barcode inside the frame '
+                            'and hold the device steady.'
+                      : _isSerialNumberScan
                       ? 'Position the serial number barcode inside the frame '
                             'and hold the device steady.'
                       : hasExcludedValues
@@ -438,7 +488,9 @@ class _ImeiScannerScreenState extends State<ImeiScannerScreen>
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Looking for $scanLabel barcode',
+                  _isBarcodeScan
+                      ? 'Looking for a product barcode'
+                      : 'Looking for $scanLabel barcode',
                   style: const TextStyle(color: Colors.white60, fontSize: 12),
                 ),
               ],
