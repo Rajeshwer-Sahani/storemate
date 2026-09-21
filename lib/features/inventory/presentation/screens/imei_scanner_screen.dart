@@ -3,15 +3,21 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 
 class ImeiScannerScreen extends StatefulWidget {
   const ImeiScannerScreen({
-    required this.imeiNumber,
-    this.excludedImeis = const <String>[],
+    required this.scanType,
+    this.imeiNumber,
+    this.excludedValues = const <String>[],
     super.key,
   });
 
-  final int imeiNumber;
+  /// Supported values:
+  /// - 'imei'
+  /// - 'serial'
+  final String scanType;
 
-  /// IMEIs that have already been scanned and must not be returned again.
-  final List<String> excludedImeis;
+  final int? imeiNumber;
+
+  /// Values that have already been scanned and must be ignored.
+  final List<String> excludedValues;
 
   @override
   State<ImeiScannerScreen> createState() => _ImeiScannerScreenState();
@@ -19,17 +25,33 @@ class ImeiScannerScreen extends StatefulWidget {
 
 class _ImeiScannerScreenState extends State<ImeiScannerScreen>
     with SingleTickerProviderStateMixin {
-  final MobileScannerController _controller = MobileScannerController();
+  final MobileScannerController _controller = MobileScannerController(
+    formats: [
+      BarcodeFormat.code128,
+      BarcodeFormat.code39,
+      BarcodeFormat.code93,
+      BarcodeFormat.itf,
+      BarcodeFormat.itf2of5,
+      BarcodeFormat.itf2of5WithChecksum,
+      BarcodeFormat.itf14,
+      BarcodeFormat.ean13,
+      BarcodeFormat.ean8,
+      BarcodeFormat.upcA,
+      BarcodeFormat.upcE,
+    ],
+  );
 
   late final AnimationController _scanLineController;
 
   bool _isProcessing = false;
   bool _torchEnabled = false;
 
-  Set<String> get _excludedImeis => widget.excludedImeis
-      .map((imei) => imei.trim())
-      .where((imei) => imei.isNotEmpty)
+  Set<String> get _excludedValues => widget.excludedValues
+      .map((value) => value.trim())
+      .where((value) => value.isNotEmpty)
       .toSet();
+
+  bool get _isSerialNumberScan => widget.scanType == 'serial';
 
   @override
   void initState() {
@@ -53,10 +75,65 @@ class _ImeiScannerScreenState extends State<ImeiScannerScreen>
       return;
     }
 
-    for (final barcode in capture.barcodes) {
-      final rawValue = barcode.rawValue;
+    if (_isSerialNumberScan) {
+      _handleSerialNumberDetection(capture);
+      return;
+    }
 
-      if (rawValue == null || rawValue.trim().isEmpty) {
+    _handleImeiDetection(capture);
+  }
+
+  void _handleSerialNumberDetection(BarcodeCapture capture) {
+    Barcode? serialBarcode;
+
+    for (final barcode in capture.barcodes) {
+      final rawValue = barcode.rawValue?.trim();
+
+      if (rawValue == null || rawValue.isEmpty) {
+        continue;
+      }
+
+      // Never accept a value that was explicitly excluded.
+      if (_excludedValues.contains(rawValue)) {
+        continue;
+      }
+
+      // Never treat common retail/product barcodes as serial numbers.
+      if (_isProductBarcodeFormat(barcode.format)) {
+        continue;
+      }
+
+      // A valid 15-digit IMEI must never be accepted as a serial number.
+      if (RegExp(r'^\d{15}$').hasMatch(rawValue) && _isValidImei(rawValue)) {
+        continue;
+      }
+
+      serialBarcode = barcode;
+      break;
+    }
+
+    if (serialBarcode == null) {
+      return;
+    }
+
+    final serialNumber = serialBarcode.rawValue?.trim();
+
+    if (serialNumber == null || serialNumber.isEmpty) {
+      return;
+    }
+
+    _isProcessing = true;
+
+    _controller.stop();
+
+    Navigator.of(context).pop(serialNumber);
+  }
+
+  void _handleImeiDetection(BarcodeCapture capture) {
+    for (final barcode in capture.barcodes) {
+      final rawValue = barcode.rawValue?.trim();
+
+      if (rawValue == null || rawValue.isEmpty) {
         continue;
       }
 
@@ -66,10 +143,7 @@ class _ImeiScannerScreenState extends State<ImeiScannerScreen>
         continue;
       }
 
-      // Important:
-      // If this IMEI was already scanned, ignore it and continue
-      // looking for another barcode.
-      if (_excludedImeis.contains(imei)) {
+      if (_excludedValues.contains(imei)) {
         continue;
       }
 
@@ -82,6 +156,13 @@ class _ImeiScannerScreenState extends State<ImeiScannerScreen>
     }
   }
 
+  bool _isProductBarcodeFormat(BarcodeFormat format) {
+    return format == BarcodeFormat.ean13 ||
+        format == BarcodeFormat.ean8 ||
+        format == BarcodeFormat.upcA ||
+        format == BarcodeFormat.upcE;
+  }
+
   String? _extractImei(String value) {
     final matches = RegExp(r'\d{15}').allMatches(value);
 
@@ -92,7 +173,7 @@ class _ImeiScannerScreenState extends State<ImeiScannerScreen>
         continue;
       }
 
-      if (_excludedImeis.contains(candidate)) {
+      if (_excludedValues.contains(candidate)) {
         continue;
       }
 
@@ -147,7 +228,9 @@ class _ImeiScannerScreenState extends State<ImeiScannerScreen>
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final imeiLabel = 'IMEI ${widget.imeiNumber}';
+    final scanLabel = _isSerialNumberScan
+        ? 'Serial Number'
+        : 'IMEI ${widget.imeiNumber}';
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -170,15 +253,15 @@ class _ImeiScannerScreenState extends State<ImeiScannerScreen>
           SafeArea(
             child: Column(
               children: [
-                _buildTopBar(context, imeiLabel),
+                _buildTopBar(context, scanLabel),
 
                 const Spacer(),
 
-                _buildScannerInstruction(context, imeiLabel),
+                _buildScannerInstruction(context, scanLabel),
 
                 const SizedBox(height: 24),
 
-                _buildBottomPanel(context, imeiLabel),
+                _buildBottomPanel(context, scanLabel),
 
                 const SizedBox(height: 20),
               ],
@@ -248,8 +331,8 @@ class _ImeiScannerScreenState extends State<ImeiScannerScreen>
     );
   }
 
-  Widget _buildScannerInstruction(BuildContext context, String imeiLabel) {
-    final hasExcludedImeis = _excludedImeis.isNotEmpty;
+  Widget _buildScannerInstruction(BuildContext context, String scanLabel) {
+    final hasExcludedValues = _excludedValues.isNotEmpty;
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 24),
@@ -284,7 +367,7 @@ class _ImeiScannerScreenState extends State<ImeiScannerScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Scan $imeiLabel',
+                  'Scan $scanLabel',
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 15,
@@ -295,7 +378,10 @@ class _ImeiScannerScreenState extends State<ImeiScannerScreen>
                 const SizedBox(height: 4),
 
                 Text(
-                  hasExcludedImeis
+                  _isSerialNumberScan
+                      ? 'Position the serial number barcode inside the frame '
+                            'and hold the device steady.'
+                      : hasExcludedValues
                       ? 'Place the next IMEI barcode inside the frame. '
                             'Previously scanned IMEIs will be ignored.'
                       : 'Place the IMEI barcode inside the frame '
@@ -314,7 +400,7 @@ class _ImeiScannerScreenState extends State<ImeiScannerScreen>
     );
   }
 
-  Widget _buildBottomPanel(BuildContext context, String imeiLabel) {
+  Widget _buildBottomPanel(BuildContext context, String scanLabel) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 24),
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
@@ -352,7 +438,7 @@ class _ImeiScannerScreenState extends State<ImeiScannerScreen>
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  'Looking for $imeiLabel barcode',
+                  'Looking for $scanLabel barcode',
                   style: const TextStyle(color: Colors.white60, fontSize: 12),
                 ),
               ],

@@ -26,14 +26,20 @@ class _AddProductUnitScreenState extends State<AddProductUnitScreen> {
 
   bool _isImei1Scanned = false;
   bool _isImei2Scanned = false;
+  bool _isSerialNumberScanned = false;
 
   bool _isUpdatingFromScanner = false;
 
   @override
   void dispose() {
+    _imei1Controller.removeListener(_handleImei1Changed);
+    _imei2Controller.removeListener(_handleImei2Changed);
+    _serialNumberController.removeListener(_handleSerialNumberChanged);
+
     _imei1Controller.dispose();
     _imei2Controller.dispose();
     _serialNumberController.dispose();
+
     super.dispose();
   }
 
@@ -43,6 +49,7 @@ class _AddProductUnitScreenState extends State<AddProductUnitScreen> {
 
     _imei1Controller.addListener(_handleImei1Changed);
     _imei2Controller.addListener(_handleImei2Changed);
+    _serialNumberController.addListener(_handleSerialNumberChanged);
   }
 
   void _handleImei1Changed() {
@@ -65,6 +72,18 @@ class _AddProductUnitScreenState extends State<AddProductUnitScreen> {
     if (_isImei2Scanned) {
       setState(() {
         _isImei2Scanned = false;
+      });
+    }
+  }
+
+  void _handleSerialNumberChanged() {
+    if (_isUpdatingFromScanner) {
+      return;
+    }
+
+    if (_isSerialNumberScanned) {
+      setState(() {
+        _isSerialNumberScanned = false;
       });
     }
   }
@@ -159,7 +178,10 @@ class _AddProductUnitScreenState extends State<AddProductUnitScreen> {
     FocusScope.of(context).unfocus();
 
     final imei = await Navigator.of(context).push<String>(
-      MaterialPageRoute(builder: (_) => const ImeiScannerScreen(imeiNumber: 1)),
+      MaterialPageRoute(
+        builder: (_) =>
+            const ImeiScannerScreen(scanType: 'imei', imeiNumber: 1),
+      ),
     );
 
     if (!mounted || imei == null) {
@@ -185,8 +207,9 @@ class _AddProductUnitScreenState extends State<AddProductUnitScreen> {
     final imei = await Navigator.of(context).push<String>(
       MaterialPageRoute(
         builder: (_) => ImeiScannerScreen(
+          scanType: 'imei',
           imeiNumber: 2,
-          excludedImeis: [if (imei1.isNotEmpty) imei1],
+          excludedValues: [if (imei1.isNotEmpty) imei1],
         ),
       ),
     );
@@ -204,6 +227,35 @@ class _AddProductUnitScreenState extends State<AddProductUnitScreen> {
     setState(() {
       _isImei2Scanned = true;
     });
+  }
+
+  Future<void> _scanSerialNumber() async {
+    FocusScope.of(context).unfocus();
+
+    final existingSerialNumber = _serialNumberController.text.trim();
+    final imei1 = _imei1Controller.text.trim();
+    final imei2 = _imei2Controller.text.trim();
+
+    final serialNumber = await Navigator.of(context).push<String>(
+      MaterialPageRoute(
+        builder: (_) => ImeiScannerScreen(
+          scanType: 'serial',
+          excludedValues: [
+            if (existingSerialNumber.isNotEmpty) existingSerialNumber,
+            if (imei1.isNotEmpty) imei1,
+            if (imei2.isNotEmpty) imei2,
+          ],
+        ),
+      ),
+    );
+
+    if (!mounted || serialNumber == null) return;
+
+    _isUpdatingFromScanner = true;
+    _serialNumberController.text = serialNumber;
+    _isUpdatingFromScanner = false;
+
+    setState(() => _isSerialNumberScanned = true);
   }
 
   String? _validateImei1(String? value) {
@@ -333,6 +385,8 @@ class _AddProductUnitScreenState extends State<AddProductUnitScreen> {
                 hint: 'Enter serial number (optional)',
                 icon: Icons.numbers_rounded,
                 keyboardType: TextInputType.text,
+                onScan: _scanSerialNumber,
+                isScanned: _isSerialNumberScanned,
               ),
 
               const SizedBox(height: 20),
