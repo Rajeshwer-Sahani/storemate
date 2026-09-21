@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:storemate/core/widgets/product_icon.dart';
 
 import '../../../inventory/data/models/product_model.dart';
 
@@ -114,19 +115,16 @@ class _ProductSelectorBottomSheetState
     );
   }
 
-  Widget _buildProductAvatar(ThemeData theme) {
-    return Container(
-      width: 50,
-      height: 50,
-      decoration: BoxDecoration(
-        color: theme.colorScheme.primaryContainer,
-        borderRadius: BorderRadius.circular(18),
-      ),
-      child: Icon(
-        Icons.inventory_2_rounded,
-        color: theme.colorScheme.onPrimaryContainer,
-        size: 24,
-      ),
+  Widget _buildProductAvatar(ProductModel product) {
+    return ProductIcon(
+      product: {
+        'name': product.name,
+        'brand': product.brand,
+        'product_categories': {'name': product.categoryName ?? ''},
+      },
+      size: 50,
+      iconSize: 24,
+      borderRadius: 18,
     );
   }
 
@@ -349,7 +347,7 @@ class _ProductSelectorBottomSheetState
                                     crossAxisAlignment:
                                         CrossAxisAlignment.start,
                                     children: [
-                                      _buildProductAvatar(theme),
+                                      _buildProductAvatar(product),
 
                                       const SizedBox(width: 16),
 
