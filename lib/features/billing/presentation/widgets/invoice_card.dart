@@ -495,19 +495,31 @@ class _PaymentStatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = _paymentStatusColor(status);
-    final backgroundColor = _paymentStatusBackgroundColor(status);
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    final statusColor = _paymentStatusColor(status, colorScheme: colorScheme);
+
+    final backgroundColor = _paymentStatusBackgroundColor(
+      status,
+      colorScheme: colorScheme,
+    );
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
         color: backgroundColor,
         borderRadius: BorderRadius.circular(30),
+        border: Border.all(
+          color: statusColor.withValues(
+            alpha: theme.brightness == Brightness.dark ? 0.22 : 0.12,
+          ),
+        ),
       ),
       child: Text(
         status.toUpperCase(),
         style: TextStyle(
-          color: color,
+          color: statusColor,
           fontSize: 11,
           fontWeight: FontWeight.w700,
           letterSpacing: .4,
@@ -555,7 +567,7 @@ String _formatDate(DateTime date) {
 /// Payment Status Colors
 /// ===========================================================================
 
-Color _paymentStatusColor(String status) {
+Color _paymentStatusColor(String status, {required ColorScheme colorScheme}) {
   switch (status.toLowerCase()) {
     case 'paid':
       return AppColors.success;
@@ -573,29 +585,36 @@ Color _paymentStatusColor(String status) {
       return AppColors.primary;
 
     default:
-      return Colors.grey.shade700;
+      return colorScheme.onSurfaceVariant;
   }
 }
 
-Color _paymentStatusBackgroundColor(String status) {
+Color _paymentStatusBackgroundColor(
+  String status, {
+  required ColorScheme colorScheme,
+}) {
+  final brightness = colorScheme.brightness;
+
+  final alpha = brightness == Brightness.dark ? 0.16 : 0.08;
+
   switch (status.toLowerCase()) {
     case 'paid':
-      return Colors.green.shade50;
+      return AppColors.success.withValues(alpha: alpha);
 
     case 'partial':
-      return Colors.orange.shade50;
+      return AppColors.warning.withValues(alpha: alpha);
 
     case 'unpaid':
-      return Colors.red.shade50;
+      return AppColors.error.withValues(alpha: alpha);
 
     case 'partially_returned':
-      return Colors.orange.shade50;
+      return AppColors.warning.withValues(alpha: alpha);
 
     case 'returned':
-      return Colors.blue.shade50;
+      return AppColors.primary.withValues(alpha: alpha);
 
     default:
-      return Colors.grey.shade200;
+      return colorScheme.onSurfaceVariant.withValues(alpha: alpha);
   }
 }
 
