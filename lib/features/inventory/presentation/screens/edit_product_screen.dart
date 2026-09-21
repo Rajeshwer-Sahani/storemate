@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:storemate/core/widgets/product_icon.dart';
 
 import 'package:storemate/features/inventory/data/models/product_model.dart';
 import 'package:storemate/features/inventory/data/services/inventory_service.dart';
+import 'package:storemate/features/inventory/presentation/screens/imei_scanner_screen.dart';
 import 'package:storemate/features/inventory/presentation/widgets/tracking_mode_card.dart';
 
 class EditProductScreen extends StatefulWidget {
@@ -25,6 +27,8 @@ class _EditProductScreenState extends State<EditProductScreen> {
 
   late final TextEditingController _skuController;
 
+  late final TextEditingController _barcodeController;
+
   late final TextEditingController _purchasePriceController;
 
   late final TextEditingController _sellingPriceController;
@@ -43,6 +47,10 @@ class _EditProductScreenState extends State<EditProductScreen> {
 
   bool _isSaving = false;
 
+  bool _isBarcodeScanned = false;
+
+  bool _isUpdatingBarcodeFromScanner = false;
+
   // ---------------------------------------------------------------------------
   // Initial setup
   // ---------------------------------------------------------------------------
@@ -56,6 +64,10 @@ class _EditProductScreenState extends State<EditProductScreen> {
     _brandController = TextEditingController(text: widget.product.brand ?? '');
 
     _skuController = TextEditingController(text: widget.product.sku ?? '');
+
+    _barcodeController = TextEditingController(
+      text: widget.product.barcode ?? '',
+    );
 
     _purchasePriceController = TextEditingController(
       text: _numberText(widget.product.purchasePrice),
@@ -79,6 +91,8 @@ class _EditProductScreenState extends State<EditProductScreen> {
 
     _selectedCategoryId = widget.product.categoryId;
 
+    _barcodeController.addListener(_handleBarcodeChanged);
+
     _loadCategories();
   }
 
@@ -94,17 +108,62 @@ class _EditProductScreenState extends State<EditProductScreen> {
     return value.toString();
   }
 
+  void _handleBarcodeChanged() {
+    if (_isUpdatingBarcodeFromScanner) {
+      return;
+    }
+
+    if (_isBarcodeScanned) {
+      setState(() {
+        _isBarcodeScanned = false;
+      });
+    }
+  }
+
+  Future<void> _scanBarcode() async {
+    FocusManager.instance.primaryFocus?.unfocus();
+
+    final existingBarcode = _barcodeController.text.trim();
+
+    final barcode = await Navigator.of(context).push<String>(
+      MaterialPageRoute(
+        builder: (_) => ImeiScannerScreen(
+          scanType: 'barcode',
+          excludedValues: [if (existingBarcode.isNotEmpty) existingBarcode],
+        ),
+      ),
+    );
+
+    if (!mounted || barcode == null || barcode.trim().isEmpty) {
+      return;
+    }
+
+    _isUpdatingBarcodeFromScanner = true;
+
+    _barcodeController.text = barcode.trim();
+
+    _isUpdatingBarcodeFromScanner = false;
+
+    setState(() {
+      _isBarcodeScanned = true;
+    });
+  }
+
   // ---------------------------------------------------------------------------
   // Dispose controllers
   // ---------------------------------------------------------------------------
 
   @override
   void dispose() {
+    _barcodeController.removeListener(_handleBarcodeChanged);
+
     _productNameController.dispose();
 
     _brandController.dispose();
 
     _skuController.dispose();
+
+    _barcodeController.dispose();
 
     _purchasePriceController.dispose();
 
@@ -237,6 +296,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
         categoryId: _selectedCategoryId,
         brand: _brandController.text,
         sku: _skuController.text,
+        barcode: _barcodeController.text.trim(),
         purchasePrice: double.parse(_purchasePriceController.text.trim()),
         sellingPrice: double.parse(_sellingPriceController.text.trim()),
         stockQuantity: int.parse(_stockQuantityController.text.trim()),
@@ -358,7 +418,7 @@ class _EditProductScreenState extends State<EditProductScreen> {
                 ),
               ),
 
-                            if (_selectedCategoryId != null) ...[
+              if (_selectedCategoryId != null) ...[
                 const SizedBox(height: 12),
 
                 TrackingModeCard(
@@ -390,6 +450,34 @@ class _EditProductScreenState extends State<EditProductScreen> {
                 decoration: const InputDecoration(
                   labelText: 'SKU / Product code (optional)',
                   prefixIcon: Icon(Icons.qr_code_rounded),
+                ),
+              ),
+
+              const SizedBox(height: 18),
+              TextFormField(
+                controller: _barcodeController,
+                enabled: !_isSaving,
+                keyboardType: TextInputType.number,
+                textInputAction: TextInputAction.next,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                decoration: InputDecoration(
+                  labelText: 'Barcode (optional)',
+                  hintText: 'Example: 8906129037366',
+                  prefixIcon: const Icon(Icons.qr_code_2_rounded),
+                  suffixIcon: _isBarcodeScanned
+                      ? IconButton(
+                          tooltip: 'Scan again',
+                          onPressed: _isSaving ? null : _scanBarcode,
+                          icon: const Icon(
+                            Icons.check_circle_rounded,
+                            color: Colors.green,
+                          ),
+                        )
+                      : IconButton(
+                          tooltip: 'Scan barcode',
+                          onPressed: _isSaving ? null : _scanBarcode,
+                          icon: const Icon(Icons.document_scanner_outlined),
+                        ),
                 ),
               ),
 
