@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:storemate/features/inventory/data/models/product_model.dart';
 import 'package:storemate/features/inventory/data/models/product_unit_model.dart';
+import 'package:storemate/features/inventory/data/models/product_unit_sale_info.dart';
 import 'package:storemate/features/inventory/data/services/product_unit_service.dart';
 import 'package:storemate/features/inventory/presentation/screens/edit_product_unit_screen.dart';
 
@@ -25,10 +26,48 @@ class _DeviceDetailsScreenState extends State<DeviceDetailsScreen> {
 
   late ProductUnitModel _unit;
 
+  ProductUnitSaleInfo? _saleInfo;
+
+  bool _isLoadingSaleInfo = false;
+
   @override
   void initState() {
     super.initState();
+
     _unit = widget.unit;
+
+    if (_unit.status == ProductUnitStatus.sold) {
+      _loadSaleInformation();
+    }
+  }
+
+  Future<void> _loadSaleInformation() async {
+    setState(() {
+      _isLoadingSaleInfo = true;
+    });
+
+    try {
+      final saleInfo = await _productUnitService.getProductUnitSaleInfo(
+        productUnitId: _unit.id,
+      );
+
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _saleInfo = saleInfo;
+        _isLoadingSaleInfo = false;
+      });
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      setState(() {
+        _isLoadingSaleInfo = false;
+      });
+    }
   }
 
   Future<void> _editDevice() async {
@@ -225,6 +264,26 @@ class _DeviceDetailsScreenState extends State<DeviceDetailsScreen> {
       );
   }
 
+  String _formatSaleDate(DateTime dateTime) {
+    final localDate = dateTime.toLocal();
+
+    final day = localDate.day.toString().padLeft(2, '0');
+    final month = localDate.month.toString().padLeft(2, '0');
+    final year = localDate.year.toString();
+
+    final hour = localDate.hour == 0
+        ? 12
+        : localDate.hour > 12
+        ? localDate.hour - 12
+        : localDate.hour;
+
+    final minute = localDate.minute.toString().padLeft(2, '0');
+
+    final period = localDate.hour >= 12 ? 'PM' : 'AM';
+
+    return '$day/$month/$year · $hour:$minute $period';
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -298,12 +357,27 @@ class _DeviceDetailsScreenState extends State<DeviceDetailsScreen> {
               statusBackground,
             ),
 
+            if (_unit.status == ProductUnitStatus.sold) ...[
+              const SizedBox(height: 26),
+
+              _SectionHeading(
+                title: 'Sale Information',
+                subtitle: 'Customer and invoice associated with this device.',
+              ),
+
+              const SizedBox(height: 14),
+
+              _buildSaleInformationCard(theme, colorScheme),
+            ],
+
             const SizedBox(height: 26),
 
             _SectionHeading(
               title: 'Device Information',
               subtitle: 'Identifiers for this physical unit.',
             ),
+
+            
 
             const SizedBox(height: 14),
 
@@ -464,6 +538,141 @@ class _DeviceDetailsScreenState extends State<DeviceDetailsScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildSaleInformationCard(ThemeData theme, ColorScheme colorScheme) {
+    if (_isLoadingSaleInfo) {
+      return _InformationCard(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 22),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: colorScheme.primary,
+                  ),
+                ),
+
+                const SizedBox(width: 14),
+
+                Text(
+                  'Loading sale information...',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+
+    if (_saleInfo == null) {
+      return _InformationCard(
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.receipt_long_outlined,
+                  color: colorScheme.onSurfaceVariant,
+                ),
+
+                const SizedBox(width: 12),
+
+                Expanded(
+                  child: Text(
+                    'No linked invoice information was found for this device.',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
+
+    final saleInfo = _saleInfo!;
+
+    return _InformationCard(
+      children: [
+        _InformationRow(
+          icon: Icons.person_outline_rounded,
+          label: 'Customer',
+          value: _displayValue(saleInfo.customerName),
+          iconColor: Colors.teal.shade600,
+          iconBackground: Colors.teal.withValues(alpha: 0.10),
+        ),
+
+        if (saleInfo.customerPhone != null &&
+            saleInfo.customerPhone!.trim().isNotEmpty) ...[
+          const _InformationDivider(),
+
+          _InformationRow(
+            icon: Icons.phone_outlined,
+            label: 'Customer Phone',
+            value: saleInfo.customerPhone!.trim(),
+            iconColor: Colors.green.shade600,
+            iconBackground: Colors.green.withValues(alpha: 0.10),
+          ),
+        ],
+
+        const _InformationDivider(),
+
+        _InformationRow(
+          icon: Icons.receipt_long_outlined,
+          label: 'Invoice',
+          value: saleInfo.invoiceNumber,
+          iconColor: colorScheme.primary,
+          iconBackground: colorScheme.primary.withValues(alpha: 0.10),
+        ),
+
+        const _InformationDivider(),
+
+        _InformationRow(
+          icon: Icons.calendar_today_outlined,
+          label: 'Sale Date',
+          value: _formatSaleDate(saleInfo.invoiceDate),
+          iconColor: Colors.orange.shade700,
+          iconBackground: Colors.orange.withValues(alpha: 0.10),
+        ),
+
+        if (saleInfo.paymentStatus != null &&
+            saleInfo.paymentStatus!.trim().isNotEmpty) ...[
+          const _InformationDivider(),
+
+          _InformationRow(
+            icon: Icons.payments_outlined,
+            label: 'Payment',
+            value: saleInfo.paymentStatus!,
+            iconColor: Colors.green.shade700,
+            iconBackground: Colors.green.withValues(alpha: 0.10),
+          ),
+        ],
+
+        if (saleInfo.invoiceStatus != null &&
+            saleInfo.invoiceStatus!.trim().isNotEmpty) ...[
+          const _InformationDivider(),
+
+          _InformationRow(
+            icon: Icons.assignment_turned_in_outlined,
+            label: 'Invoice Status',
+            value: saleInfo.invoiceStatus!,
+            iconColor: Colors.indigo.shade600,
+            iconBackground: Colors.indigo.withValues(alpha: 0.10),
+          ),
+        ],
+      ],
     );
   }
 

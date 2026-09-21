@@ -1,3 +1,4 @@
+import 'package:storemate/features/inventory/data/models/product_unit_sale_info.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:storemate/features/inventory/data/models/product_unit_model.dart';
 
@@ -27,7 +28,7 @@ class ProductUnitService {
 
   // ---------------------------------------------------------------------------
   // Get product unit count
-  // ---------------------------------------------------------------------------  
+  // ---------------------------------------------------------------------------
   Future<int> getProductUnitCount({required String productId}) async {
     final response = await _supabase
         .from('product_units')
@@ -121,6 +122,95 @@ class ProductUnitService {
     } on PostgrestException catch (error) {
       throw _mapDatabaseError(error);
     }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Get sale information for a product unit
+  // ---------------------------------------------------------------------------
+  //
+  // A physical device can be sold, returned, and later sold again.
+  // Therefore we use the most recent invoice_item_units relationship.
+  //
+  // The relationship is:
+  // product_units
+  //      ↓
+  // invoice_item_units
+  //      ↓
+  // invoice_items
+  //      ↓
+  // invoices
+  //
+  // The invoice contains the historical customer snapshot, invoice number,
+  // invoice date, and payment/status information.
+  // ---------------------------------------------------------------------------
+
+  Future<ProductUnitSaleInfo?> getProductUnitSaleInfo({
+    required String productUnitId,
+  }) async {
+    final unitLink = await _supabase
+        .from('invoice_item_units')
+        .select('invoice_item_id, created_at')
+        .eq('product_unit_id', productUnitId)
+        .order('created_at', ascending: false)
+        .limit(1)
+        .maybeSingle();
+
+    if (unitLink == null) {
+      return null;
+    }
+
+    final invoiceItemId = unitLink['invoice_item_id']?.toString();
+
+    if (invoiceItemId == null || invoiceItemId.isEmpty) {
+      return null;
+    }
+
+    final invoiceItem = await _supabase
+        .from('invoice_items')
+        .select('invoice_id')
+        .eq('id', invoiceItemId)
+        .maybeSingle();
+
+    if (invoiceItem == null) {
+      return null;
+    }
+
+    final invoiceId = invoiceItem['invoice_id']?.toString();
+
+    if (invoiceId == null || invoiceId.isEmpty) {
+      return null;
+    }
+
+    final invoice = await _supabase
+        .from('invoices')
+        .select(
+          'id, invoice_number, invoice_date, customer_name, '
+          'customer_phone, payment_status, invoice_status',
+        )
+        .eq('id', invoiceId)
+        .maybeSingle();
+
+    if (invoice == null) {
+      return null;
+    }
+
+    final invoiceDate = DateTime.tryParse(
+      invoice['invoice_date']?.toString() ?? '',
+    );
+
+    if (invoiceDate == null) {
+      return null;
+    }
+
+    return ProductUnitSaleInfo(
+      invoiceId: invoice['id']?.toString() ?? invoiceId,
+      invoiceNumber: invoice['invoice_number']?.toString() ?? 'Unknown',
+      invoiceDate: invoiceDate,
+      customerName: invoice['customer_name']?.toString(),
+      customerPhone: invoice['customer_phone']?.toString(),
+      paymentStatus: invoice['payment_status']?.toString(),
+      invoiceStatus: invoice['invoice_status']?.toString(),
+    );
   }
 
   // ---------------------------------------------------------------------------
