@@ -377,8 +377,6 @@ class _DeviceDetailsScreenState extends State<DeviceDetailsScreen> {
               subtitle: 'Identifiers for this physical unit.',
             ),
 
-            
-
             const SizedBox(height: 14),
 
             _InformationCard(
@@ -589,7 +587,7 @@ class _DeviceDetailsScreenState extends State<DeviceDetailsScreen> {
 
                 Expanded(
                   child: Text(
-                    'No linked invoice information was found for this device.',
+                    'No linked sale information was found for this device.',
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: colorScheme.onSurfaceVariant,
                     ),
@@ -604,74 +602,41 @@ class _DeviceDetailsScreenState extends State<DeviceDetailsScreen> {
 
     final saleInfo = _saleInfo!;
 
-    return _InformationCard(
+    return Column(
       children: [
-        _InformationRow(
-          icon: Icons.person_outline_rounded,
-          label: 'Customer',
-          value: _displayValue(saleInfo.customerName),
-          iconColor: Colors.teal.shade600,
-          iconBackground: Colors.teal.withValues(alpha: 0.10),
+        _SaleCustomerCard(
+          theme: theme,
+          colorScheme: colorScheme,
+          customerName: _displayValue(
+            saleInfo.customerName,
+            fallback: 'Unknown Customer',
+          ),
+          customerPhone: saleInfo.customerPhone,
+          onViewCustomer: () {
+            // We will connect Customer Details here.
+          },
         ),
 
-        if (saleInfo.customerPhone != null &&
-            saleInfo.customerPhone!.trim().isNotEmpty) ...[
-          const _InformationDivider(),
+        const SizedBox(height: 12),
 
-          _InformationRow(
-            icon: Icons.phone_outlined,
-            label: 'Customer Phone',
-            value: saleInfo.customerPhone!.trim(),
-            iconColor: Colors.green.shade600,
-            iconBackground: Colors.green.withValues(alpha: 0.10),
-          ),
-        ],
-
-        const _InformationDivider(),
-
-        _InformationRow(
-          icon: Icons.receipt_long_outlined,
-          label: 'Invoice',
-          value: saleInfo.invoiceNumber,
-          iconColor: colorScheme.primary,
-          iconBackground: colorScheme.primary.withValues(alpha: 0.10),
+        _SaleInvoiceCard(
+          theme: theme,
+          colorScheme: colorScheme,
+          invoiceNumber: saleInfo.invoiceNumber,
+          invoiceDate: _formatSaleDate(saleInfo.invoiceDate),
+          onViewInvoice: () {
+            // We will connect Invoice Details here.
+          },
         ),
 
-        const _InformationDivider(),
+        const SizedBox(height: 12),
 
-        _InformationRow(
-          icon: Icons.calendar_today_outlined,
-          label: 'Sale Date',
-          value: _formatSaleDate(saleInfo.invoiceDate),
-          iconColor: Colors.orange.shade700,
-          iconBackground: Colors.orange.withValues(alpha: 0.10),
+        _SaleSummaryCard(
+          theme: theme,
+          colorScheme: colorScheme,
+          saleAmount: saleInfo.saleAmount,
+          paymentStatus: saleInfo.paymentStatus,
         ),
-
-        if (saleInfo.paymentStatus != null &&
-            saleInfo.paymentStatus!.trim().isNotEmpty) ...[
-          const _InformationDivider(),
-
-          _InformationRow(
-            icon: Icons.payments_outlined,
-            label: 'Payment',
-            value: saleInfo.paymentStatus!,
-            iconColor: Colors.green.shade700,
-            iconBackground: Colors.green.withValues(alpha: 0.10),
-          ),
-        ],
-
-        if (saleInfo.invoiceStatus != null &&
-            saleInfo.invoiceStatus!.trim().isNotEmpty) ...[
-          const _InformationDivider(),
-
-          _InformationRow(
-            icon: Icons.assignment_turned_in_outlined,
-            label: 'Invoice Status',
-            value: saleInfo.invoiceStatus!,
-            iconColor: Colors.indigo.shade600,
-            iconBackground: Colors.indigo.withValues(alpha: 0.10),
-          ),
-        ],
       ],
     );
   }
@@ -945,5 +910,288 @@ class _InformationDivider extends StatelessWidget {
       height: 1,
       color: Theme.of(context).colorScheme.outlineVariant,
     );
+  }
+}
+
+class _SaleCustomerCard extends StatelessWidget {
+  const _SaleCustomerCard({
+    required this.theme,
+    required this.colorScheme,
+    required this.customerName,
+    required this.customerPhone,
+    required this.onViewCustomer,
+  });
+
+  final ThemeData theme;
+  final ColorScheme colorScheme;
+  final String customerName;
+  final String? customerPhone;
+  final VoidCallback onViewCustomer;
+
+  @override
+  Widget build(BuildContext context) {
+    final phone = customerPhone?.trim();
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 15),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: colorScheme.outlineVariant),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: Colors.teal.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(13),
+            ),
+            child: Icon(
+              Icons.person_outline_rounded,
+              size: 22,
+              color: Colors.teal.shade600,
+            ),
+          ),
+
+          const SizedBox(width: 14),
+
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Customer',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+
+                const SizedBox(height: 3),
+
+                Text(
+                  customerName,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+
+                if (phone != null && phone.isNotEmpty) ...[
+                  const SizedBox(height: 3),
+
+                  Text(
+                    phone,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+
+                const SizedBox(height: 9),
+
+                TextButton(
+                  onPressed: onViewCustomer,
+                  style: TextButton.styleFrom(
+                    padding: EdgeInsets.zero,
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    alignment: Alignment.centerLeft,
+                  ),
+                  child: Text(
+                    'View Customer →',
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: colorScheme.primary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SaleInvoiceCard extends StatelessWidget {
+  const _SaleInvoiceCard({
+    required this.theme,
+    required this.colorScheme,
+    required this.invoiceNumber,
+    required this.invoiceDate,
+    required this.onViewInvoice,
+  });
+
+  final ThemeData theme;
+  final ColorScheme colorScheme;
+  final String invoiceNumber;
+  final String invoiceDate;
+  final VoidCallback onViewInvoice;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 15),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: colorScheme.outlineVariant),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: colorScheme.primary.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(13),
+            ),
+            child: Icon(
+              Icons.receipt_long_outlined,
+              size: 22,
+              color: colorScheme.primary,
+            ),
+          ),
+
+          const SizedBox(width: 14),
+
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Invoice',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+
+                const SizedBox(height: 3),
+
+                Text(
+                  invoiceNumber,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+
+                const SizedBox(height: 3),
+
+                Text(
+                  invoiceDate,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+
+                const SizedBox(height: 9),
+
+                TextButton(
+                  onPressed: onViewInvoice,
+                  style: TextButton.styleFrom(
+                    padding: EdgeInsets.zero,
+                    minimumSize: Size.zero,
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    alignment: Alignment.centerLeft,
+                  ),
+                  child: Text(
+                    'View Invoice →',
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: colorScheme.primary,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SaleSummaryCard extends StatelessWidget {
+  const _SaleSummaryCard({
+    required this.theme,
+    required this.colorScheme,
+    required this.saleAmount,
+    required this.paymentStatus,
+  });
+
+  final ThemeData theme;
+  final ColorScheme colorScheme;
+  final double saleAmount;
+  final String? paymentStatus;
+
+  @override
+  Widget build(BuildContext context) {
+    final status = paymentStatus?.trim();
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 17),
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: colorScheme.outlineVariant),
+      ),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Sale Amount',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+
+              Text(
+                _formatCurrency(saleAmount),
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 13),
+
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Payment Status',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+
+              Text(
+                status != null && status.isNotEmpty ? status : 'Not available',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _formatCurrency(double amount) {
+    return '₹${amount.toStringAsFixed(0)}';
   }
 }

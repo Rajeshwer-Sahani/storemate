@@ -184,8 +184,8 @@ class ProductUnitService {
     final invoice = await _supabase
         .from('invoices')
         .select(
-          'id, invoice_number, invoice_date, customer_name, '
-          'customer_phone, payment_status, invoice_status',
+          'id, customer_id, invoice_number, invoice_date, '
+          'customer_name, customer_phone, grand_total, payment_status',
         )
         .eq('id', invoiceId)
         .maybeSingle();
@@ -203,16 +203,16 @@ class ProductUnitService {
     }
 
     return ProductUnitSaleInfo(
+      customerId: invoice['customer_id']?.toString(),
+      customerName: invoice['customer_name']?.toString() ?? 'Unknown Customer',
+      customerPhone: invoice['customer_phone']?.toString(),
       invoiceId: invoice['id']?.toString() ?? invoiceId,
       invoiceNumber: invoice['invoice_number']?.toString() ?? 'Unknown',
       invoiceDate: invoiceDate,
-      customerName: invoice['customer_name']?.toString(),
-      customerPhone: invoice['customer_phone']?.toString(),
+      saleAmount: (invoice['grand_total'] as num?)?.toDouble() ?? 0.0,
       paymentStatus: invoice['payment_status']?.toString(),
-      invoiceStatus: invoice['invoice_status']?.toString(),
     );
   }
-
   // ---------------------------------------------------------------------------
   // Update a product unit
   // ---------------------------------------------------------------------------

@@ -1,19 +1,23 @@
 class ProductUnitSaleInfo {
   const ProductUnitSaleInfo({
+    required this.customerId,
+    required this.customerName,
+    this.customerPhone,
     required this.invoiceId,
     required this.invoiceNumber,
     required this.invoiceDate,
-    this.customerName,
-    this.customerPhone,
+    required this.saleAmount,
     this.paymentStatus,
-    this.invoiceStatus,
   });
+
+  final String? customerId;
+  final String customerName;
+  final String? customerPhone;
 
   final String invoiceId;
   final String invoiceNumber;
   final DateTime invoiceDate;
-  final String? customerName;
-  final String? customerPhone;
+
+  final double saleAmount;
   final String? paymentStatus;
-  final String? invoiceStatus;
 }
