@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:storemate/features/billing/presentation/screens/invoice_details_screen.dart';
+import 'package:storemate/features/customers/data/services/customer_service.dart';
+import 'package:storemate/features/customers/presentation/screens/customer_details_screen.dart';
 import 'package:storemate/features/inventory/data/models/product_model.dart';
 import 'package:storemate/features/inventory/data/models/product_unit_model.dart';
 import 'package:storemate/features/inventory/data/models/product_unit_sale_info.dart';
@@ -23,6 +26,7 @@ class DeviceDetailsScreen extends StatefulWidget {
 
 class _DeviceDetailsScreenState extends State<DeviceDetailsScreen> {
   final ProductUnitService _productUnitService = ProductUnitService();
+  final CustomerService _customerService = CustomerService();
 
   late ProductUnitModel _unit;
 
@@ -68,6 +72,53 @@ class _DeviceDetailsScreenState extends State<DeviceDetailsScreen> {
         _isLoadingSaleInfo = false;
       });
     }
+  }
+
+  Future<void> _openCustomerDetails() async {
+    final customerId = _saleInfo?.customerId?.trim();
+
+    if (customerId == null || customerId.isEmpty) {
+      _showMessage('Customer information is not available.', isError: true);
+      return;
+    }
+
+    try {
+      final customer = await _customerService.getCustomerById(customerId);
+
+      if (!mounted) {
+        return;
+      }
+
+      await Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => CustomerDetailsScreen(customer: customer),
+        ),
+      );
+    } catch (error) {
+      if (!mounted) {
+        return;
+      }
+
+      _showMessage(
+        'Unable to open customer details. Please try again.',
+        isError: true,
+      );
+    }
+  }
+
+  Future<void> _openInvoiceDetails() async {
+    final invoiceId = _saleInfo?.invoiceId?.trim();
+
+    if (invoiceId == null || invoiceId.isEmpty) {
+      _showMessage('Invoice information is not available.', isError: true);
+      return;
+    }
+
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => InvoiceDetailsScreen(invoiceId: invoiceId),
+      ),
+    );
   }
 
   Future<void> _editDevice() async {
@@ -612,9 +663,7 @@ class _DeviceDetailsScreenState extends State<DeviceDetailsScreen> {
             fallback: 'Unknown Customer',
           ),
           customerPhone: saleInfo.customerPhone,
-          onViewCustomer: () {
-            // We will connect Customer Details here.
-          },
+          onViewCustomer: _openCustomerDetails,
         ),
 
         const SizedBox(height: 12),
@@ -624,9 +673,7 @@ class _DeviceDetailsScreenState extends State<DeviceDetailsScreen> {
           colorScheme: colorScheme,
           invoiceNumber: saleInfo.invoiceNumber,
           invoiceDate: _formatSaleDate(saleInfo.invoiceDate),
-          onViewInvoice: () {
-            // We will connect Invoice Details here.
-          },
+          onViewInvoice: _openInvoiceDetails,
         ),
 
         const SizedBox(height: 12),
@@ -932,87 +979,101 @@ class _SaleCustomerCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final phone = customerPhone?.trim();
 
-    return Container(
-      padding: const EdgeInsets.fromLTRB(18, 16, 18, 15),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onViewCustomer,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: colorScheme.outlineVariant),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: Colors.teal.withValues(alpha: 0.10),
-              borderRadius: BorderRadius.circular(13),
-            ),
-            child: Icon(
-              Icons.person_outline_rounded,
-              size: 22,
-              color: Colors.teal.shade600,
-            ),
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 124),
+          padding: const EdgeInsets.fromLTRB(18, 16, 8, 16),
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: colorScheme.outlineVariant),
           ),
-
-          const SizedBox(width: 14),
-
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Customer',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // ---------------------------------------------------------------
+              // Customer icon
+              // ---------------------------------------------------------------
+              Container(
+                width: 46,
+                height: 46,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: Colors.teal.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(14),
                 ),
-
-                const SizedBox(height: 3),
-
-                Text(
-                  customerName,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+                child: Icon(
+                  Icons.person_outline_rounded,
+                  size: 23,
+                  color: Colors.teal.shade600,
                 ),
+              ),
 
-                if (phone != null && phone.isNotEmpty) ...[
-                  const SizedBox(height: 3),
+              const SizedBox(width: 14),
 
-                  Text(
-                    phone,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                      fontWeight: FontWeight.w500,
+              // ---------------------------------------------------------------
+              // Customer information
+              // ---------------------------------------------------------------
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Customer',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
                     ),
-                  ),
-                ],
 
-                const SizedBox(height: 9),
+                    const SizedBox(height: 3),
 
-                TextButton(
-                  onPressed: onViewCustomer,
-                  style: TextButton.styleFrom(
-                    padding: EdgeInsets.zero,
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    alignment: Alignment.centerLeft,
-                  ),
-                  child: Text(
-                    'View Customer →',
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      color: colorScheme.primary,
-                      fontWeight: FontWeight.w700,
+                    Text(
+                      customerName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
-                  ),
+
+                    if (phone != null && phone.isNotEmpty) ...[
+                      const SizedBox(height: 3),
+
+                      Text(
+                        phone,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
-              ],
-            ),
+              ),
+
+              const SizedBox(width: 8),
+
+              // ---------------------------------------------------------------
+              // View customer
+              // ---------------------------------------------------------------
+              IconButton(
+                onPressed: onViewCustomer,
+                tooltip: 'View Customer',
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                icon: const Icon(Icons.chevron_right_rounded, size: 28),
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -1035,85 +1096,99 @@ class _SaleInvoiceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.fromLTRB(18, 16, 18, 15),
-      decoration: BoxDecoration(
-        color: colorScheme.surface,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onViewInvoice,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: colorScheme.outlineVariant),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: colorScheme.primary.withValues(alpha: 0.10),
-              borderRadius: BorderRadius.circular(13),
-            ),
-            child: Icon(
-              Icons.receipt_long_outlined,
-              size: 22,
-              color: colorScheme.primary,
-            ),
+        child: Container(
+          constraints: const BoxConstraints(minHeight: 124),
+          padding: const EdgeInsets.fromLTRB(18, 16, 8, 16),
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: colorScheme.outlineVariant),
           ),
-
-          const SizedBox(width: 14),
-
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Invoice',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                  ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              // ---------------------------------------------------------------
+              // Invoice icon
+              // ---------------------------------------------------------------
+              Container(
+                width: 46,
+                height: 46,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: colorScheme.primary.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(14),
                 ),
-
-                const SizedBox(height: 3),
-
-                Text(
-                  invoiceNumber,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+                child: Icon(
+                  Icons.receipt_long_outlined,
+                  size: 23,
+                  color: colorScheme.primary,
                 ),
+              ),
 
-                const SizedBox(height: 3),
+              const SizedBox(width: 14),
 
-                Text(
-                  invoiceDate,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-
-                const SizedBox(height: 9),
-
-                TextButton(
-                  onPressed: onViewInvoice,
-                  style: TextButton.styleFrom(
-                    padding: EdgeInsets.zero,
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    alignment: Alignment.centerLeft,
-                  ),
-                  child: Text(
-                    'View Invoice →',
-                    style: theme.textTheme.labelLarge?.copyWith(
-                      color: colorScheme.primary,
-                      fontWeight: FontWeight.w700,
+              // ---------------------------------------------------------------
+              // Invoice information
+              // ---------------------------------------------------------------
+              Expanded(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Invoice',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                      ),
                     ),
-                  ),
+
+                    const SizedBox(height: 3),
+
+                    Text(
+                      invoiceNumber,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+
+                    const SizedBox(height: 3),
+
+                    Text(
+                      invoiceDate,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+
+              const SizedBox(width: 8),
+
+              // ---------------------------------------------------------------
+              // View invoice
+              // ---------------------------------------------------------------
+              IconButton(
+                onPressed: onViewInvoice,
+                tooltip: 'View Invoice',
+                padding: EdgeInsets.zero,
+                constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                icon: const Icon(Icons.chevron_right_rounded, size: 28),
+                color: colorScheme.onSurfaceVariant,
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -1160,6 +1235,7 @@ class _SaleSummaryCard extends StatelessWidget {
                 _formatCurrency(saleAmount),
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w800,
+                  color: Colors.green.shade700,
                 ),
               ),
             ],
@@ -1182,6 +1258,9 @@ class _SaleSummaryCard extends StatelessWidget {
                 status != null && status.isNotEmpty ? status : 'Not available',
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w800,
+                  color: status == 'Paid'
+                      ? Colors.green.shade700
+                      : Colors.orange.shade700,
                 ),
               ),
             ],
