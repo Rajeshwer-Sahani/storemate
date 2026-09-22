@@ -19,7 +19,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
   late final Animation<double> _orbitAnimation;
   late final Animation<double> _brandingAnimation;
   late final Animation<double> _featuresAnimation;
-  late final Animation<double> _buttonAnimation;
+  late final Animation<double> _continueAnimation;
 
   @override
   void initState() {
@@ -73,7 +73,7 @@ class _OnboardingScreenState extends State<OnboardingScreen>
     // ---------------------------------------------------------------
     // Button
     // ---------------------------------------------------------------
-    _buttonAnimation = CurvedAnimation(
+    _continueAnimation = CurvedAnimation(
       parent: _controller,
       curve: const Interval(0.62, 1.0, curve: Curves.easeOut),
     );
@@ -458,59 +458,80 @@ class _OnboardingScreenState extends State<OnboardingScreen>
                     ),
 
                     // =====================================================
-                    // BUTTON
+                    // CONTINUE ACTION
                     // =====================================================
-                    SizedBox(height: compact ? 15 : 22),
+                    SizedBox(height: compact ? 14 : 18),
 
                     FadeTransition(
-                      opacity: _buttonAnimation,
+                      opacity: _continueAnimation,
                       child: SlideTransition(
                         position: Tween<Offset>(
                           begin: const Offset(0, 0.08),
                           end: Offset.zero,
-                        ).animate(_buttonAnimation),
-                        child: SizedBox(
-                          width: double.infinity,
-                          height: compact ? 54 : 56,
-                          child: ElevatedButton(
-                            onPressed: _getStarted,
-                            style: ElevatedButton.styleFrom(
-                              elevation: 7,
-                              shadowColor: colorScheme.primary.withValues(
-                                alpha: 0.24,
-                              ),
-                              backgroundColor: colorScheme.primary,
-                              foregroundColor: Colors.white,
-                              padding: EdgeInsets.zero,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(17),
-                              ),
+                        ).animate(_continueAnimation),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            onTap: _getStarted,
+                            borderRadius: BorderRadius.circular(30),
+                            splashColor: colorScheme.primary.withValues(
+                              alpha: 0.08,
                             ),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Text(
-                                  "Let's Get Started",
-                                  style: TextStyle(
-                                    fontSize: compact ? 14 : 15,
-                                    fontWeight: FontWeight.w600,
-                                    letterSpacing: 0.05,
+                            highlightColor: colorScheme.primary.withValues(
+                              alpha: 0.04,
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 18,
+                                vertical: 10,
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    'Continue',
+                                    style: TextStyle(
+                                      fontSize: compact ? 15 : 16,
+                                      fontWeight: FontWeight.w600,
+                                      color: const Color(0xFF263B5A),
+                                      letterSpacing: 0.05,
+                                    ),
                                   ),
-                                ),
-                                const SizedBox(width: 11),
-                                Icon(
-                                  Icons.arrow_forward_rounded,
-                                  size: compact ? 21 : 22,
-                                ),
-                              ],
+
+                                  const SizedBox(width: 8),
+
+                                  Container(
+                                    width: compact ? 30 : 32,
+                                    height: compact ? 30 : 32,
+                                    decoration: BoxDecoration(
+                                      color: colorScheme.primary,
+                                      shape: BoxShape.circle,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: colorScheme.primary.withValues(
+                                            alpha: 0.18,
+                                          ),
+                                          blurRadius: 10,
+                                          offset: const Offset(0, 4),
+                                        ),
+                                      ],
+                                    ),
+                                    child: Icon(
+                                      Icons.arrow_forward_rounded,
+                                      color: Colors.white,
+                                      size: compact ? 17 : 18,
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ),
                       ),
                     ),
 
-                    // Very small bottom breathing room.
-                    SizedBox(height: compact ? 6 : 9),
+                    // Small bottom breathing room.
+                    SizedBox(height: compact ? 4 : 7),
                   ],
                 ),
               );
