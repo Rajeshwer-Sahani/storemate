@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:storemate/app/navigation/main_navigation_screen.dart';
 import 'package:storemate/features/auth/presentation/screens/login_screen.dart';
+import 'package:storemate/features/splash/presentation/onboarding_screen.dart';
 import 'package:storemate/features/store_setup/presentation/screens/store_setup_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -49,8 +50,7 @@ class _SplashScreenState extends State<SplashScreen>
 
     _animationController.forward();
 
-
-    _checkAuthenticationStatus();  // Check authentication and store setup status.
+    _checkAuthenticationStatus(); // Check authentication and store setup status.
   }
 
   Future<void> _checkAuthenticationStatus() async {
@@ -69,7 +69,7 @@ class _SplashScreenState extends State<SplashScreen>
 
       // No authenticated user exists.
       if (currentUser == null) {
-        _navigateTo(const LoginScreen());
+        _navigateTo(const OnboardingScreen());
         return;
       }
 
