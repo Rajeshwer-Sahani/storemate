@@ -66,6 +66,14 @@ dev_dependencies:
   build_runner: ^2.4.15
   freezed: ^3.2.3
   json_serializable: ^6.9.0
+  flutter_launcher_icons: ^0.14.4
+
+  # Flutter Launcher Icons configuration
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/logos/app_icon_logo2.png"
+  remove_alpha_ios: true
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -84,6 +92,8 @@ flutter:
      - assets/icons/
      - assets/fonts/
      - assets/logos/storemate_logo.png
+     - assets/logos/app_icon_logo.png
+     - assets/logos/app_icon_logo2.png
      - assets/logos/storemate_logo_darkmode.png
 
 
