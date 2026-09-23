@@ -67,7 +67,21 @@
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 
-	<key>NSCameraUsageDescription</key>
-	    <string>StoreMate uses the camera to scan device IMEI barcodes.</string>
+<key>NSCameraUsageDescription</key>
+<string>StoreMate uses the camera to scan device IMEI barcodes.</string>
+
+<!-- Supabase Google OAuth callback -->
+<key>CFBundleURLTypes</key>
+<array>
+	<dict>
+		<key>CFBundleTypeRole</key>
+		<string>Editor</string>
+		<key>CFBundleURLSchemes</key>
+		<array>
+			<string>io.supabase.flutter</string>
+		</array>
+	</dict>
+</array>
+
 </dict>
 </plist>
