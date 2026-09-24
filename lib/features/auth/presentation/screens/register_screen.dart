@@ -1,8 +1,12 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:storemate/app/navigation/main_navigation_screen.dart';
 import 'package:storemate/features/auth/presentation/screens/login_screen.dart';
 import 'package:storemate/features/store_setup/presentation/screens/store_setup_screen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -13,7 +17,6 @@ class RegisterScreen extends StatefulWidget {
 
 class _RegisterScreenState extends State<RegisterScreen> {
   bool _isLoading = false;
-  bool _isPhoneRegistration = false;
   bool _isPasswordVisible = false;
   bool _isConfirmPasswordVisible = false;
 
@@ -21,15 +24,33 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   final _fullNameController = TextEditingController();
   final _emailController = TextEditingController();
-  final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
+  StreamSubscription<AuthState>? _authSubscription;
+
+  @override
+  void initState() {
+    super.initState();
+
+    // Google OAuth returns to the app through a deep link.
+    // Supabase emits SIGNED_IN when the session is restored.
+    _authSubscription = Supabase.instance.client.auth.onAuthStateChange.listen((
+      authState,
+    ) {
+      if (authState.event == AuthChangeEvent.signedIn &&
+          authState.session != null) {
+        _handleAuthenticatedUser(authState.session!.user);
+      }
+    });
+  }
+
   @override
   void dispose() {
+    _authSubscription?.cancel();
+
     _fullNameController.dispose();
     _emailController.dispose();
-    _phoneController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
 
@@ -43,7 +64,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Future<void> _createAccount() async {
     FocusManager.instance.primaryFocus?.unfocus();
 
-    if (!_formKey.currentState!.validate()) {
+    final isFormValid = _formKey.currentState?.validate() ?? false;
+
+    if (!isFormValid) {
       return;
     }
 
@@ -55,58 +78,32 @@ class _RegisterScreenState extends State<RegisterScreen> {
       final supabase = Supabase.instance.client;
 
       final fullName = _fullNameController.text.trim();
+      final email = _emailController.text.trim();
       final password = _passwordController.text;
 
-      final AuthResponse response;
+      final response = await supabase.auth.signUp(
+        email: email,
+        password: password,
+        data: {'full_name': fullName},
+      );
 
-      if (_isPhoneRegistration) {
-        final phone = _normalizePhoneNumber(_phoneController.text);
+      if (!mounted) return;
 
-        response = await supabase.auth.signUp(
-          phone: phone,
-          password: password,
-          channel: OtpChannel.sms,
-          data: {'full_name': fullName},
-        );
-
-        if (!mounted) return;
-
-        // If phone confirmation is enabled, Supabase
-        // returns a user without an active session.
-        if (response.user != null && response.session == null) {
-          await _showPhoneVerificationDialog(phone);
-
-          return;
-        }
-
-        if (response.session != null) {
-          await _handleAuthenticatedUser(response.user!);
-
-          return;
-        }
-      } else {
-        response = await supabase.auth.signUp(
-          email: _emailController.text.trim(),
-          password: password,
-          data: {'full_name': fullName},
-        );
-
-        if (!mounted) return;
-
-        if (response.user != null) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Account created. Please check your email and verify your account.',
-              ),
+      if (response.user != null) {
+        // If email confirmation is enabled in Supabase,
+        // the user must verify their email before logging in.
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Account created. Please check your email and verify your account.',
             ),
-          );
+          ),
+        );
 
-          Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(builder: (context) => const LoginScreen()),
-            (route) => false,
-          );
-        }
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+          (route) => false,
+        );
       }
     } on AuthException catch (error) {
       if (!mounted) return;
@@ -132,166 +129,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   // ============================================================
-  // PHONE OTP VERIFICATION
-  // ============================================================
-
-  Future<void> _showPhoneVerificationDialog(String phone) async {
-    final otpController = TextEditingController();
-
-    try {
-      final verified = await showDialog<bool>(
-        context: context,
-        barrierDismissible: false,
-        builder: (dialogContext) {
-          bool isVerifying = false;
-
-          return StatefulBuilder(
-            builder: (context, setDialogState) {
-              return AlertDialog(
-                title: const Text('Verify your phone'),
-                content: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'We sent a verification code to\n$phone',
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                    const SizedBox(height: 20),
-                    TextField(
-                      controller: otpController,
-                      enabled: !isVerifying,
-                      keyboardType: TextInputType.number,
-                      maxLength: 6,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 6,
-                      ),
-                      decoration: const InputDecoration(
-                        labelText: 'Verification code',
-                        hintText: '000000',
-                        counterText: '',
-                        prefixIcon: Icon(Icons.verified_user_outlined),
-                      ),
-                    ),
-                  ],
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: isVerifying
-                        ? null
-                        : () {
-                            Navigator.of(dialogContext).pop(false);
-                          },
-                    child: const Text('Cancel'),
-                  ),
-                  FilledButton(
-                    onPressed: isVerifying
-                        ? null
-                        : () async {
-                            final otp = otpController.text.trim();
-
-                            if (otp.length != 6) {
-                              ScaffoldMessenger.of(dialogContext).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    'Please enter the 6-digit verification code.',
-                                  ),
-                                ),
-                              );
-                              return;
-                            }
-
-                            setDialogState(() {
-                              isVerifying = true;
-                            });
-
-                            try {
-                              final response = await Supabase
-                                  .instance
-                                  .client
-                                  .auth
-                                  .verifyOTP(
-                                    type: OtpType.sms,
-                                    token: otp,
-                                    phone: phone,
-                                  );
-
-                              if (!mounted) return;
-
-                              if (response.user == null) {
-                                throw const AuthException(
-                                  'Phone verification failed.',
-                                );
-                              }
-
-                              Navigator.of(dialogContext).pop(true);
-
-                              await _handleAuthenticatedUser(response.user!);
-                            } on AuthException catch (error) {
-                              setDialogState(() {
-                                isVerifying = false;
-                              });
-
-                              if (!dialogContext.mounted) {
-                                return;
-                              }
-
-                              ScaffoldMessenger.of(dialogContext).showSnackBar(
-                                SnackBar(content: Text(error.message)),
-                              );
-                            } catch (error) {
-                              setDialogState(() {
-                                isVerifying = false;
-                              });
-
-                              if (!dialogContext.mounted) {
-                                return;
-                              }
-
-                              ScaffoldMessenger.of(dialogContext).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    'Unable to verify the code. Please try again.',
-                                  ),
-                                ),
-                              );
-                            }
-                          },
-                    child: isVerifying
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Text('Verify'),
-                  ),
-                ],
-              );
-            },
-          );
-        },
-      );
-
-      // If the user cancelled verification, keep them
-      // on the registration screen.
-      if (verified != true && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              'Phone verification is required to complete registration.',
-            ),
-          ),
-        );
-      }
-    } finally {
-      otpController.dispose();
-    }
-  }
-
-  // ============================================================
   // GOOGLE SIGN-IN
   // ============================================================
 
@@ -305,15 +142,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
     try {
       await Supabase.instance.client.auth.signInWithOAuth(
         OAuthProvider.google,
-        redirectTo: 'io.supabase.flutter://signin-callback/',
-        authScreenLaunchMode: LaunchMode.externalApplication,
+        redirectTo: kIsWeb ? null : 'io.supabase.flutter://signin-callback/',
+        authScreenLaunchMode: kIsWeb
+            ? LaunchMode.platformDefault
+            : LaunchMode.externalApplication,
       );
 
-      // Supabase will restore the session after Google
-      // redirects back to the application.
-      //
-      // Navigation after authentication is handled by
-      // the auth state listener below.
+      // The authenticated session is handled by
+      // onAuthStateChange above after Google redirects
+      // back to the application.
     } on AuthException catch (error) {
       if (!mounted) return;
 
@@ -376,67 +213,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   // ============================================================
-  // PHONE NORMALIZATION
+  // UI
   // ============================================================
-
-  String _normalizePhoneNumber(String value) {
-    final cleaned = value.replaceAll(RegExp(r'[\s\-()]'), '');
-
-    // 10-digit Indian number.
-    if (cleaned.length == 10 && RegExp(r'^[6-9]\d{9}$').hasMatch(cleaned)) {
-      return '+91$cleaned';
-    }
-
-    // Indian number entered with leading 0.
-    if (cleaned.startsWith('0') &&
-        cleaned.length == 11 &&
-        RegExp(r'^0[6-9]\d{9}$').hasMatch(cleaned)) {
-      return '+91${cleaned.substring(1)}';
-    }
-
-    return cleaned;
-  }
-
-  String? _validatePhone(String? value) {
-    final phone = value?.trim() ?? '';
-
-    if (phone.isEmpty) {
-      return 'Please enter your phone number';
-    }
-
-    final cleaned = phone.replaceAll(RegExp(r'[\s\-()]'), '');
-
-    final isIndianLocalNumber = RegExp(r'^[6-9]\d{9}$').hasMatch(cleaned);
-
-    final isIndianNumberWithZero = RegExp(r'^0[6-9]\d{9}$').hasMatch(cleaned);
-
-    final isInternationalNumber = RegExp(r'^\+\d{10,15}$').hasMatch(cleaned);
-
-    if (!isIndianLocalNumber &&
-        !isIndianNumberWithZero &&
-        !isInternationalNumber) {
-      return 'Please enter a valid phone number';
-    }
-
-    return null;
-  }
-
-  // ============================================================
-  // SWITCH REGISTRATION METHOD
-  // ============================================================
-
-  void _setRegistrationMethod(bool phoneRegistration) {
-    if (_isPhoneRegistration == phoneRegistration) {
-      return;
-    }
-
-    FocusManager.instance.primaryFocus?.unfocus();
-
-    setState(() {
-      _isPhoneRegistration = phoneRegistration;
-      _formKey.currentState?.reset();
-    });
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -495,13 +273,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   const SizedBox(height: 24),
 
                   // ==================================================
-                  // EMAIL / PHONE SWITCH
-                  // ==================================================
-                  _buildAuthMethodSelector(context, colorScheme),
-
-                  const SizedBox(height: 22),
-
-                  // ==================================================
                   // FULL NAME
                   // ==================================================
                   TextFormField(
@@ -534,57 +305,36 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   const SizedBox(height: 15),
 
                   // ==================================================
-                  // EMAIL / PHONE
+                  // EMAIL
                   // ==================================================
-                  AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 200),
-                    child: _isPhoneRegistration
-                        ? TextFormField(
-                            key: const ValueKey('phone'),
-                            controller: _phoneController,
-                            enabled: !_isLoading,
-                            keyboardType: TextInputType.phone,
-                            textInputAction: TextInputAction.next,
-                            autofillHints: const [
-                              AutofillHints.telephoneNumber,
-                            ],
-                            validator: _validatePhone,
-                            decoration: const InputDecoration(
-                              labelText: 'Phone number',
-                              hintText: '+91 98765 43210',
-                              prefixIcon: Icon(Icons.phone_outlined),
-                            ),
-                          )
-                        : TextFormField(
-                            key: const ValueKey('email'),
-                            controller: _emailController,
-                            enabled: !_isLoading,
-                            keyboardType: TextInputType.emailAddress,
-                            textInputAction: TextInputAction.next,
-                            autofillHints: const [AutofillHints.email],
-                            validator: (value) {
-                              final email = value?.trim() ?? '';
+                  TextFormField(
+                    controller: _emailController,
+                    enabled: !_isLoading,
+                    keyboardType: TextInputType.emailAddress,
+                    textInputAction: TextInputAction.next,
+                    autofillHints: const [AutofillHints.email],
+                    validator: (value) {
+                      final email = value?.trim() ?? '';
 
-                              if (email.isEmpty) {
-                                return 'Please enter your email address';
-                              }
+                      if (email.isEmpty) {
+                        return 'Please enter your email address';
+                      }
 
-                              final emailPattern = RegExp(
-                                r'^[\w-.]+@([\w-]+\.)+[\w-]{2,}$',
-                              );
+                      final emailPattern = RegExp(
+                        r'^[\w-.]+@([\w-]+\.)+[\w-]{2,}$',
+                      );
 
-                              if (!emailPattern.hasMatch(email)) {
-                                return 'Please enter a valid email address';
-                              }
+                      if (!emailPattern.hasMatch(email)) {
+                        return 'Please enter a valid email address';
+                      }
 
-                              return null;
-                            },
-                            decoration: const InputDecoration(
-                              labelText: 'Email address',
-                              hintText: 'Enter your email address',
-                              prefixIcon: Icon(Icons.email_outlined),
-                            ),
-                          ),
+                      return null;
+                    },
+                    decoration: const InputDecoration(
+                      labelText: 'Email address',
+                      hintText: 'Enter your email address',
+                      prefixIcon: Icon(Icons.email_outlined),
+                    ),
                   ),
 
                   const SizedBox(height: 15),
@@ -768,85 +518,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   ),
                 ],
               ),
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  // ============================================================
-  // EMAIL / PHONE SELECTOR
-  // ============================================================
-
-  Widget _buildAuthMethodSelector(
-    BuildContext context,
-    ColorScheme colorScheme,
-  ) {
-    return Container(
-      height: 46,
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerHighest.withValues(alpha: 0.55),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: _buildMethodOption(
-              label: 'Email',
-              selected: !_isPhoneRegistration,
-              onTap: () => _setRegistrationMethod(false),
-            ),
-          ),
-          Expanded(
-            child: _buildMethodOption(
-              label: 'Phone',
-              selected: _isPhoneRegistration,
-              onTap: () => _setRegistrationMethod(true),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMethodOption({
-    required String label,
-    required bool selected,
-    required VoidCallback onTap,
-  }) {
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        onTap: _isLoading ? null : onTap,
-        borderRadius: BorderRadius.circular(9),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: selected ? colorScheme.surface : Colors.transparent,
-            borderRadius: BorderRadius.circular(9),
-            boxShadow: selected
-                ? [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.05),
-                      blurRadius: 6,
-                      offset: const Offset(0, 2),
-                    ),
-                  ]
-                : null,
-          ),
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
-              color: selected
-                  ? colorScheme.primary
-                  : colorScheme.onSurfaceVariant,
             ),
           ),
         ),
